@@ -63,7 +63,7 @@ nav a {{ margin-right: 1rem; }}
 </style>
 </head>
 <body>
-<nav><a href="/">TOP</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a></nav>
+<nav><a href="/">TOP</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a></nav>
 {body}
 </body>
 </html>"#
@@ -301,12 +301,43 @@ async fn composite_page(Path(slug): Path<String>) -> Html<String> {
     Html(page_shell(page.title, &render_composite_body(page).await))
 }
 
+#[handler]
+fn help_page() -> Html<String> {
+    let body = r#"<h1>困った時は</h1>
+
+<h2>Google Chromeで「保護されていない通信」と出る場合</h2>
+<p>Edge(Windowsの証明書ストアを使用)では正常なのに対し、Chromeは独自の
+「Chrome Root Store」という、Windowsとは別の信頼済みルート証明書リストを
+持っています。新しいLet's Encryptのルート証明書がまだお使いのChromeの
+バージョンに反映されていない可能性があります。</p>
+<p><strong>対処法:</strong> Chromeを<code>chrome://settings/help</code>から更新し、
+再起動(タスクマネージャーでプロセスが残っていないか確認)してから再度アクセスしてください。</p>
+
+<h2>サイトが表示されない場合(DNS_PROBE_FINISHED_NXDOMAIN等)</h2>
+<p>お使いのDNS(特にCloudflareの1.1.1.1)が、ドメインの権威サーバーに
+一時的に到達できないことがあります。Google(8.8.8.8)・Quad9(9.9.9.9)
+など別のDNSでは問題なく解決できることが多いです。</p>
+<p><strong>対処法:</strong> スマホのモバイル回線(Wi-Fiオフ)で試すか、
+Windowsの設定(ネットワークとインターネット → プロパティ → DNSサーバーの
+割り当てを「手動」)でDNSサーバーを変更してください。
+<strong>優先DNS</strong>欄に<code>8.8.8.8</code>のみ、<strong>代替DNS</strong>欄に
+<code>8.8.4.4</code>をそれぞれ別々に入力してください
+(1つの欄に<code>8.8.8.8 / 8.8.4.4</code>とまとめて入力すると
+「無効なエントリ」エラーになります)。「HTTPS経由のDNS」が
+「オン(手動テンプレート)」の場合はまず「オフ」にしてから保存を試してください。
+それでも解決しない場合は、単純にDNSの反映待ち(通常数分〜1時間程度)
+であることも多いです。</p>
+"#;
+    Html(page_shell("困った時は", body))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     tracing_subscriber::fmt::init();
     let app = Route::new()
         .at("/", get(top))
         .at("/healthz", get(healthz))
+        .at("/help", get(help_page))
         .at("/ranking/:slug", get(ranking_page))
         .at("/page/:slug", get(composite_page));
 
