@@ -57,6 +57,8 @@ table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
 th, td {{ border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; font-size: 0.92rem; }}
 th {{ background: #f5f5f5; }}
 .disclaimer {{ font-size: 0.8rem; color: #777; }}
+a {{ color: #222; }}
+a:visited {{ color: #222; }}
 nav a {{ margin-right: 1rem; }}
 </style>
 </head>
