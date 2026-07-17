@@ -13,10 +13,13 @@
 //!
 //! キャッシュのスキーマは完全には統一されていない(地域別
 //! `tokyo_23`/`tokyo_tama`/`national`に分かれるもの、フラットな`rows`
-//! だけのもの等)。今回は代表的な2形状(地域別・フラット`rows`)を汎用
-//! レンダラーで対応し、`ai-tech-ranking`・`aruaru-learning-prices`・
-//! `rakuten-*`系(さらに異なるネスト構造)は次回以降の移行対象として
-//! `CLAUDE.md`のHANDOFFに正直に記録する(未対応をここでごまかさない)。
+//! だけのもの、`ai-tech-ranking`のような複数の異なる配列を持つもの、
+//! `rakuten-*`系のようなスカラー値+日英併記フィールドの塊等)。
+//! 2026-07-17、全8種のキャッシュに対応する**完全再帰の汎用レンダラー**
+//! (`render_value_generic`)に書き換えた——形状ごとに専用コードを書く
+//! のではなく、JSON構造から機械的にHTMLへ変換する(スカラー値は`<p>`、
+//! 文字列配列は`<ul>`、同一キー構成のオブジェクト配列は表、
+//! それ以外のオブジェクト配列・ネストしたオブジェクトは再帰)。
 
 use poem::web::{Html, Path};
 use poem::{get, handler, listener::TcpListener, Route, Server};
@@ -26,11 +29,16 @@ const CACHE_BASE: &str = "https://audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
 
 /// このRust側が対応済みのランキング一覧(表示名・キャッシュファイル名)。
-/// 未対応のキャッシュ(ai-tech-ranking等)はここに含めない。
+/// 2026-07-17、汎用レンダラーへの書き換えにより全8種類に対応。
 const RANKINGS: &[(&str, &str, &str)] = &[
     ("aruaru-caba", "aruaru-caba-ranking-cache.json", "キャバクラ求人 時給帯ランキング(地域別)"),
     ("aruaru-eikaiwa", "aruaru-eikaiwa-ranking-cache.json", "英会話スクール ランキング"),
     ("aruaru-jukujo-caba", "aruaru-jukujo-caba-ranking-cache.json", "熟女キャバ 求人ランキング"),
+    ("ai-tech-ranking", "ai-tech-ranking-cache.json", "プログラミング言語・フレームワーク・DBランキング"),
+    ("aruaru-learning-prices", "aruaru-learning-prices-cache.json", "学習サービス月額料金"),
+    ("rakuten-mobile", "rakuten-mobile-cache.json", "楽天モバイル プラン情報"),
+    ("rakuten-intl-call", "rakuten-intl-call-cache.json", "楽天モバイル 国際通話"),
+    ("rakuten-platinum", "rakuten-platinum-cache.json", "楽天モバイル プラチナバンド・衛星"),
 ];
 
 fn page_shell(title: &str, body: &str) -> String {
@@ -70,60 +78,114 @@ fn html_escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
-/// フラットな`rows`配列を表として描画。
-fn render_rows_table(rows: &[Value]) -> String {
-    let mut out = String::from("<table><tr><th>順位</th><th>項目</th><th>詳細</th><th>リンク</th></tr>");
-    for row in rows {
-        let rank = row.get("rank").map(|v| v.to_string()).unwrap_or_default();
-        let title = row.get("title").or_else(|| row.get("area")).and_then(|v| v.as_str()).unwrap_or("");
-        let band = row.get("band").and_then(|v| v.as_str()).unwrap_or("");
-        let pickup = row.get("pickup").and_then(|v| v.as_str()).unwrap_or("");
-        let url = row.get("url").and_then(|v| v.as_str());
-        let link = url
-            .map(|u| format!(r#"<a href="{}" target="_blank" rel="noopener noreferrer">🔎 詳細を見る</a>"#, html_escape(u)))
-            .unwrap_or_default();
-        out.push_str(&format!(
-            "<tr><td>{}</td><td>{}<br><small>{}</small></td><td>{}</td><td>{}</td></tr>",
-            html_escape(&rank),
-            html_escape(title),
-            html_escape(band),
-            html_escape(pickup),
-            link
-        ));
+/// オブジェクト配列を、可能なら表として描画する。各要素が同じキー集合を
+/// 持つ場合(このキャッシュ群の大半のケース)は列を揃えた表に、そうでない
+/// 場合は要素ごとの箇条書き(キー:値)にフォールバックする。
+fn render_object_array(items: &[Value]) -> String {
+    let Some(first) = items.first().and_then(|v| v.as_object()) else {
+        return String::new();
+    };
+    let columns: Vec<&String> = first.keys().collect();
+    let uniform = items.iter().all(|v| {
+        v.as_object().map(|o| {
+            let keys: Vec<&String> = o.keys().collect();
+            keys == columns
+        }).unwrap_or(false)
+    });
+
+    if uniform {
+        let mut out = String::from("<table><tr>");
+        for col in &columns {
+            out.push_str(&format!("<th>{}</th>", html_escape(col)));
+        }
+        out.push_str("</tr>");
+        for item in items {
+            out.push_str("<tr>");
+            for col in &columns {
+                let cell = item.get(col.as_str());
+                let rendered = match cell {
+                    Some(Value::String(s)) if s.starts_with("http://") || s.starts_with("https://") => {
+                        format!(r#"<a href="{0}" target="_blank" rel="noopener noreferrer">🔎 リンク</a>"#, html_escape(s))
+                    }
+                    Some(Value::String(s)) => html_escape(s),
+                    Some(v) => html_escape(&v.to_string()),
+                    None => String::new(),
+                };
+                out.push_str(&format!("<td>{rendered}</td>"));
+            }
+            out.push_str("</tr>");
+        }
+        out.push_str("</table>");
+        out
+    } else {
+        let mut out = String::from("<ul>");
+        for item in items {
+            if let Some(obj) = item.as_object() {
+                let pairs: Vec<String> = obj
+                    .iter()
+                    .map(|(k, v)| format!("{}: {}", html_escape(k), html_escape(&v.to_string())))
+                    .collect();
+                out.push_str(&format!("<li>{}</li>", pairs.join(" / ")));
+            }
+        }
+        out.push_str("</ul>");
+        out
     }
-    out.push_str("</table>");
-    out
 }
 
-/// 対応する2形状(地域別/フラット)を判定して汎用レンダリング。
-fn render_ranking_body(label: &str, data: &Value) -> String {
-    let mut out = format!("<h1>{}</h1>", html_escape(label));
-    if let Some(updated_at) = data.get("updated_at").and_then(|v| v.as_str()) {
-        out.push_str(&format!("<p class=\"disclaimer\">更新日時: {}</p>", html_escape(updated_at)));
-    }
-    if let Some(disclaimer) = data.get("disclaimer").and_then(|v| v.as_str()) {
-        out.push_str(&format!("<p class=\"disclaimer\">{}</p>", html_escape(disclaimer)));
+/// JSON値を再帰的にHTMLへ変換する完全汎用レンダラー。8種類全てのキャッシュ
+/// 形状(地域別ネスト・フラットrows・複数配列の塊・スカラー値+日英併記
+/// フィールド)をこの1関数だけでカバーする。
+fn render_value_generic(data: &Value, depth: u8) -> String {
+    let mut out = String::new();
+    let Some(obj) = data.as_object() else {
+        return html_escape(&data.to_string());
+    };
+
+    // 先に見出し的なスカラーフィールド(updated_at/disclaimer等)を出す。
+    for key in ["updated_at", "crawled_at", "disclaimer"] {
+        if let Some(v) = obj.get(key).and_then(|v| v.as_str()) {
+            out.push_str(&format!("<p class=\"disclaimer\">{}: {}</p>", html_escape(key), html_escape(v)));
+        }
     }
 
-    // フラット `rows` 形状(aruaru-eikaiwa / aruaru-jukujo-caba)。
-    if let Some(rows) = data.get("rows").and_then(|v| v.as_array()) {
-        out.push_str(&render_rows_table(rows));
-        return out;
-    }
-
-    // 地域別形状(aruaru-caba: tokyo_23 / tokyo_tama / national、各 {rows: [...]})。
-    const REGION_LABELS: &[(&str, &str)] = &[
-        ("tokyo_23", "東京23区"),
-        ("tokyo_tama", "東京多摩地域"),
-        ("national", "全国"),
-    ];
-    for (key, region_label) in REGION_LABELS {
-        if let Some(rows) = data.get(*key).and_then(|v| v.get("rows")).and_then(|v| v.as_array()) {
-            out.push_str(&format!("<h2>{}</h2>", html_escape(region_label)));
-            out.push_str(&render_rows_table(rows));
+    for (key, value) in obj {
+        if matches!(key.as_str(), "updated_at" | "crawled_at" | "disclaimer") {
+            continue;
+        }
+        match value {
+            Value::String(s) if s.starts_with("http://") || s.starts_with("https://") => {
+                out.push_str(&format!(
+                    r#"<p><strong>{}:</strong> <a href="{}" target="_blank" rel="noopener noreferrer">🔎 リンク</a></p>"#,
+                    html_escape(key), html_escape(s)
+                ));
+            }
+            Value::String(s) => {
+                out.push_str(&format!("<p><strong>{}:</strong> {}</p>", html_escape(key), html_escape(s)));
+            }
+            Value::Number(_) | Value::Bool(_) => {
+                out.push_str(&format!("<p><strong>{}:</strong> {}</p>", html_escape(key), html_escape(&value.to_string())));
+            }
+            Value::Array(items) if items.iter().all(|v| v.is_string()) => {
+                let list: String = items.iter().map(|v| format!("<li>{}</li>", html_escape(v.as_str().unwrap_or("")))).collect();
+                out.push_str(&format!("<h{n}>{k}</h{n}><ul>{list}</ul>", n = (depth + 2).min(6), k = html_escape(key)));
+            }
+            Value::Array(items) if !items.is_empty() && items.iter().all(|v| v.is_object()) => {
+                out.push_str(&format!("<h{n}>{k}</h{n}>", n = (depth + 2).min(6), k = html_escape(key)));
+                out.push_str(&render_object_array(items));
+            }
+            Value::Object(_) => {
+                out.push_str(&format!("<h{n}>{k}</h{n}>", n = (depth + 2).min(6), k = html_escape(key)));
+                out.push_str(&render_value_generic(value, depth + 1));
+            }
+            _ => {}
         }
     }
     out
+}
+
+fn render_ranking_body(label: &str, data: &Value) -> String {
+    format!("<h1>{}</h1>{}", html_escape(label), render_value_generic(data, 0))
 }
 
 #[handler]
