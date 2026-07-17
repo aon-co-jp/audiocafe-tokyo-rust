@@ -188,6 +188,69 @@ fn render_ranking_body(label: &str, data: &Value) -> String {
     format!("<h1>{}</h1>{}", html_escape(label), render_value_generic(data, 0))
 }
 
+/// PHP側の`/aruaru/`・`/aruaru-lady/`・`/rakuten-mobile/`サブページは、
+/// 複数のキャッシュファイルを1ページに束ねて表示する構成になっている
+/// (調査済み、2026-07-17)。同じ構成をRust側でも複合ページとして再現する。
+/// キャッシュパスは`CACHE_BASE`からの相対パス(サブディレクトリ込み)。
+struct CompositePage {
+    slug: &'static str,
+    title: &'static str,
+    sections: &'static [(&'static str, &'static str)], // (見出し, キャッシュの相対パス)
+}
+
+const COMPOSITE_PAGES: &[CompositePage] = &[
+    CompositePage {
+        slug: "rakuten-mobile",
+        title: "楽天モバイル 総合ページ",
+        sections: &[
+            ("基本プラン", "rakuten-mobile-cache.json"),
+            ("国際通話", "rakuten-intl-call-cache.json"),
+            ("プラチナバンド・衛星", "rakuten-platinum-cache.json"),
+        ],
+    },
+    CompositePage {
+        slug: "aruaru",
+        title: "aruaru(IT・建築系求人 総合ページ)",
+        sections: &[
+            ("キャバクラ求人 時給帯ランキング", "aruaru-caba-ranking-cache.json"),
+            ("熟女キャバ 求人ランキング", "aruaru-jukujo-caba-ranking-cache.json"),
+            ("英会話スクール ランキング", "aruaru-eikaiwa-ranking-cache.json"),
+            ("学習サービス月額料金", "aruaru-learning-prices-cache.json"),
+            ("プログラミング言語・フレームワーク・DBランキング", "ai-tech-ranking-cache.json"),
+            ("楽天モバイル 基本プラン", "aruaru/rakuten-mobile-cache.json"),
+            ("楽天モバイル 国際通話", "aruaru/rakuten-intl-call-cache.json"),
+            ("楽天モバイル プラチナバンド・衛星", "aruaru/rakuten-platinum-cache.json"),
+            ("楽天モバイル スマホキャンペーン", "aruaru/rakuten-smartphone-cache.json"),
+            ("doda 求人情報", "aruaru/doda-jobs-cache.json"),
+        ],
+    },
+    CompositePage {
+        slug: "aruaru-lady",
+        title: "aruaru-lady(女性向け求人 総合ページ)",
+        sections: &[
+            ("キャバクラ求人 時給帯ランキング", "aruaru-lady/aruaru-caba-ranking-cache.json"),
+            ("熟女キャバ 求人ランキング", "aruaru-lady/aruaru-jukujo-caba-ranking-cache.json"),
+            ("TVチャット(通常) ランキング", "aruaru-lady/aruaru-tvchat-normal-ranking-cache.json"),
+            ("TVチャット(グループ) ランキング", "aruaru-lady/aruaru-tvchat-group-ranking-cache.json"),
+            ("楽天モバイル 基本プラン", "aruaru-lady/rakuten-mobile-cache.json"),
+            ("楽天モバイル 国際通話", "aruaru-lady/rakuten-intl-call-cache.json"),
+            ("楽天モバイル プラチナバンド・衛星", "aruaru-lady/rakuten-platinum-cache.json"),
+        ],
+    },
+];
+
+async fn render_composite_body(page: &CompositePage) -> String {
+    let mut out = format!("<h1>{}</h1>", html_escape(page.title));
+    for (heading, path) in page.sections {
+        out.push_str(&format!("<h2>{}</h2>", html_escape(heading)));
+        match fetch_cache(path).await {
+            Ok(data) => out.push_str(&render_value_generic(&data, 1)),
+            Err(e) => out.push_str(&format!("<p class=\"disclaimer\">取得エラー: {}</p>", html_escape(&e))),
+        }
+    }
+    out
+}
+
 #[handler]
 fn healthz() -> &'static str {
     "ok"
@@ -199,10 +262,18 @@ fn top() -> Html<String> {
         .iter()
         .map(|(slug, _, label)| format!(r#"<li><a href="/ranking/{slug}">{}</a></li>"#, html_escape(label)))
         .collect();
+    let composite_list: String = COMPOSITE_PAGES
+        .iter()
+        .map(|p| format!(r#"<li><a href="/page/{}">{}</a></li>"#, p.slug, html_escape(p.title)))
+        .collect();
     let body = format!(
         r#"<h1>audiocafe.tokyo (Rust版、移行中)</h1>
-<p>既存PHPサイトのジャンル別ランキング表示を、段階的にRust + Poemへ移行しています。
-現時点で対応済みのランキングは以下の通りです(未対応分は既存PHP側でご覧いただけます)。</p>
+<p>既存PHPサイトのジャンル別ランキング表示を、段階的にRust + Poemへ移行しています。</p>
+
+<h2>総合ページ(既存PHP側の/aruaru・/aruaru-lady・/rakuten-mobileに相当)</h2>
+<ul>{composite_list}</ul>
+
+<h2>個別ランキング</h2>
 <ul>{list}</ul>
 "#
     );
@@ -220,13 +291,22 @@ async fn ranking_page(Path(slug): Path<String>) -> Html<String> {
     }
 }
 
+#[handler]
+async fn composite_page(Path(slug): Path<String>) -> Html<String> {
+    let Some(page) = COMPOSITE_PAGES.iter().find(|p| p.slug == slug) else {
+        return Html(page_shell("見つかりません", "<h1>404</h1><p>未対応のページです。</p>"));
+    };
+    Html(page_shell(page.title, &render_composite_body(page).await))
+}
+
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     tracing_subscriber::fmt::init();
     let app = Route::new()
         .at("/", get(top))
         .at("/healthz", get(healthz))
-        .at("/ranking/:slug", get(ranking_page));
+        .at("/ranking/:slug", get(ranking_page))
+        .at("/page/:slug", get(composite_page));
 
     tracing::info!("audiocafe-tokyo-server listening on 127.0.0.1:4400");
     Server::new(TcpListener::bind("127.0.0.1:4400")).run(app).await
