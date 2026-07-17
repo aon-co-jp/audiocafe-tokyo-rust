@@ -21,6 +21,9 @@
 //! 文字列配列は`<ul>`、同一キー構成のオブジェクト配列は表、
 //! それ以外のオブジェクト配列・ネストしたオブジェクトは再帰)。
 
+mod scraper;
+mod seed_urls;
+
 use poem::web::{Html, Path};
 use poem::{get, handler, listener::TcpListener, Route, Server};
 use serde_json::Value;
@@ -63,7 +66,7 @@ nav a {{ margin-right: 1rem; }}
 </style>
 </head>
 <body>
-<nav><a href="/">TOP</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a></nav>
+<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a></nav>
 {body}
 </body>
 </html>"#
@@ -301,6 +304,64 @@ async fn composite_page(Path(slug): Path<String>) -> Html<String> {
     Html(page_shell(page.title, &render_composite_body(page).await))
 }
 
+/// PHP側の`build_lists($SEED_URLS)`(テキストリンク・動画リンク・写真の
+/// 収集アルゴリズム)を移植した`scraper::build_lists`を呼び出して表示する。
+/// 元のPHPはトップページ内で条件付きに埋め込んでいたが、Rust側では
+/// 独立したページ`/discover`として切り出した。
+#[handler]
+async fn discover_page() -> Html<String> {
+    let lists = scraper::build_lists(seed_urls::SEED_URLS).await;
+
+    let video_items: String = lists
+        .video_links
+        .iter()
+        .map(|v| {
+            let thumb = scraper::extract_yt_id(&v.url)
+                .map(|id| format!(r#"<img src="https://i.ytimg.com/vi/{id}/default.jpg" alt="" style="vertical-align:middle;margin-right:0.5rem;">"#))
+                .unwrap_or_default();
+            format!(
+                r#"<li><a href="{}" target="_blank" rel="noopener noreferrer">{}▶️ [{}] {}</a></li>"#,
+                html_escape(&v.url),
+                thumb,
+                html_escape(scraper::source_name(&v.url)),
+                html_escape(&v.title)
+            )
+        })
+        .collect();
+
+    let text_items: String = lists
+        .text_links
+        .iter()
+        .map(|t| format!(r#"<li><a href="{}" target="_blank" rel="noopener noreferrer">{}</a></li>"#, html_escape(&t.url), html_escape(&t.title)))
+        .collect();
+
+    let photo_items: String = lists
+        .photos
+        .iter()
+        .map(|p| format!(r#"<li><a href="{}" target="_blank" rel="noopener noreferrer">🖼️ {}</a></li>"#, html_escape(&p.src), html_escape(&p.alt)))
+        .collect();
+
+    let body = format!(
+        r#"<h1>Discover</h1>
+<p>登録済みの記事URL群から、動画リンク・テキストリンク・写真を自動収集しています
+(PHP側の<code>build_lists()</code>アルゴリズムのRust移植版、1日キャッシュ)。</p>
+
+<h2>動画リンク ({video_count}件)</h2>
+<ul class="linklist">{video_items}</ul>
+
+<h2>記事リンク ({text_count}件)</h2>
+<ul class="linklist">{text_items}</ul>
+
+<h2>写真 ({photo_count}件)</h2>
+<ul class="linklist">{photo_items}</ul>
+"#,
+        video_count = lists.video_links.len(),
+        text_count = lists.text_links.len(),
+        photo_count = lists.photos.len(),
+    );
+    Html(page_shell("Discover | audiocafe.tokyo", &body))
+}
+
 #[handler]
 fn help_page() -> Html<String> {
     let body = r#"<h1>困った時は</h1>
@@ -342,6 +403,7 @@ async fn main() -> Result<(), std::io::Error> {
         .at("/", get(top))
         .at("/healthz", get(healthz))
         .at("/help", get(help_page))
+        .at("/discover", get(discover_page))
         .at("/ranking/:slug", get(ranking_page))
         .at("/page/:slug", get(composite_page));
 
