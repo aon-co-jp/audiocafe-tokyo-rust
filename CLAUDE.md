@@ -103,6 +103,38 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-17 `index.php`本体(トップページ)のサーバー側アルゴリズムを移植・
+  簡略化、`/discover`ページ新設**: `index.php`(8146行)を調査した結果、
+  実質的な"PHPアルゴリズム"と呼べる部分は`is_video_host`/`source_name`/
+  `extract_yt_id`/`fetch_url`/`extract_from_html`/`build_lists`
+  (シードURL群からテキストリンク・動画リンク・写真を収集する仕組み、
+  1日キャッシュ)の184行だけで、残り8000行超はクライアント側JavaScript
+  (言語カード切替・YouTube背景プレイヤー・モーダルナビゲーション等の
+  UI演出)だった。今回はこの実アルゴリズムのみを`src/scraper.rs`へ移植し、
+  新規`/discover`ページとして公開した(クライアント側JS一式は対象外——
+  ブラウザ側の演出はバックエンド言語に依存しないため「PHPのアルゴリズム」
+  には含めない判断)。
+  - **簡略化した点**: (1) PHP側は`$seen_text`/`$seen_video`/`$seen_img`
+    という3つの連想配列+3回に分けたforeachで重複排除していたが、
+    `HashSet`3つ+イテレータチェーンにまとめた。(2) `<a>`用・`<img>`用に
+    別々に書かれていた「相対URLの絶対化」ロジックを`resolve_url()`
+    1関数に集約。(3) キャッシュ永続化を[`rust_json`](https://github.com/aon-co-jp/Rust-JSON)
+    経由に統一(このエコシステムのJSON処理一本化方針に合わせる)。
+  - `$SEED_URLS`(360件のシードURL)は`src/seed_urls.rs`へ機械的にそのまま
+    抽出・移植(取捨選択なし)。
+  - **検証**: VPS上(実インターネット接続あり)で`cargo test`
+    5件全green(`is_video_host`/`source_name`/`extract_yt_id`/
+    `resolve_url`/`extract_from_html`の単体テスト)。実バイナリで
+    `/discover`にアクセスし、実際に360件のシードURLを処理して
+    動画リンク93件・記事リンク280件・写真22件を正しく収集
+    (初回6秒、キャッシュヒット時9ms)——実データでの動作確認済み、
+    型チェックのみでの「完了」報告ではない。`extract_yt_id`は
+    YouTubeサムネイル表示(`i.ytimg.com`)に実際に使用し、未使用関数を
+    残さない既存の検証基準を満たした。
+  - 次にすべきこと: VPSへのsystemd反映(まだ`/root/audiocafe-tokyo-rust`の
+    ビルド確認のみ、常駐サービスの再起動は次回)、クライアント側UIの
+    移植要否の判断(演出目的が強く、優先度は低いと考える)。
+
 - **2026-07-17 複合ページ(`/page/:slug`)追加、実質的な`/aruaru`・
   `/aruaru-lady`・`/rakuten-mobile`移植完了**: PHP側のこれら3パスが
   実は複数キャッシュの統合ページであることを調査で確認し、
