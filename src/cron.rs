@@ -1,14 +1,27 @@
 //! `--cron-all`(PHP側`audiocafe.tokyo/aruaru/index.php` 7564〜7649行目)の
-//! Rust移植。8処理のうち**OpenAI API に依存しない4処理**のみ実装する:
+//! Rust移植。8処理のうち**OpenAI APIに依存しない5処理**を実装する:
 //!
 //! 1. `rakuten_fetch_price()` — 楽天モバイル基本料金(PHP`rakuten_fetch_price()`、4437行目)
 //! 2. `rakuten_intl_crawl()` — 楽天モバイル国際通話(PHP`rakuten_intl_crawl()`、4481行目)
 //! 3. `rakuten_platinum_crawl()` — 楽天モバイル プラチナバンド・衛星(PHP`rakuten_platinum_crawl()`、4567行目)
 //! 4. `doda_run_crawl()` — doda求人(PHP`doda_run_crawl()`、4831行目)
+//! 5. `eikaiwa_ranking_refresh()` — 英会話アプリ・サービスランキング
+//!    (PHP`aruaru_eikaiwa_ranking_refresh()`、1902行目)
 //!
-//! 残り4処理(技術ランキング同期・学習価格・AI学習コメント・英会話ランキング)は
-//! `aruaru_tech_refresh_rankings`/`aruaru_learning_ai_cron_refresh`等が
-//! OpenAI APIに依存するため今回のスコープ外(`CLAUDE.md`のHANDOFF参照)。
+//! **2026-07-18訂正**: CLAUDE.mdの過去記録では英会話ランキングも
+//! 「OpenAI API依存」と記載されていたが、実際にPHPソース
+//! (`aruaru_eikaiwa_master_pool()`、1820行目)を読み直したところ、
+//! **完全に静的なハードコードデータをrankソートしてJSON書き出すだけの
+//! 非AI処理**であることが判明した(各行の`'ai'=>true/false`は、その
+//! サービス自体がAI機能を持つか否かを示す表示用フラグであって、
+//! OpenAI API呼び出しとは無関係)。よって今回追加で移植する。
+//!
+//! 残り2処理(技術ランキング同期・AI学習コメント)は実際に
+//! `aruaru_tech_apply_ai_enrichment`/`aruaru_learning_ai_fetch_links`が
+//! OpenAI APIで自然文・実在URLを新規生成する処理であり、今回も
+//! スコープ外のまま(`CLAUDE.md`のHANDOFF参照、契約不要の独自AI
+//! `aruaru-llm`はルールベースの意図分類のみで自由文生成能力を持たない
+//! ため代替不可と判断)。
 //!
 //! PHP版と同じく「失敗時は前回キャッシュ or 安全側デフォルト値を維持」する
 //! フェイルセーフ設計を踏襲する(各`*_crawl`関数は取得に失敗しても
@@ -478,6 +491,101 @@ pub async fn doda_run_crawl() -> Value {
     })
 }
 
+// ===================== 英会話ランキング(非AI・静的データ) =====================
+
+/// PHP`aruaru_eikaiwa_master_pool()`(index.php 1820〜1874行目)のTOP50を
+/// そのまま移植した静的データ。フィールド順は
+/// `(rank, name, platform, style, level, price, url, ai, note)`。
+/// `ai`はサービス自体がAI機能を持つかを示す表示用フラグであり、
+/// この処理自体がOpenAI APIを呼ぶわけではない(モジュールdoc参照)。
+const EIKAIWA_POOL: &[(u32, &str, &str, &str, &str, &str, &str, bool, &str)] = &[
+    (1, "Duolingo", "📱💻", "ゲーム感覚", "初級〜中級", "無料(Pro月額¥1,250〜)", "https://ja.duolingo.com/", false, "世界最大の語学学習アプリ。毎日継続しやすいゲーム形式"),
+    (2, "Speak", "📱💻", "AIスピーキング", "初級〜上級", "月額¥2,000〜", "https://www.speak.com/ja", true, "AIが発音・会話をリアルタイム採点。話す練習特化"),
+    (3, "ELSA Speak", "📱", "発音矯正AI", "初級〜上級", "無料(Pro月額¥1,500〜)", "https://elsaspeak.com/ja/", true, "AI音声認識で発音を細かくスコアリング"),
+    (4, "スタディサプリENGLISH", "📱💻", "動画×AI", "初級〜中級", "月額¥2,178〜", "https://eigosapuri.jp/", true, "TOEIC・日常英会話・ビジネス英語コース充実"),
+    (5, "Cambly", "📱💻", "ネイティブ講師", "初級〜上級", "月額¥5,000〜", "https://www.cambly.com/english?lang=ja", false, "24時間いつでもネイティブ講師とビデオ通話"),
+    (6, "DMM英会話", "📱💻", "オンラインレッスン", "初級〜上級", "月額¥6,480〜", "https://eikaiwa.dmm.com/", false, "日本最大級。130ヶ国以上の講師から選択可"),
+    (7, "ネイティブキャンプ", "📱💻", "オンライン無制限", "初級〜上級", "月額¥6,480〜", "https://nativecamp.net/", false, "月額定額で回数無制限レッスン。スキマ時間に最適"),
+    (8, "Rosetta Stone", "📱💻", "没入型学習", "初級〜中級", "月額¥2,940〜", "https://www.rosettastone.com/lp/ja/", true, "50年以上の実績。絵と音声のみで直感的に学ぶ"),
+    (9, "Babbel", "📱💻", "対話型レッスン", "初級〜中級", "月額¥1,633〜", "https://ja.babbel.com/", false, "実際の会話シーンを再現した短いレッスンが得意"),
+    (10, "Busuu", "📱💻", "ネイティブ添削", "初級〜中級", "無料(Premium月額¥1,067〜)", "https://www.busuu.com/ja", false, "世界中のネイティブにフィードバックしてもらえる"),
+    (11, "Pimsleur", "📱💻", "リスニング特化", "初級〜中級", "月額¥2,100〜", "https://www.pimsleur.com/", false, "音声主体。通勤・家事しながら耳で学ぶのに最適"),
+    (12, "HelloTalk", "📱", "言語交換SNS", "初級〜上級", "無料(VIP月額¥1,000〜)", "https://www.hellotalk.com/?lang=ja", false, "世界中のネイティブと相互に言語を教え合う"),
+    (13, "Tandem", "📱", "言語パートナー", "初級〜上級", "無料(Pro月額¥1,800〜)", "https://www.tandem.net/ja", false, "テキスト・音声・ビデオで言語交換パートナーと練習"),
+    (14, "Anki", "📱💻", "フラッシュカード", "全レベル", "PC無料(iOS¥3,000)", "https://apps.ankiweb.net/", false, "間隔反復学習で単語・フレーズを効率的に記憶"),
+    (15, "Memrise", "📱💻", "記憶術×動画", "初級〜中級", "無料(Pro月額¥1,500〜)", "https://www.memrise.com/", true, "ネイティブの動画クリップで自然な表現を習得"),
+    (16, "BBC Learning English", "📱💻", "ニュース×学習", "中級〜上級", "完全無料", "https://www.bbc.co.uk/learningenglish/", false, "BBCが提供する無料の高品質英語学習コンテンツ"),
+    (17, "VOA Learning English", "📱💻", "ニュース英語", "初級〜中級", "完全無料", "https://learningenglish.voanews.com/", false, "米国政府系メディアによるゆっくり英語ニュース"),
+    (18, "TED", "📱💻", "スピーチ動画", "中級〜上級", "完全無料", "https://www.ted.com/", false, "世界トップクラスの講演動画。字幕付きで聴ける"),
+    (19, "YouTube(英語学習CH)", "📱💻", "動画学習", "全レベル", "無料(Premium¥1,280〜/月)", "https://www.youtube.com/", false, "EnglishAddict・Rachel'sEnglishなど良質CHが豊富"),
+    (20, "Coursera", "📱💻", "大学レベル講座", "中級〜上級", "無料聴講〜月額¥5,900〜", "https://www.coursera.org/", false, "米国トップ大学の英語コースを世界中から受講可"),
+    (21, "edX", "📱💻", "大学講座", "中級〜上級", "無料〜(証明書有料)", "https://www.edx.org/", false, "MIT・ハーバードなど名門大の無料英語コース"),
+    (22, "Udemy英語コース", "📱💻", "録画講座", "初級〜上級", "買切り¥1,500〜", "https://www.udemy.com/ja/", false, "セールで格安取得可能な豊富な英会話コース"),
+    (23, "iKnow!", "📱💻", "脳科学記憶", "初級〜中級", "月額¥1,500〜", "https://iknow.jp/", false, "脳科学に基づく間隔反復で英単語・例文を定着"),
+    (24, "abceed", "📱💻", "TOEIC特化AI", "初級〜上級", "無料(Premium月額¥2,233〜)", "https://www.abceed.com/", true, "AI分析でTOEICスコアアップに特化した最強アプリ"),
+    (25, "英語物語", "📱", "RPGゲーム学習", "初級〜中級", "無料(アイテム課金)", "https://eigomonogatari.com/", false, "RPG形式で楽しみながら英単語・文法を習得"),
+    (26, "Mondly", "📱💻", "AR×VR×AI", "初級〜中級", "月額¥1,170〜", "https://www.mondly.com/", true, "AR・VR対応の次世代英語学習。会話シミュレーション"),
+    (27, "Clozemaster", "📱💻", "穴埋め文脈学習", "中級〜上級", "無料(Pro月額¥1,000〜)", "https://www.clozemaster.com/", false, "文脈の中で大量の英文に触れて上級語彙を習得"),
+    (28, "Cake英語学習", "📱", "動画フレーズ", "初級〜中級", "無料(Premium月額¥980〜)", "https://mycake.me/", false, "海外ドラマ・映画のワンシーンで自然な英語を習得"),
+    (29, "シャドテン", "📱💻", "シャドーイング特化", "初級〜上級", "月額¥6,480〜", "https://shadowten.com/", true, "AIコーチングでシャドーイングを毎日添削"),
+    (30, "fluentu", "📱💻", "動画×字幕学習", "初級〜上級", "月額¥3,240〜", "https://www.fluentu.com/", false, "YouTube動画に双方向字幕・単語帳が連動"),
+    (31, "Speechling", "📱💻", "発音コーチング", "初級〜上級", "無料(Pro月額¥2,000〜)", "https://speechling.com/", false, "録音した発音をネイティブコーチが無料添削"),
+    (32, "LanguageTransfer", "📱💻", "思考型音声講座", "初級〜中級", "完全無料", "https://www.languagetransfer.org/", false, "考えながら聴く独自メソッドで文法を直感習得"),
+    (33, "Lingoda", "📱💻", "グループレッスン", "初級〜上級", "月額¥8,000〜", "https://www.lingoda.com/ja/", false, "少人数グループで欧州式カリキュラムの本格授業"),
+    (34, "italki", "📱💻", "1対1レッスン", "全レベル", "1回¥500〜(講師による)", "https://www.italki.com/", false, "世界中のプロ・コミュニティ講師から自由に選択"),
+    (35, "Preply", "📱💻", "マンツーマン", "全レベル", "月額¥5,000〜(講師選択)", "https://preply.com/", false, "AIが最適な講師をマッチング。試し体験あり"),
+    (36, "英語にあそぼ(NHK)", "💻", "NHK教育動画", "超初級", "完全無料", "https://www.nhk.or.jp/school/eigoni/", false, "NHKが子ども向けに提供。家族で楽しめる"),
+    (37, "NHK World English", "📱💻", "ニュース・教養", "中級〜上級", "完全無料", "https://www3.nhk.or.jp/nhkworld/", false, "NHKの英語国際放送。日本に関する英語ニュースが豊富"),
+    (38, "Glossika", "📱💻", "文章反復訓練", "中級〜上級", "月額¥1,800〜", "https://ai.glossika.com/", true, "大量の例文を繰り返し聴いて話す流暢さ養成法"),
+    (39, "LingQ", "📱💻", "多読・多聴", "初級〜上級", "無料(Premium月額¥1,167〜)", "https://www.lingq.com/ja/", false, "本物の英文コンテンツで語彙を自動ハイライト学習"),
+    (40, "Nativshark", "📱💻", "構造的カリキュラム", "初級〜中級", "月額¥2,900〜", "https://nativshark.com/", false, "体系的なカリキュラムで日常英会話を着実に習得"),
+    (41, "Chatterbug", "📱💻", "テキスト×動画", "初級〜中級", "月額¥5,800〜", "https://chatterbug.com/", false, "自習アプリ+週1ネイティブライブレッスンの組合せ"),
+    (42, "Speechace", "📱💻", "発音AI採点", "初級〜上級", "無料(Pro月額¥1,500〜)", "https://www.speechace.com/", true, "CEFR対応。音節レベルで発音をスコアリング"),
+    (43, "Beelinguapp", "📱", "バイリンガル読書", "初級〜中級", "無料(Pro¥720〜)", "https://www.beelinguapp.com/", false, "日英並列表示で物語を読みながら英語習得"),
+    (44, "Toucan", "💻", "ブラウザ拡張", "初級〜中級", "無料(Pro月額¥500〜)", "https://jointoucan.com/", false, "Webブラウジング中に自動で英単語が表示され学習"),
+    (45, "Mango Languages", "📱💻", "会話重視", "初級〜中級", "月額¥2,500〜(図書館無料)", "https://mangolanguages.com/", false, "図書館カード会員は無料。実用的な会話フレーズ中心"),
+    (46, "Yabla", "📱💻", "ネイティブ動画", "初級〜上級", "月額¥1,200〜", "https://english.yabla.com/", false, "本物の映像コンテンツにインタラクティブ字幕連動"),
+    (47, "EnglishClass101", "📱💻", "ポッドキャスト×動画", "初級〜上級", "無料〜月額¥2,000〜", "https://www.englishclass101.com/", false, "ポッドキャスト形式の大量コンテンツで通勤学習"),
+    (48, "Magoosh TOEFL/IELTS", "📱💻", "試験対策", "中級〜上級", "月額¥3,000〜", "https://magoosh.com/", false, "TOEFL・IELTS専門。高品質な問題集と解説動画"),
+    (49, "ChatGPT英会話練習", "📱💻", "AI対話", "全レベル", "無料(Plus月額¥3,000〜)", "https://chat.openai.com/", true, "ChatGPTに「英会話の練習相手になって」と依頼するだけ"),
+    (50, "Claude英会話練習", "📱💻", "AI対話", "全レベル", "無料(Pro月額¥3,000〜)", "https://claude.ai/", true, "自然な会話練習・文法修正・英作文添削に最適なAI"),
+];
+
+/// PHP`aruaru_eikaiwa_ranking_refresh()`(index.php 1902行目)の移植。
+/// 静的データを`rank`昇順にソートして返すだけの非AI処理
+/// (`EIKAIWA_POOL`は元々rank昇順だが、PHP版の`usort`と同じく
+/// 安全のため明示的にソートする)。`ttl_days`はPHP版の値(7)を
+/// そのままスキーマ整合のため踏襲する(実際のキャッシュ有効期限は
+/// このRust側では呼び出し側の運用でコントロールする想定)。
+pub async fn eikaiwa_ranking_refresh() -> Value {
+    let mut pool: Vec<&(u32, &str, &str, &str, &str, &str, &str, bool, &str)> =
+        EIKAIWA_POOL.iter().collect();
+    pool.sort_by_key(|e| e.0);
+
+    let rows: Vec<Value> = pool
+        .iter()
+        .map(|(rank, name, platform, style, level, price, url, ai, note)| {
+            json!({
+                "rank": rank,
+                "name": name,
+                "platform": platform,
+                "style": style,
+                "level": level,
+                "price": price,
+                "url": url,
+                "ai": ai,
+                "note": note,
+            })
+        })
+        .collect();
+
+    json!({
+        "updated_at": now_ymd_hm(),
+        "ttl_days": 7,
+        "rows": rows,
+    })
+}
+
 // ===================== --cron-all 統合実行 =====================
 
 fn write_cache_json(filename: &str, data: &Value) -> std::io::Result<()> {
@@ -486,55 +594,63 @@ fn write_cache_json(filename: &str, data: &Value) -> std::io::Result<()> {
 }
 
 /// PHP版`--cron-all`(index.php 7564〜7649行目)相当の統合実行。
-/// OpenAI依存の①③(技術ランキング/AI学習コメント)・英会話ランキング更新は
-/// 今回スコープ外のため未実装(CLAUDE.md参照)——4処理のみをこの順で実行する。
+/// OpenAI依存の技術ランキング同期/AI学習コメントの2処理は
+/// 今回スコープ外のため未実装(CLAUDE.md参照)——非AI処理5件をこの順で実行する。
 pub async fn run_cron_all() {
     let t0 = std::time::Instant::now();
     println!("[{}] ========== audiocafe cron 開始 ==========", now_ymd_hm());
 
-    println!("[{}] [1/4] 楽天モバイル 基本料金 クロール...", now_ymd_hm());
+    println!("[{}] [1/5] 楽天モバイル 基本料金 クロール...", now_ymd_hm());
     let rk = rakuten_fetch_price().await;
     if let Err(e) = write_cache_json("rakuten-mobile-cache.json", &rk) {
-        eprintln!("[{}] [1/4] 書込エラー: {e}", now_ymd_hm());
+        eprintln!("[{}] [1/5] 書込エラー: {e}", now_ymd_hm());
     }
     println!(
-        "[{}] [1/4] 完了 — 料金: {}",
+        "[{}] [1/5] 完了 — 料金: {}",
         now_ymd_hm(),
         rk.get("price").and_then(|v| v.as_str()).unwrap_or("?")
     );
 
-    println!("[{}] [2/4] 楽天モバイル 国際通話 クロール...", now_ymd_hm());
+    println!("[{}] [2/5] 楽天モバイル 国際通話 クロール...", now_ymd_hm());
     let intl = rakuten_intl_crawl().await;
     if let Err(e) = write_cache_json("rakuten-intl-call-cache.json", &intl) {
-        eprintln!("[{}] [2/4] 書込エラー: {e}", now_ymd_hm());
+        eprintln!("[{}] [2/5] 書込エラー: {e}", now_ymd_hm());
     }
     println!(
-        "[{}] [2/4] 完了 — 国数: {}  成功: {}",
+        "[{}] [2/5] 完了 — 国数: {}  成功: {}",
         now_ymd_hm(),
         intl.get("intl_countries_count").and_then(|v| v.as_str()).unwrap_or("?"),
         if intl.get("crawl_success").and_then(|v| v.as_bool()).unwrap_or(false) { "YES" } else { "NO" }
     );
 
-    println!("[{}] [3/4] 楽天モバイル プラチナバンド・衛星 クロール...", now_ymd_hm());
+    println!("[{}] [3/5] 楽天モバイル プラチナバンド・衛星 クロール...", now_ymd_hm());
     let plat = rakuten_platinum_crawl().await;
     if let Err(e) = write_cache_json("rakuten-platinum-cache.json", &plat) {
-        eprintln!("[{}] [3/4] 書込エラー: {e}", now_ymd_hm());
+        eprintln!("[{}] [3/5] 書込エラー: {e}", now_ymd_hm());
     }
     println!(
-        "[{}] [3/4] 完了 — カバレッジ: {}  成功: {}",
+        "[{}] [3/5] 完了 — カバレッジ: {}  成功: {}",
         now_ymd_hm(),
         plat.get("platinum_coverage_ja").and_then(|v| v.as_str()).unwrap_or("?"),
         if plat.get("crawl_success").and_then(|v| v.as_bool()).unwrap_or(false) { "YES" } else { "NO" }
     );
 
-    println!("[{}] [4/4] doda 求人 クロール...", now_ymd_hm());
+    println!("[{}] [4/5] doda 求人 クロール...", now_ymd_hm());
     let doda = doda_run_crawl().await;
     if let Err(e) = write_cache_json("doda-jobs-cache.json", &doda) {
-        eprintln!("[{}] [4/4] 書込エラー: {e}", now_ymd_hm());
+        eprintln!("[{}] [4/5] 書込エラー: {e}", now_ymd_hm());
     }
     let it_count = doda.get("categories").and_then(|c| c.get("it")).and_then(|c| c.get("count")).and_then(|v| v.as_u64()).unwrap_or(0);
     let ad_count = doda.get("categories").and_then(|c| c.get("ad")).and_then(|c| c.get("count")).and_then(|v| v.as_u64()).unwrap_or(0);
-    println!("[{}] [4/4] 完了 — IT={it_count} AD={ad_count}", now_ymd_hm());
+    println!("[{}] [4/5] 完了 — IT={it_count} AD={ad_count}", now_ymd_hm());
+
+    println!("[{}] [5/5] 英会話ランキング 更新...", now_ymd_hm());
+    let eikaiwa = eikaiwa_ranking_refresh().await;
+    if let Err(e) = write_cache_json("aruaru-eikaiwa-ranking-cache.json", &eikaiwa) {
+        eprintln!("[{}] [5/5] 書込エラー: {e}", now_ymd_hm());
+    }
+    let eikaiwa_count = eikaiwa.get("rows").and_then(|v| v.as_array()).map(|a| a.len()).unwrap_or(0);
+    println!("[{}] [5/5] 完了 — {eikaiwa_count}件", now_ymd_hm());
 
     println!(
         "[{}] ========== audiocafe cron 完了（{:.2}秒） ==========",
@@ -542,7 +658,7 @@ pub async fn run_cron_all() {
         t0.elapsed().as_secs_f64()
     );
     println!(
-        "[{}] ※ 技術ランキング/AI学習コメント/英会話ランキング(OpenAI API依存)は今回未実装、CLAUDE.md参照",
+        "[{}] ※ 技術ランキング/AI学習コメント(OpenAI API依存)は今回未実装、CLAUDE.md参照",
         now_ymd_hm()
     );
 }
@@ -550,6 +666,26 @@ pub async fn run_cron_all() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn eikaiwa_ranking_refresh_returns_all_50_entries_sorted_by_rank() {
+        let data = eikaiwa_ranking_refresh().await;
+        let rows = data.get("rows").and_then(|v| v.as_array()).expect("rows array");
+        assert_eq!(rows.len(), 50);
+
+        let ranks: Vec<u64> = rows.iter().map(|r| r.get("rank").and_then(|v| v.as_u64()).unwrap()).collect();
+        let mut sorted_ranks = ranks.clone();
+        sorted_ranks.sort_unstable();
+        assert_eq!(ranks, sorted_ranks, "rows must be sorted ascending by rank");
+        assert_eq!(ranks.first(), Some(&1));
+        assert_eq!(ranks.last(), Some(&50));
+
+        assert_eq!(data.get("ttl_days").and_then(|v| v.as_u64()), Some(7));
+
+        let first = &rows[0];
+        assert_eq!(first.get("name").and_then(|v| v.as_str()), Some("Duolingo"));
+        assert_eq!(first.get("ai").and_then(|v| v.as_bool()), Some(false));
+    }
 
     #[test]
     fn extract_rakuten_price_matches_yen_with_tax_label() {

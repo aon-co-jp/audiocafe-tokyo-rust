@@ -103,6 +103,39 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-18(続きの続き) 英会話ランキング更新処理を追加実装、`--cron-all`を非AI処理5件に拡張**:
+  従来「OpenAI API依存で今回スコープ外」と誤って記録されていた
+  `aruaru_eikaiwa_ranking_refresh()`(PHP`index.php`1902行目)を
+  再調査した結果、**実際には完全に静的なハードコードデータ
+  (`aruaru_eikaiwa_master_pool()`、1820行目、英会話アプリ・サービス
+  TOP50)を`rank`でソートしてJSON書き出すだけの非AI処理**であることが
+  判明した(各行の`'ai'=>true/false`はそのサービス自体がAI機能を
+  持つか否かの表示用フラグであり、この処理自体がOpenAI APIを
+  呼ぶわけではない)。よって`src/cron.rs`に`EIKAIWA_POOL`(50件の
+  静的タプル配列、PHP版データをそのまま移植)+`eikaiwa_ranking_refresh()`
+  を追加し、`run_cron_all()`の`[5/5]`として組み込んだ(既存4処理は
+  `[n/4]`→`[n/5]`表記へ更新)。出力先は`aruaru-eikaiwa-ranking-cache.json`
+  (PHP版と同名、`main.rs`の`render_value_generic`が既に読むスキーマと
+  完全一致)。
+  - **検証**: `cargo build`成功、`cargo test`で新規1件+既存13件の
+    計14件全green(新規テストは50件全件・rank昇順ソート・`ttl_days=7`・
+    先頭行の内容を検証)。さらに実バイナリで`--cron-all`を実行し、
+    既存4処理(楽天3種+doda)も含め全5処理が正常完了することを確認
+    (楽天基本料金「最大3,278円」、国際通話「66カ国」成功、プラチナ
+    バンド「全国整備進行中」成功、doda IT=12/AD=12、英会話50件)。
+    生成された`aruaru-eikaiwa-ranking-cache.json`の中身も確認し、
+    `rows[0]`が`Duolingo`(rank=1)であることを含めPHP版と一致することを
+    確認済み(型チェックのみでの完了報告ではない)。確認後、一時実行
+    ディレクトリは削除済み。
+  - **今回のスコープ外(継続)**: 技術ランキング同期・AI学習コメントの
+    2処理(いずれも実際にOpenAI APIで自然文・実在URLを新規生成する
+    処理)は引き続き未実装。cronのスケジュール実行自体(systemd timer/
+    cron設定)もVPS側の運用作業として別途必要。
+  - 次にすべきこと: (1) VPSへの本番デプロイ時に`--cron-all`の出力先
+    ディレクトリを決定し、systemd timer等で毎日実行するよう設定する、
+    (2) 必要であれば技術ランキング/AI学習コメント(OpenAI依存)にも
+    着手する。
+
 - **2026-07-18(続き) cron自動更新ロジック、OpenAI非依存4処理を実装完了**:
   下記調査ログの「次にすべきこと」を実施し、新規`src/cron.rs`に
   楽天モバイル3種(基本料金/国際通話/プラチナバンド)+doda求人の
