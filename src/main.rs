@@ -25,9 +25,10 @@ mod cron;
 mod scraper;
 mod seed_urls;
 
-use poem::web::{Html, Path};
-use poem::{get, handler, listener::TcpListener, Route, Server};
+use open_runo_router::hyper_compat::{self, Params};
+use hyper::{Method, StatusCode};
 use serde_json::Value;
+use std::sync::Arc;
 
 const CACHE_BASE: &str = "https://audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
@@ -257,13 +258,15 @@ async fn render_composite_body(page: &CompositePage) -> String {
     out
 }
 
-#[handler]
-fn healthz() -> &'static str {
-    "ok"
+fn healthz_response() -> hyper_compat::Response {
+    hyper::Response::builder()
+        .status(StatusCode::OK)
+        .header("content-type", "text/plain; charset=utf-8")
+        .body(hyper_compat::fixed_body(bytes::Bytes::from_static(b"ok")))
+        .expect("building a response from a fixed set of valid headers cannot fail")
 }
 
-#[handler]
-fn top() -> Html<String> {
+fn top_body() -> String {
     let list: String = RANKINGS
         .iter()
         .map(|(slug, _, label)| format!(r#"<li><a href="/ranking/{slug}">{}</a></li>"#, html_escape(label)))
@@ -283,34 +286,42 @@ fn top() -> Html<String> {
 <ul>{list}</ul>
 "#
     );
-    Html(page_shell("audiocafe.tokyo (Rust移行版)", &body))
+    page_shell("audiocafe.tokyo (Rust移行版)", &body)
 }
 
-#[handler]
-async fn ranking_page(Path(slug): Path<String>) -> Html<String> {
+async fn ranking_page(params: Params) -> hyper_compat::Response {
+    let slug = params.get("slug").unwrap_or("");
     let Some((_, filename, label)) = RANKINGS.iter().find(|(s, _, _)| *s == slug) else {
-        return Html(page_shell("見つかりません", "<h1>404</h1><p>未対応のランキングです。</p>"));
+        return hyper_compat::html_response(
+            StatusCode::NOT_FOUND,
+            page_shell("見つかりません", "<h1>404</h1><p>未対応のランキングです。</p>"),
+        );
     };
     match fetch_cache(filename).await {
-        Ok(data) => Html(page_shell(label, &render_ranking_body(label, &data))),
-        Err(e) => Html(page_shell("エラー", &format!("<h1>取得エラー</h1><p>{}</p>", html_escape(&e)))),
+        Ok(data) => hyper_compat::html_response(StatusCode::OK, page_shell(label, &render_ranking_body(label, &data))),
+        Err(e) => hyper_compat::html_response(
+            StatusCode::OK,
+            page_shell("エラー", &format!("<h1>取得エラー</h1><p>{}</p>", html_escape(&e))),
+        ),
     }
 }
 
-#[handler]
-async fn composite_page(Path(slug): Path<String>) -> Html<String> {
+async fn composite_page(params: Params) -> hyper_compat::Response {
+    let slug = params.get("slug").unwrap_or("");
     let Some(page) = COMPOSITE_PAGES.iter().find(|p| p.slug == slug) else {
-        return Html(page_shell("見つかりません", "<h1>404</h1><p>未対応のページです。</p>"));
+        return hyper_compat::html_response(
+            StatusCode::NOT_FOUND,
+            page_shell("見つかりません", "<h1>404</h1><p>未対応のページです。</p>"),
+        );
     };
-    Html(page_shell(page.title, &render_composite_body(page).await))
+    hyper_compat::html_response(StatusCode::OK, page_shell(page.title, &render_composite_body(page).await))
 }
 
 /// PHP側の`build_lists($SEED_URLS)`(テキストリンク・動画リンク・写真の
 /// 収集アルゴリズム)を移植した`scraper::build_lists`を呼び出して表示する。
 /// 元のPHPはトップページ内で条件付きに埋め込んでいたが、Rust側では
 /// 独立したページ`/discover`として切り出した。
-#[handler]
-async fn discover_page() -> Html<String> {
+async fn discover_page() -> hyper_compat::Response {
     let lists = scraper::build_lists(seed_urls::SEED_URLS).await;
 
     let video_items: String = lists
@@ -360,11 +371,10 @@ async fn discover_page() -> Html<String> {
         text_count = lists.text_links.len(),
         photo_count = lists.photos.len(),
     );
-    Html(page_shell("Discover | audiocafe.tokyo", &body))
+    hyper_compat::html_response(StatusCode::OK, page_shell("Discover | audiocafe.tokyo", &body))
 }
 
-#[handler]
-fn help_page() -> Html<String> {
+fn help_body() -> String {
     let body = r#"<h1>困った時は</h1>
 
 <h2>Google Chromeで「保護されていない通信」と出る場合</h2>
@@ -394,7 +404,7 @@ Wi-Fi → 詳細設定の中にある場合も → 「プライベートDNS」�
 それでも解決しない場合は、単純にDNSの反映待ち(通常数分〜1時間程度)
 であることも多いです。</p>
 "#;
-    Html(page_shell("困った時は", body))
+    page_shell("困った時は", body)
 }
 
 #[tokio::main]
@@ -410,14 +420,32 @@ async fn main() -> Result<(), std::io::Error> {
         return Ok(());
     }
 
-    let app = Route::new()
-        .at("/", get(top))
-        .at("/healthz", get(healthz))
-        .at("/help", get(help_page))
-        .at("/discover", get(discover_page))
-        .at("/ranking/:slug", get(ranking_page))
-        .at("/page/:slug", get(composite_page));
+    let router = hyper_compat::Router::new()
+        .route(
+            Method::GET,
+            "/",
+            Arc::new(|_req, _params| Box::pin(async move { hyper_compat::html_response(StatusCode::OK, top_body()) })),
+        )
+        .route(Method::GET, "/healthz", Arc::new(|_req, _params| Box::pin(async move { healthz_response() })))
+        .route(
+            Method::GET,
+            "/help",
+            Arc::new(|_req, _params| Box::pin(async move { hyper_compat::html_response(StatusCode::OK, help_body()) })),
+        )
+        .route(Method::GET, "/discover", Arc::new(|_req, _params| Box::pin(async move { discover_page().await })))
+        .route(
+            Method::GET,
+            "/ranking/:slug",
+            Arc::new(|_req, params: Params| Box::pin(async move { ranking_page(params).await })),
+        )
+        .route(
+            Method::GET,
+            "/page/:slug",
+            Arc::new(|_req, params: Params| Box::pin(async move { composite_page(params).await })),
+        );
 
     tracing::info!("audiocafe-tokyo-server listening on 127.0.0.1:4400");
-    Server::new(TcpListener::bind("127.0.0.1:4400")).run(app).await
+    let (_, handle) = hyper_compat::serve(router, "127.0.0.1:4400".parse().unwrap()).await?;
+    handle.await.map_err(|e| std::io::Error::other(e))?;
+    Ok(())
 }
