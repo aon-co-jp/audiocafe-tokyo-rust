@@ -103,6 +103,72 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-18 cron自動更新ロジック(`--cron-all`相当)の調査完了、移植は設計方針の
+  記録に留めた(スコープ大につき見送り)**: 前回セッションが通信エラーで中断した
+  `cron.php`調査を引き継ぎ、`F:\open-runo\audiocafe.tokyo`のローカルPHPコピーを
+  精査した。未コミット変更は無く(`git status`クリーン)、`cargo build --release`・
+  `cargo test`(5件green)・実バイナリ起動での全ルート(`/`・`/healthz`・
+  `/ranking/:slug`全8種・`/page/:slug`全3種・`/discover`・`/help`)200確認、
+  実データ(78言語の技術ランキング表・980円国際通話プラン・150KB超の複合ページ
+  11テーブル)のレンダリングも確認済み——既存実装に劣化は無い。
+  - **cron.phpの実体**: `audiocafe.tokyo/aruaru/cron.php`と`aruaru-lady/cron.php`は
+    どちらも`$argv=['cron.php','--cron-all']`を仕込んで`require __DIR__.'/index.php'`
+    するだけの薄いラッパー。実処理は`aruaru/index.php`(8152行、姉妹ファイルであり
+    Rust側が既に移植した旧ドライブ直下の`index.php`8146行とは別物)の末尾
+    (7514〜7649行目)にある`--cron-all`統合ブロック。
+  - **`aruaru_is_cron_request()`(28行目付近)**: LOLIPOPのcronがCLIではなくCGI
+    (`cgi-fcgi`)で起動される場合があるため、`$argv`/`$_SERVER['argv']`両経路+
+    「HTTP経由でない(`$no_http`)」判定を組み合わせてcron起動を検知する独自関数。
+    個別フラグ(`--cron-intl`/`--cron-platinum`/`--cron-doda`)と統合フラグ
+    (`--cron-all`、または引数なしCLI直接実行)の両方に対応。
+  - **`--cron-all`が呼ぶ8処理(7564〜7649行目)**といずれも外部サイトへの
+    実クロール・API呼び出しを伴う:
+    1. `aruaru_tech_refresh_rankings()`(787行目) — Stack Overflow/DB-Engines等
+       外部ソースから言語・FW・DB各80件の人気度を同期し、`OPENAI_API_KEY`
+       設定時はOpenAI APIで紹介文(`ai_comment`)を生成(未設定ならベースライン
+       固定文言にフォールバック)。`ai-tech-ranking-cache.json`へ保存。
+    2. `aruaru_learning_prices_refresh()`(1723行目) — 学習サービス価格情報更新。
+    3. `aruaru_learning_ai_cron_refresh()`(1511行目) — AI学習コメントを1回の
+       cronにつき最大12件ずつ小分け更新(レート制限対策と思われる)。
+    4. `aruaru_eikaiwa_ranking_refresh()`(1902行目) — 英会話アプリ・サービス
+       ランキング(週1回7日TTL)。
+    5〜7. `rakuten_fetch_price()`/`rakuten_intl_crawl()`/`rakuten_platinum_crawl()`
+       (4437・4481・4567行目) — 楽天モバイル公式サイトを`file_get_contents`+
+       正規表現でスクレイプ(基本料金・国際通話・プラチナバンド)。失敗時は
+       前回キャッシュまたは安全側デフォルト値へフォールバック。
+    8. `doda_run_crawl()`(4831行目) — doda求人サイトをIT/広告代理店カテゴリで
+       クロールし件数集計。
+    - 各処理は個別に「失敗時は前回キャッシュ or 安全側デフォルトを維持」する
+      設計(例: `campaign_active=true`固定などフェイルセーフ)。
+    - 最後に対象キャッシュファイルの`mtime`を強制`touch`し、内容が同一でも
+      画面上の「最終更新」バッジが毎朝反映されるようにしている。
+  - **Rust側への移植方針(設計のみ、未実装)**:
+    - 現行Rust実装は「PHP側が生成した`*-cache.json`をHTTP経由で読むだけ」の
+      疎結合設計(`main.rs`)であり、この設計自体は cron 自動更新ロジックの
+      移植と両立する——cron側を移植してもキャッシュ取得部分は変更不要。
+    - 移植する場合の想定構成: 新規`src/cron.rs`に8処理それぞれを1関数として
+      実装し、`main.rs`に`--cron-all`引数解釈(`std::env::args()`)を追加、
+      CLIから`audiocafe-tokyo-server --cron-all`で起動できるようにする
+      (PHPの`aruaru_is_cron_request()`のCGI/CLI両対応の複雑さはRustバイナリでは
+      不要——Rustは常にCLI起動のみを想定すればよい)。
+    - 外部クロール(楽天3種・doda・Stack Overflow/DB-Engines)は`reqwest`で
+      素直に置き換え可能。正規表現抽出はPHPの`preg_match`をRustの`regex`
+      クレート(既に依存に追加済み)へそのまま移植できる。
+    - **最大の障壁はOpenAI API依存部分**(`aruaru_tech_apply_ai_enrichment`・
+      `aruaru_learning_ai_cron_refresh`)——現行Rust側に相当するAPIキー管理・
+      HTTPクライアント設定が無く、しかも「未設定ならベースライン文言」という
+      フェイルセーフ込みの移植が必要。ここを後回しにし、まず楽天3種+doda
+      (純粋なスクレイプ、外部AI依存なし)から着手するのが妥当。
+    - 移植してもcronのスケジュール実行自体(LOLIPOPのcron設定相当)はVPS側の
+      systemd timerまたはcronで別途組む必要がある(このリポジトリのコードで
+      完結しない運用面の作業)。
+  - **今回はここまで(実装は行っていない)**——理由: 8処理×複数の外部サイト
+    スクレイプ+OpenAI連携という一括実装には検証を含め相応の時間を要し、
+    「無理に完全実装しなくてよい」との指示に従い、まず正確な設計方針を
+    記録した。次にすべきこと: 上記方針に沿って`src/cron.rs`を新設し、
+    まず楽天3種+doda(AI依存なし)から実装・実データ検証、その後
+    `ai-tech-ranking`系(OpenAI API依存)に着手。
+
 - **2026-07-17 `index.php`本体(トップページ)のサーバー側アルゴリズムを移植・
   簡略化、`/discover`ページ新設**: `index.php`(8146行)を調査した結果、
   実質的な"PHPアルゴリズム"と呼べる部分は`is_video_host`/`source_name`/
