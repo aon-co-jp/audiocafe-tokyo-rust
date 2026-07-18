@@ -129,6 +129,54 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-18(続きの続きの続き) Poem → RPoem`open-runo-router::hyper_compat`への移行完了
+  (エコシステム方針、Poem/Tauriパッケージへの直接依存を断つ)**:
+  前セッションが`Cargo.toml`の`poem = "3.1"`を
+  `open-runo-router = { path = "../RPoem/crates/open-runo-router" }`に
+  書き換えた状態で中断しており、`src/main.rs`側は旧`poem`のAPI
+  (`poem::web::{Html, Path}`・`#[handler]`・`Route::new().at(...)`・
+  `Server::new(TcpListener::bind(...))`)のままでコンパイル不能な状態
+  だった。これを`F:\open-runo\RPoem\crates\open-runo-router\src\
+  hyper_compat.rs`(手書きtokio/hyperルーター、Poem本体には非依存)を
+  使う形に書き換えた——「Poem/Tauriをパッケージとして直接依存させず、
+  RPoem側の自前実装(API形状は互換)を使う」というエコシステム全体の
+  方針([`RPoem/CLAUDE.md`](https://github.com/aon-co-jp/RPoem)参照)を、
+  このリポジトリにも適用する対応。
+  - **変更点**: `Cargo.toml`に`hyper`(1.10, full features)・`bytes`
+    (1.9)を追加(`hyper_compat`のResponse/Request型・`Method`/
+    `StatusCode`・`fixed_body`を直接使うため必要)。`src/main.rs`は
+    `#[handler]`マクロ・`Html<String>`・`Path<String>`extractorを廃止し、
+    各ハンドラを素の関数(`top_body() -> String`・
+    `ranking_page(params: Params) -> hyper_compat::Response`等)に書き換え、
+    `hyper_compat::Router::new().route(Method::GET, "/ranking/:slug",
+    Arc::new(|_req, params| Box::pin(async move { ... })))`という
+    クロージャ登録形式でルート定義。`/healthz`は`hyper_compat`に
+    プレーンテキスト専用ヘルパーが無かったため、`hyper::Response::builder()`
+    +`hyper_compat::fixed_body`(pub化済みヘルパー)で
+    `text/plain; charset=utf-8`の200レスポンスを直接組み立てた。
+    `main()`の起動部分は`hyper_compat::serve(router, addr).await`+
+    返り値の`JoinHandle`を`.await`する形に変更(元の`Server::run(app).await`
+    と同じブロッキング挙動を維持)。`--cron-all`のCLI早期リターンは無変更。
+    `src/cron.rs`・`src/scraper.rs`・`src/seed_urls.rs`はいずれも
+    未変更(Poem/hyper_compatに依存していないため対象外)。
+  - **検証**: `cargo build`成功(エラー・警告なし、`open-runo-router`側の
+    既存3警告(`missing_debug_implementations`、無関係)のみ)。
+    `cargo test`で14件全green
+    (`cron`/`scraper`のテストのみ、HTTP層に変更前後の差なし——タスク
+    冒頭の想定は15件だったが実際は14件、いずれにせよ全件成功)。
+    実バイナリを起動し`curl`で`/`・`/healthz`(`ok`、200)・`/help`・
+    `/discover`(360件シードURLの実クロール)・
+    `/ranking/aruaru-eikaiwa`(実際に`https://audiocafe.tokyo/
+    aruaru-eikaiwa-ranking-cache.json`を取得し50件の表を描画)・
+    `/page/rakuten-mobile`(複合ページ、3セクション実データ)を確認、
+    全て200・`<nav>`/`<h1>`/`<h2>`を含む正しいHTML構造であることを
+    確認済み(型チェックのみでの完了報告ではない)。検証後サーバー
+    プロセスは停止済み。
+  - 次にすべきこと: 特に緊急の課題はない。今後、RPoemの
+    `hyper_compat`にHANDOFF記載のような新機能(gRPC・MCP等)が追加
+    された場合、このリポジトリ側で使う必要が生じれば追従を検討する
+    (現状は素朴なGETルーティングのみで十分)。
+
 - **2026-07-18(続きの続き) 英会話ランキング更新処理を追加実装、`--cron-all`を非AI処理5件に拡張**:
   従来「OpenAI API依存で今回スコープ外」と誤って記録されていた
   `aruaru_eikaiwa_ranking_refresh()`(PHP`index.php`1902行目)を

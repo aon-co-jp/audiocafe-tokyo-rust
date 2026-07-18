@@ -8,7 +8,9 @@ name = "audiocafe-tokyo-server"
 path = "src/main.rs"
 
 [dependencies]
-poem = "3.1"
+open-runo-router = { path = "../RPoem/crates/open-runo-router" }
+hyper = { version = "1.10", features = ["full"] }
+bytes = "1.9"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
