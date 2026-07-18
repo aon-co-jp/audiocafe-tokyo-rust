@@ -103,6 +103,46 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-18(続き) cron自動更新ロジック、OpenAI非依存4処理を実装完了**:
+  下記調査ログの「次にすべきこと」を実施し、新規`src/cron.rs`に
+  楽天モバイル3種(基本料金/国際通話/プラチナバンド)+doda求人の
+  4処理を実装、`src/main.rs`に`--cron-all`のCLI引数判定
+  (`std::env::args()`、PHPの`aruaru_is_cron_request()`のCGI/CLI両対応の
+  複雑さは不要と判断しシンプルな文字列一致のみ)を追加した。
+  - **実装方式**: 各処理はPHPの`rakuten_fetch_price`/`rakuten_intl_crawl`/
+    `rakuten_platinum_crawl`/`doda_run_crawl`(いずれも`audiocafe.tokyo/aruaru/index.php`)
+    のロジックをほぼそのまま`reqwest`+`regex`へ移植。正規表現抽出・
+    「失敗時は前回キャッシュ or 安全側デフォルト値を維持」という
+    フェイルセーフ設計もPHP版を踏襲。doda求人は`r.jina.ai`経由のmarkdown
+    抽出→失敗時は生HTMLへフォールバックという既存方針(PHP側と同じ)のまま。
+  - **PHP版からの意図的な差分1点**: プラチナバンドのカバー率抽出正規表現
+    (`extract_platinum_coverage`)は、PHP版の貪欲`[^。]{0,60}`のままだと
+    実際に"99.9%"のような小数点付き数値の頭が欠けて"9"だけを拾ってしまう
+    ケースをテストで発見したため、Rust版は非貪欲`{0,60}?`に変更して
+    修正済み(`src/cron.rs`内にコメントで明記)。
+  - **出力先**: `--cron-all`実行時のカレントディレクトリ直下に
+    PHP版と同名の`rakuten-mobile-cache.json`・`rakuten-intl-call-cache.json`・
+    `rakuten-platinum-cache.json`・`doda-jobs-cache.json`を書き出す
+    (本番配置先ディレクトリの決定・systemd timer/cron設定は運用面の
+    別タスクとして未着手)。`.gitignore`に`/*-cache.json`を追加し、
+    ローカル実行で生成されるファイルがリポジトリに混入しないようにした。
+  - **検証**: `cargo build`成功、`cargo test`で新規8件+既存5件の
+    計13件全green。さらに実インターネット接続がある開発環境で実際に
+    `audiocafe-tokyo-server.exe --cron-all`を実行し、4処理とも実際に
+    外部サイト(楽天モバイル公式・doda)へアクセスして正しいスキーマの
+    JSONを生成することを確認済み(型チェックのみでの完了報告ではない)——
+    楽天基本料金「最大3,278円（税込）」、国際通話「66カ国」成功、
+    プラチナバンド「全国整備進行中」成功、doda求人IT=12件/AD=12件を
+    実データで取得。確認後、生成された一時キャッシュファイルは削除済み。
+  - **今回のスコープ外(継続)**: 技術ランキング同期・AI学習コメント・
+    英会話ランキングの3処理(いずれもOpenAI API依存、または今回未着手)は
+    未実装のまま。cronのスケジュール実行自体(systemd timer/cron設定)も
+    VPS側の運用作業として別途必要。
+  - 次にすべきこと: (1) VPSへの本番デプロイ時に`--cron-all`の出力先
+    ディレクトリ(nginx静的公開ディレクトリ)を決定し、systemd timer等で
+    毎日実行するよう設定する、(2) 必要であれば技術ランキング/AI学習コメント
+    (OpenAI依存)にも着手する。
+
 - **2026-07-18 cron自動更新ロジック(`--cron-all`相当)の調査完了、移植は設計方針の
   記録に留めた(スコープ大につき見送り)**: 前回セッションが通信エラーで中断した
   `cron.php`調査を引き継ぎ、`F:\open-runo\audiocafe.tokyo`のローカルPHPコピーを
