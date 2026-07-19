@@ -1456,16 +1456,24 @@ fn render_lang_card(card: &LangCard) -> String {
     // 側JSを持たないアーキテクチャのため、(b)のプレーンHTML化を採用——
     // ユーザーはモーダルを経由せず1クリックで同じ行き先へ実際に到達できる)。
     let gc = &card.g;
+    let ac_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/", gc));
+    // /aruaru・/aruaru-lady・/rakuten-mobileへの遷移も、audiocafe.tokyo本体と
+    // 同じくGoogle翻訳プロキシ経由にする(2026-07-19、ユーザー指摘により修正
+    // ——従来は素の日本語ページへ直接リンクしており、選択した言語が
+    // 反映されていなかった)。日本語(`gc=="ja"`)の場合は
+    // `google_translate_proxy_url`が素のURLを返すため従来通り無翻訳。
+    let aruaru_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/aruaru", gc));
+    let aruaru_lady_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/aruaru-lady", gc));
+    let rakuten_mobile_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/rakuten-mobile", gc));
     let actions = format!(
         r#"<div class="card-actions">
-<a href="{ac}" target="_blank" rel="noopener noreferrer">audiocafe.tokyo</a>
-<a href="/aruaru">/aruaru</a>
-<a href="/aruaru-lady">/aruaru-lady</a>
-<a href="/rakuten-mobile">/rakuten-mobile</a>
+<a href="{ac_url}" target="_blank" rel="noopener noreferrer">audiocafe.tokyo</a>
+<a href="{aruaru_url}" target="_blank" rel="noopener noreferrer">/aruaru</a>
+<a href="{aruaru_lady_url}" target="_blank" rel="noopener noreferrer">/aruaru-lady</a>
+<a href="{rakuten_mobile_url}" target="_blank" rel="noopener noreferrer">/rakuten-mobile</a>
 <a href="{aruaru_tokyo}" target="_blank" rel="noopener noreferrer">aruaru.tokyo</a>
 <a href="{gt}" target="_blank" rel="noopener noreferrer">🌐 Google Translate</a>
 </div>"#,
-        ac = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/", gc)),
         aruaru_tokyo = html_escape(ARUARU_TOKYO_URL),
         gt = html_escape(&google_translate_site_url(gc, "https://audiocafe.tokyo/")),
     );
@@ -1478,7 +1486,7 @@ fn render_lang_card(card: &LangCard) -> String {
     // クリック直後に(本文を読まずとも)遷移先を選べる体験だったため、
     // このRust版でも同じ即時性を静的リンクで再現する。
     format!(
-        r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
+        r#"<div class="card"><a href="{ac_url}" target="_blank" rel="noopener noreferrer"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"></a><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
         fc = html_escape(&card.fc),
         label = html_escape(&card.a),
         native = html_escape(&card.t),
@@ -1547,22 +1555,27 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
         card.n.to_lowercase().contains(&q) || card.t.to_lowercase().contains(&q) || card.a.to_lowercase().contains(&q)
     };
 
-    let mut sections = String::new();
-    let mut shown = 0usize;
-    for region in region_order {
-        let cards: String = TOP_LANGUAGES.iter().filter(|c| c.r == region && matches(c)).map(render_lang_card).collect();
-        if cards.is_empty() {
-            continue;
-        }
-        shown += TOP_LANGUAGES.iter().filter(|c| c.r == region && matches(c)).count();
-        sections.push_str(&format!(
+    // PHP版`render()`のロジックに合わせる(`index.php` 1992〜2047行目):
+    // 地域フィルタ未指定(`activeRegion==="all"`)の場合はL配列の元の並び順の
+    // ままフラットに1セクションで表示し、地域ごとのグループ化は行わない
+    // (グループ化は特定の地域ピルを選択した時のみ、`region-title`見出し付きで
+    // 表示する)。旧実装は常に6地域へグループ化していたため、デフォルト表示の
+    // 先頭が「イラン→日本→…」というPHP版の実際の並び順と異なっていた
+    // (2026-07-19、ユーザー指摘により修正)。
+    let matched: Vec<&LangCard> = TOP_LANGUAGES.iter().filter(|c| matches(c)).collect();
+    let shown = matched.len();
+    let sections = if shown == 0 {
+        r#"<p class="note">条件に一致する言語カードが見つかりません。</p>"#.to_string()
+    } else if let Some(rf) = region_filter {
+        let cards: String = matched.iter().map(|c| render_lang_card(c)).collect();
+        format!(
             r#"<section class="region-section"><h2 class="region-title">{}</h2><div class="grid">{cards}</div></section>"#,
-            region_label(region)
-        ));
-    }
-    if shown == 0 {
-        sections = r#"<p class="note">条件に一致する言語カードが見つかりません。</p>"#.to_string();
-    }
+            region_label(rf)
+        )
+    } else {
+        let cards: String = matched.iter().map(|c| render_lang_card(c)).collect();
+        format!(r#"<section class="region-section"><div class="grid">{cards}</div></section>"#)
+    };
 
     // 地域絞り込みピル(PHP版`#pills`相当、JSでのDOM生成をサーバーサイドの
     // クエリパラメータリンクへ置き換え——クリックのみで動作し、JS不要)。
