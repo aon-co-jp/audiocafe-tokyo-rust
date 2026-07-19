@@ -624,6 +624,71 @@ async fn render_aruaru_lady_body() -> String {
 /// 静的マーケティング文言を1対1で再現しつつ、データ部分(料金・国際通話・
 /// プラチナバンド/衛星)は既存の`fetch_cache`アーキテクチャ経由で取得した
 /// 3キャッシュJSONから埋め込む。
+/// PHP版`rakuten-mobile/index.php`(917行)の`<style>`ブロック
+/// (448〜625行目)から、レイアウトの核となるダークテーマCSSを移植した
+/// もの(`.rakuten-mobile-page`でスコープし、他ページの同名セレクタと
+/// 衝突しないようにしている)。開閉パネル用のJS演出CSS(386〜412行目、
+/// 埋め込みモード限定の機能)は対象外(ユーザー指示によるスコープ拡大:
+/// 2026-07-19、見た目もPHP版と一致させる)。
+const RAKUTEN_MOBILE_STYLE: &str = r#"<style>
+.rakuten-mobile-page{--bg:#0b1220;--surface:rgba(15,23,42,.9);--border:rgba(148,163,184,.2);--red:#ef4444;--blue:#3b82f6;--cyan:#22d3ee;--purple:#a78bfa;--orange:#fb923c;--text:#e2e8f0;--dim:#94a3b8;--yellow:#fde68a;margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Noto Sans JP',system-ui,sans-serif;line-height:1.7}
+.rakuten-mobile-page a{color:#7dd3fc;text-decoration:underline}
+.rakuten-mobile-page a:hover{color:#bae6fd}
+.rakuten-mobile-page .page-wrap{max-width:1100px;margin:0 auto;padding:24px 16px 40px}
+.rakuten-mobile-page .rm-hero{background:linear-gradient(135deg,rgba(231,10,38,.18) 0%,rgba(59,130,246,.1) 100%);border:2px solid rgba(239,68,68,.4);border-radius:18px;padding:28px 24px;margin-bottom:24px}
+.rakuten-mobile-page .rm-hero__badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:rgba(239,68,68,.2);border:1px solid rgba(239,68,68,.5);color:#fca5a5;font-size:13px;font-weight:700;margin-bottom:12px}
+.rakuten-mobile-page .rm-hero h1{font-size:clamp(1.3rem,4vw,2rem);font-weight:900;color:#fff;margin-bottom:8px;line-height:1.3}
+.rakuten-mobile-page .rm-hero__sub{font-size:15px;color:var(--dim);margin-bottom:16px}
+.rakuten-mobile-page .rm-hero__price{font-size:clamp(1.6rem,5vw,2.4rem);font-weight:900;color:var(--red);letter-spacing:-.02em}
+.rakuten-mobile-page .rm-hero__price span{font-size:.6em;color:var(--dim)}
+.rakuten-mobile-page .rm-hero__official{display:inline-block;margin-top:12px;padding:8px 18px;border-radius:10px;background:rgba(239,68,68,.25);border:1px solid rgba(239,68,68,.6);color:#fca5a5;font-weight:800;font-size:15px;text-decoration:none}
+.rakuten-mobile-page .rm-hero__official:hover{background:rgba(239,68,68,.4);color:#fff}
+.rakuten-mobile-page .rm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px;margin-bottom:24px}
+.rakuten-mobile-page .rm-card{padding:18px 20px;border-radius:14px;background:rgba(2,6,23,.85)}
+.rakuten-mobile-page .rm-card--intl{border:1px solid rgba(59,130,246,.4)}
+.rakuten-mobile-page .rm-card--sat{border:1px solid rgba(56,189,248,.4)}
+.rakuten-mobile-page .rm-card--plat{border:1px solid rgba(167,139,250,.4)}
+.rakuten-mobile-page .rm-card__h3{color:#fff;font-size:16px;font-weight:800;margin-bottom:6px}
+.rakuten-mobile-page .rm-card__meta{color:var(--dim);font-size:13px;margin-bottom:8px}
+.rakuten-mobile-page .rm-card__body{font-size:14px;line-height:1.8;color:var(--text)}
+.rakuten-mobile-page .rm-card__body .dim{color:var(--dim);font-size:13px}
+.rakuten-mobile-page .rm-area{background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:24px}
+.rakuten-mobile-page .rm-area__h{font-size:15px;font-weight:800;color:var(--dim);margin-bottom:10px}
+.rakuten-mobile-page .rm-area__btns{display:flex;flex-wrap:wrap;gap:8px}
+.rakuten-mobile-page .rm-area__btn{display:inline-block;padding:6px 14px;border-radius:8px;font-size:15px;font-weight:700;text-decoration:none}
+.rakuten-mobile-page .rm-area__btn--red{background:rgba(231,10,38,.2);border:1px solid rgba(231,10,38,.5);color:#fca5a5}
+.rakuten-mobile-page .rm-area__btn--blue{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
+.rakuten-mobile-page .rm-area__btn--red:hover{background:rgba(231,10,38,.35);color:#fff}
+.rakuten-mobile-page .rm-area__btn--blue:hover{background:rgba(59,130,246,.3);color:#fff}
+.rakuten-mobile-page .rm-coverage{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:24px}
+.rakuten-mobile-page .rm-coverage__item{background:rgba(15,23,42,.55);border-radius:10px;padding:12px 14px}
+.rakuten-mobile-page .rm-coverage__item--cyan{border:1px solid rgba(34,211,238,.3)}
+.rakuten-mobile-page .rm-coverage__item--purple{border:1px solid rgba(139,92,246,.3)}
+.rakuten-mobile-page .rm-coverage__item--orange{border:1px solid rgba(251,146,60,.3)}
+.rakuten-mobile-page .rm-coverage__ttl{font-weight:800;font-size:15px;margin-bottom:6px}
+.rakuten-mobile-page .rm-coverage__ttl--cyan{color:#22d3ee}
+.rakuten-mobile-page .rm-coverage__ttl--purple{color:#a78bfa}
+.rakuten-mobile-page .rm-coverage__ttl--orange{color:#fb923c}
+.rakuten-mobile-page .rm-coverage__body{font-size:15px;line-height:1.7;color:var(--text)}
+.rakuten-mobile-page .rm-links{background:linear-gradient(180deg,rgba(191,219,254,.1),rgba(17,8,24,.6));border:1px solid rgba(56,189,248,.25);border-radius:14px;padding:20px 20px;margin-bottom:24px}
+.rakuten-mobile-page .rm-links__h2{font-size:clamp(1.05rem,3.2vw,1.25rem);font-weight:800;color:#7dd3fc;margin-bottom:8px}
+.rakuten-mobile-page .rm-links__lead{font-size:15px;line-height:1.75;color:var(--text);opacity:.95;margin-bottom:12px}
+.rakuten-mobile-page .rm-links__list{list-style:none;padding:0;margin:0 0 12px;line-height:1.9;font-size:15px;color:#e0f2fe}
+.rakuten-mobile-page .rm-links__list a{color:#7dd3fc;font-weight:700;text-decoration:underline}
+.rakuten-mobile-page .rm-links__note{font-size:15px;line-height:1.65;color:#cbd5e1;opacity:.9}
+.rakuten-mobile-page .rm-search-btns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.rakuten-mobile-page .rm-search-btn{display:inline-block;padding:8px 16px;border-radius:9px;font-size:15px;font-weight:800;text-decoration:none}
+.rakuten-mobile-page .rm-search-btn--red{background:rgba(231,10,38,.25);border:1px solid rgba(231,10,38,.6);color:#fca5a5}
+.rakuten-mobile-page .rm-search-btn--blue{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#93c5fd}
+.rakuten-mobile-page .rm-search-btn--purple{background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.4);color:#c4b5fd}
+.rakuten-mobile-page .rm-search-btn:hover{opacity:.8;color:#fff}
+.rakuten-mobile-page .rm-cron-note{background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:24px;font-size:13px;color:var(--dim);line-height:1.7}
+.rakuten-mobile-page .rm-cron-note code{background:#0a1628;padding:2px 7px;border-radius:4px;color:#a5f3fc;font-size:12px}
+.rakuten-mobile-page .rm-footer{text-align:center;padding:24px 16px;color:var(--dim);font-size:14px;border-top:1px solid var(--border);margin-top:16px}
+.rakuten-mobile-page .rm-footer a{color:var(--dim)}
+.rakuten-mobile-page .rm-footer a:hover{color:var(--text)}
+</style>"#;
+
 async fn render_rakuten_mobile_body() -> String {
     let rk = fetch_cache("rakuten-mobile-cache.json").await;
     let intl = fetch_cache("rakuten-intl-call-cache.json").await;
@@ -666,61 +731,82 @@ async fn render_rakuten_mobile_body() -> String {
     let price_search_url = google_search_url("楽天モバイル Rakuten最強プラン 料金");
 
     format!(
-        r#"<h1>📶 楽天モバイル 最新情報</h1>
-<p>自社の楽天回線エリアとau回線（パートナー回線）エリアを合わせてデータ使い放題（パケット放題）となります。</p>
-<p>月間無制限に使っても <strong>{price}</strong>（税込）</p>
-<p><a href="{official_url}" target="_blank" rel="noopener noreferrer">公式サイトで確認 →</a></p>
-<p class="disclaimer">📅 {updated_at}</p>
+        r##"{RAKUTEN_MOBILE_STYLE}
+<div class="rakuten-mobile-page">
+<div class="page-wrap">
 
-<h2>📡 楽天回線エリア</h2>
-<p>人口カバー率<strong>99.9%</strong>を達成。自社基地局エリア内ではデータ高速<strong>無制限</strong>で利用できます。</p>
+<div class="rm-hero">
+<div class="rm-hero__badge">📶 Rakuten最強プラン</div>
+<h1>楽天モバイル 最新情報</h1>
+<p class="rm-hero__sub">自社の楽天回線エリアと au回線（パートナー回線）エリアを合わせてデータ使い放題（パケット放題）となります。</p>
+<div>月間無制限に使っても <span class="rm-hero__price">{price}<span>（税込）</span></span></div>
+<a href="{official_url}" target="_blank" rel="noopener noreferrer" class="rm-hero__official">公式サイトで確認 →</a>
+<p style="font-size:13px;color:var(--dim);margin-top:10px;">📅 {updated_at}</p>
+</div>
 
-<h2>🔄 パートナー回線（au）エリア</h2>
-<p>楽天電波が届きにくい屋内や一部エリアでは<strong>auローミング</strong>を利用。月間<strong>5GBまで</strong>高速、超過後は最大1Mbps。</p>
+<div class="rm-coverage">
+<div class="rm-coverage__item rm-coverage__item--cyan">
+<div class="rm-coverage__ttl rm-coverage__ttl--cyan">📡 楽天回線エリア</div>
+<p class="rm-coverage__body">人口カバー率<strong style="color:var(--yellow)">99.9%</strong>を達成。自社基地局エリア内ではデータ高速<strong style="color:var(--yellow)">無制限</strong>で利用できます。</p>
+</div>
+<div class="rm-coverage__item rm-coverage__item--purple">
+<div class="rm-coverage__ttl rm-coverage__ttl--purple">🔄 パートナー回線（au）エリア</div>
+<p class="rm-coverage__body">楽天電波が届きにくい屋内や一部エリアでは<strong style="color:#a78bfa">auローミング</strong>を利用。月間<strong style="color:#fca5a5">5GBまで</strong>高速、超過後は最大1Mbps。</p>
+</div>
+<div class="rm-coverage__item rm-coverage__item--orange">
+<div class="rm-coverage__ttl rm-coverage__ttl--orange">⚠️ 注意点</div>
+<p class="rm-coverage__body">地下・高層ビル・奥まった屋内では繋がりにくい場合あり。プラチナバンド（700MHz帯）を拡大中。</p>
+</div>
+</div>
 
-<h2>⚠️ 注意点</h2>
-<p>地下・高層ビル・奥まった屋内では繋がりにくい場合あり。プラチナバンド（700MHz帯）を拡大中。</p>
+<div class="rm-area">
+<div class="rm-area__h">🗺️ エリア確認ツール</div>
+<div class="rm-area__btns">
+<a href="{area_url}" target="_blank" rel="noopener noreferrer" class="rm-area__btn rm-area__btn--red">📍 楽天モバイル 通信・エリアマップ</a>
+<a href="{area_faq_url}" target="_blank" rel="noopener noreferrer" class="rm-area__btn rm-area__btn--blue">❓ データ高速無制限エリアとは</a>
+</div>
+</div>
 
-<h2>🗺️ エリア確認ツール</h2>
-<ul>
-<li><a href="{area_url}" target="_blank" rel="noopener noreferrer">📍 楽天モバイル 通信・エリアマップ</a></li>
-<li><a href="{area_faq_url}" target="_blank" rel="noopener noreferrer">❓ データ高速無制限エリアとは</a></li>
-</ul>
+<div class="rm-search-btns">
+<a href="{price_search_url}" target="_blank" rel="noopener noreferrer" class="rm-search-btn rm-search-btn--red">🔍 最新料金を Google で検索</a>
+<a href="{campaign_url}" target="_blank" rel="noopener noreferrer" class="rm-search-btn rm-search-btn--blue">🔍 乗り換えキャンペーン</a>
+<a href="{we2plus_url}" target="_blank" rel="noopener noreferrer" class="rm-search-btn rm-search-btn--purple">📱 1円スマホ（we2 plus）</a>
+</div>
 
-<h2>🔍 関連検索</h2>
-<ul>
-<li><a href="{price_search_url}" target="_blank" rel="noopener noreferrer">🔍 最新料金を Google で検索</a></li>
-<li><a href="{campaign_url}" target="_blank" rel="noopener noreferrer">🔍 乗り換えキャンペーン</a></li>
-<li><a href="{we2plus_url}" target="_blank" rel="noopener noreferrer">📱 1円スマホ（we2 plus）</a></li>
-</ul>
-
-<h2>📞 楽天モバイル 国際通話プラン詳細</h2>
-<p class="disclaimer">📅 {intl_crawled}{intl_ok_note}</p>
-<p>
+<div class="rm-cards">
+<div class="rm-card rm-card--intl">
+<div class="rm-card__h3">📞 楽天モバイル 国際通話プラン詳細</div>
+<p class="rm-card__meta">📅 {intl_crawled}{intl_ok_note}</p>
+<div class="rm-card__body">
 🇯🇵 日本 → 海外 プラン料金：{intl_price} / {intl_name}<br>
 🌍 かけ放題対象国：{intl_count} カ国<br>
-✈️ 海外 → 日本：Rakuten Link 利用時 無料（対象国・条件あり）
-</p>
-<p><strong>🌏 海外からも日本へ電話放題？</strong><br>
-✅ はい、かなり本当です。主に Rakuten Link アプリ利用時（条件あり）。</p>
-<p>
+✈️ 海外 → 日本：Rakuten Link 利用時 無料（対象国・条件あり）<br><br>
+<strong style="color:var(--yellow)">🌏 海外からも日本へ電話放題？</strong><br>
+✅ はい、かなり本当です。主に Rakuten Link アプリ利用時（条件あり）。<br><br>
 🇯🇵 日本→日本：Rakuten Link で無料<br>
 🇯🇵 日本→海外：「{intl_name}（{intl_price}）」で{intl_count}カ国かけ放題<br>
-✈️ 海外→日本：Rakuten Link で無料（対象国から）
-</p>
-<p><a href="{intl_free_url}" target="_blank" rel="noopener noreferrer">📎 国際通話かけ放題 公式ページ</a></p>
+✈️ 海外→日本：Rakuten Link で無料（対象国から）<br><br>
+<a href="{intl_free_url}" target="_blank" rel="noopener noreferrer">📎 国際通話かけ放題 公式ページ</a>
+</div>
+</div>
 
-<h2>🚀 衛星ブロードバンド通話（AST SpaceMobile 提携）</h2>
-<p class="disclaimer">📅 {plat_crawled}{plat_ok_note}</p>
-<p>{sat_status}<br>{sat_detail}<br><span class="disclaimer">🛰️ {sat_launch}</span></p>
+<div class="rm-card rm-card--sat">
+<div class="rm-card__h3">🚀 衛星ブロードバンド通話（AST SpaceMobile 提携）</div>
+<p class="rm-card__meta">📅 {plat_crawled}{plat_ok_note}</p>
+<div class="rm-card__body">{sat_status}<br><span style="color:#cbd5e1">{sat_detail}</span><br><span class="dim">🛰️ {sat_launch}</span></div>
+</div>
 
-<h2>📡 プラチナ回線（700MHz帯 プラチナバンド）</h2>
-<p class="disclaimer">📅 {plat_crawled}{plat_ok_note}</p>
-<p>{plat_status}<br>{plat_detail}<br><span class="disclaimer">📶 カバレッジ：{plat_coverage}</span></p>
+<div class="rm-card rm-card--plat">
+<div class="rm-card__h3">📡 プラチナ回線（700MHz帯 プラチナバンド）</div>
+<p class="rm-card__meta">📅 {plat_crawled}{plat_ok_note}</p>
+<div class="rm-card__body">{plat_status}<br><span style="color:#cbd5e1">{plat_detail}</span><br><span class="dim">📶 カバレッジ：{plat_coverage}</span></div>
+</div>
+</div>
 
-<h2>📶 楽天モバイル（1円スマホ・パケット放題・電話放題）</h2>
-<p>スマホなら楽天モバイルへの乗り換えを検討できます。eSIM 対応端末やキャンペーンの一例として、富士通製「we2 plus」など高性能 CPU 端末を<strong>1円</strong>で入手できる案内が出る場合があります（時期・在庫・契約条件は要確認）。日本全国で<strong>楽天リンク</strong>アプリが使えます。</p>
-<ul>
+<div class="rm-links">
+<h2 class="rm-links__h2">📶 楽天モバイル（1円スマホ・パケット放題・電話放題）</h2>
+<p class="rm-links__lead">スマホなら楽天モバイルへの乗り換えを検討できます。eSIM 対応端末やキャンペーンの一例として、富士通製「we2 plus」など高性能 CPU 端末を<strong>1円</strong>で入手できる案内が出る場合があります（時期・在庫・契約条件は要確認）。日本全国で<strong>楽天リンク</strong>アプリが使えます。</p>
+<ul class="rm-links__list">
 <li><a href="{we2plus_url}" target="_blank" rel="noopener noreferrer">1円スマホの例：富士通製 we2 plus など（要確認）</a></li>
 <li><a href="{packet_url}" target="_blank" rel="noopener noreferrer">パケット放題・データ使い放題プラン</a></li>
 <li><a href="{phone_url}" target="_blank" rel="noopener noreferrer">電話放題・楽天リンク経由の通話</a></li>
@@ -728,19 +814,28 @@ async fn render_rakuten_mobile_body() -> String {
 <li><a href="{link_iphone_url}" target="_blank" rel="noopener noreferrer">楽天リンク iPhone版</a></li>
 <li><a href="{campaign_url}" target="_blank" rel="noopener noreferrer">楽天モバイル 乗り換え・キャンペーン全般</a></li>
 </ul>
-<p class="disclaimer">楽天モバイルのアンテナ・基地局が届くエリアでは、オンライン配信や TV チャットでも<strong>パケットを気にしにくいプラン</strong>を検討できます。病院などの FREE Wi-Fi が使える場合、在宅・入院中の環境づくりにも役立つことがあります（プラン内容・エリアは必ず公式で確認してください）。</p>
+<p class="rm-links__note">楽天モバイルのアンテナ・基地局が届くエリアでは、オンライン配信や TV チャットでも<strong>パケットを気にしにくいプラン</strong>を検討できます。病院などの FREE Wi-Fi が使える場合、在宅・入院中の環境づくりにも役立つことがあります（プラン内容・エリアは必ず公式で確認してください）。</p>
+</div>
 
-<h2>⏱ 自動更新について</h2>
-<p class="disclaimer">このページの元データ(楽天モバイル料金・国際通話・プラチナバンド)はPHP版サイトが毎朝05:00AMに自動クロール・キャッシュ更新しています。キャッシュ先: rakuten-mobile-cache.json 他2ファイル。</p>
+<div class="rm-cron-note">
+<strong style="color:#67e8f9">⏱ 自動更新について</strong><br>
+このページの元データ(楽天モバイル料金・国際通話・プラチナバンド)はPHP版サイトが毎朝05:00AMに自動クロール・キャッシュ更新しています。キャッシュ先: <code>rakuten-mobile-cache.json</code> 他2ファイル。
+</div>
 
-<p style="margin-top:2rem;">
-<a href="/">← audiocafe.tokyo トップ</a> ・
-<a href="/aruaru">📊 aruaru（IT技術情報）</a> ・
-<a href="/aruaru-lady">💃 aruaru-lady（女性向け情報）</a> ・
+<div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:24px">
+<a href="/" style="display:inline-block;padding:8px 18px;border-radius:10px;background:rgba(15,23,42,.7);border:1px solid var(--border);color:var(--dim);font-weight:700;text-decoration:none;">← audiocafe.tokyo トップ</a>
+<a href="/aruaru" style="display:inline-block;padding:8px 18px;border-radius:10px;background:rgba(15,23,42,.7);border:1px solid var(--border);color:var(--dim);font-weight:700;text-decoration:none;">📊 aruaru（IT技術情報）</a>
+<a href="/aruaru-lady" style="display:inline-block;padding:8px 18px;border-radius:10px;background:rgba(15,23,42,.7);border:1px solid var(--border);color:var(--dim);font-weight:700;text-decoration:none;">💃 aruaru-lady（女性向け情報）</a>
+</div>
+
+<div class="rm-footer">
+楽天モバイル情報は毎朝05:00AMに自動クロール更新。内容は必ず<a href="{official_url}" target="_blank" rel="noopener noreferrer">公式サイト</a>でご確認ください。 ・
 <a href="{ARUARU_TOKYO_URL}" target="_blank" rel="noopener noreferrer">🎲 aruaru.tokyo</a>
-</p>
-<p class="disclaimer">楽天モバイル情報は毎朝05:00AMに自動クロール更新。内容は必ず<a href="{official_url}" target="_blank" rel="noopener noreferrer">公式サイト</a>でご確認ください。</p>
-"#,
+</div>
+
+</div>
+</div>
+"##,
         intl_ok_note = if intl_ok { " ✓ クロール成功" } else { "" },
         plat_ok_note = if plat_ok { " ✓ クロール成功" } else { "" },
     )

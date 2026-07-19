@@ -147,6 +147,28 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(続きの続きの続き) `/rakuten-mobile`にも見た目(CSS/クラス構造)を追補**:
+  `/aruaru-lady`対応時にユーザーからスコープ拡大の指示(見た目もPHP版と
+  一致させる)を受けたが、`/rakuten-mobile`(先に完了していたHANDOFF
+  参照)は「内容のみ」の旧方針で実装済みだったため、追補作業として
+  実施。PHP側`rakuten-mobile/index.php`の`<style>`ブロック(448〜625行目)
+  から、実際に使われているクラス(`.rm-hero`・`.rm-coverage`・
+  `.rm-cards`・`.rm-area`・`.rm-search-btns`・`.rm-links`・
+  `.rm-cron-note`等)とCSS変数(`--red`・`--cyan`・`--purple`等)をそのまま
+  `RAKUTEN_MOBILE_STYLE`定数として移植(`.rakuten-mobile-page`でスコープ、
+  `ARUARU_LADY_STYLE`と同じパターン)。`render_rakuten_mobile_body()`の
+  HTML本体もPHP版と同じクラス名・div構造に書き換えた(埋め込みモード用の
+  開閉パネルJS演出CSSは対象外、見た目一致というスコープ外と判断)。
+  - **検証**: `cargo build`成功、`cargo test`で14件全green(変更前と
+    同数)。実バイナリを起動し`curl http://127.0.0.1:4400/rakuten-mobile`
+    を取得、PHP版CSSのクラス名(`rakuten-mobile-page`・`rm-hero`・
+    `rm-coverage`・`rm-cards`・`rm-links`)とカラーコード(`#ef4444`・
+    `#22d3ee`・`#a78bfa`)が実際に出力に含まれることを確認、加えて
+    既存の内容文字列(「楽天モバイル 最新情報」「AST SpaceMobile」
+    「プラチナ回線」)も引き続き正しく含まれることを確認。
+  - 次にすべきこと: 最大の`/aruaru`(8152行)へ同様の内容+見た目移植を
+    行う。
+
 - **2026-07-19(続きの続き) `/aruaru-lady`の内容乖離を解消(汎用JSONダンプ→PHP版の実際のページ内容+見た目を専用レンダラーで再現)**:
   `/rakuten-mobile`(前項参照)に続き、`/aruaru-lady`
   (PHP側`F:\open-runo\audiocafe.tokyo\aruaru-lady\index.php`、2916行)
