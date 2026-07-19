@@ -166,6 +166,78 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(続き) 前回HANDOFFの3項目(国旗クリック導線・母国語選択導線・
+  YouTubeシリーズ機能)を全て実装完了**: 前回セッションが引き継いだ
+  未着手3項目に、ユーザーからの追加要望(aruaru等へのリンクも選択言語で
+  Google翻訳、デフォルトの言語カード順をPHP版通りに、地域ピルを英語+
+  (日本語)併記に)も加えて全て実装した。
+  1. **国旗画像クリック導線**: `render_lang_card`の`<img class="card-flag">`
+     を`<a>`でラップし、audiocafe.tokyo本体のGoogle翻訳プロキシURLへ
+     遷移するようにした。
+  2. **`.card-actions`のaruaru系リンクも翻訳経由に**: `/aruaru`・
+     `/aruaru-lady`・`/rakuten-mobile`への直リンクを、audiocafe.tokyo
+     本体と同じ`google_translate_proxy_url`経由に変更(日本語カードは
+     従来通り無翻訳)。選択した言語カードから遷移した先が実際に
+     その言語で表示されるようになった(ユーザー指摘により追加対応)。
+  3. **デフォルト表示順をPHP版に一致**: `render_top_body`が常に6地域へ
+     グループ化していたのをやめ、地域フィルタ未指定時はPHP版
+     `render()`の`activeRegion==="all"`ケース(`index.php` 2028〜2032行目)
+     と同じくL配列の元の並び順でフラット表示するよう修正(Persian→
+     Japanese→Arabic→…、ユーザー指摘により発覚・修正)。
+  4. **地域ピルを英語+(日本語)併記に**: `region_order`をPHP版`REGIONS`
+     (Asia/Europe/Americas/Middle East/Africa/Pacific)と同じ順序に、
+     ラベルを"Asia (アジア)"等の英日併記に変更(従来は日本語のみ・
+     順序もPHP版と不一致だった)。
+  5. **YouTube再生リストのシリーズ機能を復活**: PHP版`SEARCH_SERIES`
+     (`index.php` 2566行目)をNode.jsの`new Function`評価で
+     `assets/search_series.json`へlosslessに抽出(実際は**77件**——
+     旧HANDOFFの「84件」は未検証の見積もりだったと判明・訂正)。
+     `SearchSeries`構造体+`Lazy`static(`TOP_LANGUAGES`と同じパターン)を
+     新設し、`scraper::extract_yt_id`(`/discover`のサムネイル抽出と
+     共通)で各シリーズの再生可能動画IDを事前計算、`<script
+     type="application/json">`でクライアントへ渡す。**このRustサイト初の
+     クライアント側JS**(従来「クライアント側JSを持たない」方針だったが、
+     ユーザーが明示的に2回、実際のOPEN/CLOSEパネル+シリーズ切替の復活を
+     要望したため、この機能に限り小さな自己完結スクリプトを導入する
+     判断をした)。`acPlaySeries(i)`でシリーズ切替(iframe src差し替え)、
+     `acNextVideo()`でシリーズ内キューを送り(末尾で先頭へループ)、
+     `acToggleYtPanel(open)`でCLOSE/OPENボタンの表示切替。0件しか
+     再生可能URLが無いシリーズ(`results?search_query=`のみ)は、
+     `audiocafe.tokyo/CLAUDE.md`の既存方針(YouTube検索結果のスクレイプ
+     推測再生はしない)を踏襲し、実際のYouTube検索結果ページへ新規タブで
+     遷移するフォールバックにした。起動時はPHP版コメント(`index.php`
+     195〜197行目)通りSEARCH_SERIES[0]の先頭URLを再生(旧
+     `TOP_DEFAULT_BG_VIDEO_ID`はPHP側でも「全候補が失敗した場合のみ」の
+     フォールバック専用定数であり、実際の初期表示動画ではなかったと
+     判明・訂正、フォールバックとしては引き続き保持)。
+  - **検証(実施済み)**: `cargo build`成功(新規警告なし)、`cargo test`
+    14件全green。実バイナリでcurl確認に加え、ブラウザ(Claude Browser)で
+    `javascript_tool`経由の実行確認も実施(埋め込みYouTube iframeの
+    autoplayが原因で`computer`のスクリーンショットがタイムアウトした
+    ため、コンソールエラー無し確認+JS関数の直接呼び出しで検証):
+    初期状態でSEARCH_SERIES[0](`KRS Rey Audio WARP-5`)が実際に再生設定
+    されていること、`acToggleYtPanel(false/true)`でパネルの
+    表示/非表示とOPENボタンの表示/非表示が正しく切り替わること、
+    `acPlaySeries(2)`で実際にiframe srcとnow-playingラベルが
+    「JBL Summit EVEREST 2026」に切り替わること、`acNextVideo()`で
+    同シリーズの2本目のURLに実際に進むこと、0件シリーズ(`JBL DD67000`)
+    が`ids:[]`+有効な検索URLを持つことを確認。本番でも77件のシリーズ
+    ボタン・iframe初期値・CLOSE/OPENボタンの存在をcurlで確認。
+  - **本番反映**: ユーザー指示により今後「反映しますか」の確認は不要
+    (本ファイル上部の運用ルール追記参照)、上記5項目全てをコミット・
+    push後、`ssh conoha`で`git pull && cargo build --release &&
+    systemctl restart`まで実施し、`https://audiocafe.tokyo/`本番で
+    実際に反映されていることを確認済み(commit `d821f24`・`4f4f9bc`・
+    `ce359da`)。
+  - **今回のスコープ外(正直に開示)**: (1) PHP版のYouTube IFrame API
+    連携(自動キュー送り・シャッフル・検索駆動の動画切替アニメーション、
+    `index.php`だけで数千行)は対象外、NEXTボタンでの手動送りのみ。
+    (2) 遷移先選択モーダル自体のJS開閉アニメーションは引き続き静的
+    直リンクで代替。(3) 多言語版(`index-en.php`等)は依然未対応。
+  - 次にすべきこと: (1) 必要であれば多言語版対応、(2) `/cancer`・
+    `/world`(削除予定)・`/Python`の移植要否判断、(3) YouTube
+    IFrame API連携の自動キュー送り等が必要になった場合の検討。
+
 - **2026-07-19 国旗クリックのバグ修正 + 次セッションへの新規要望の引き継ぎ
   (コンテキストウインドウ制限直前のチェックポイント)**:
   **完了した修正**: `render_lang_card`の`.card-actions`(遷移先リンク:
