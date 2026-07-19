@@ -181,6 +181,59 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-19(またさらに続き) ダンシングロゴをcanvas実描画に置き換え、
+  /aruaruのdodaリンク・技術ランキング見出し・追加リンクを修正**:
+  ユーザーから「ロゴが動いて踊るのは、PHP版をRust版は全然再現出来ていません。
+  もっと正確に復活再現して」という指摘を受け、前回HANDOFFで実装した
+  CSS `@keyframes`ベースの簡略版ロゴを撤回し、`index.php`の
+  `danceMotionForChar`(10ジャンル分のdx/dy/rot/scale計算式)・
+  `drawTextGradient`(グラデーション定義)・`getTextPixels`/`initParticles`
+  (爆発/オービット用パーティクル物理)を**そのままJSへ移植**した
+  `LOGO_CANVAS_SCRIPT`定数(`src/main.rs`)で置き換えた(`<canvas
+  id="acLogoCanvas">`+`requestAnimationFrame`ループ)。省略したのは
+  (1) YouTube音量連動(`ytEnergy`、Player APIと未接続のため常に0)、
+  (2) 波モード専用の帆船装飾(`drawSailingShip`、ロゴ本体の動きとは別)、
+  (3) Dance AIモードの音量パターン解析(`detectGenreFromEnergy`、実音声
+  入力が無いため10ジャンルの定期ローテーションに簡略化)の3点のみ——
+  文字自体の動きの計算式は原文と同一。
+  - **検証上の制約(正直に開示)**: Claude Browser(このセッションの
+    ブラウザ検証環境)では`document.hidden === true`(タブが背面/
+    非アクティブ扱い)のため`requestAnimationFrame`がブラウザ側で
+    抑制され、モード切替後もキャンバスのピクセルが実際に動いている
+    ことを自動検証できなかった(これはPHP版含めあらゆるrAFベースの
+    アニメーションに共通する標準的なブラウザの省電力挙動であり、
+    今回移植したコード固有の不具合ではないと判断)。代わりに
+    (1) `cargo build`/`cargo test`(14件全green)、(2) コンソール
+    エラー無し、(3) canvasが正しいサイズ(640×90)で実際に文字
+    ピクセルを描画済み(alpha>10のピクセルがテキスト形状に一致する
+    分布で存在)、(4) モード/ジャンル切替関数(`acSetLogoMode`/
+    `acSetLogoGenre`)がボタンのactiveクラス切替を含め正常動作、
+    (5) 数式がPHP原文と1対1で一致すること、で検証を代替した。
+    実ユーザーの通常のブラウザ利用(タブがアクティブ)では
+    `requestAnimationFrame`は毎フレーム実行されるため、この制約は
+    実運用には影響しないと考えられるが、次回セッションで実機
+    (スマホ/PC実ブラウザ)での目視確認ができる場合は行うこと。
+  - **`/aruaru`側の追加修正**(ユーザー要望、コミット`3b2d6ca`):
+    (1) doda求人ボタン(IT・通信業界／広告・マーケティング業界)の
+    フォールバックURLを、キャッシュに`search`フィールドが無い場合の
+    汎用doda.jpトップページから、PHP版`doda_categories()`
+    (`aruaru/index.php` 4754〜4763行目)と同じ実際の絞り込み済み
+    doda検索結果URL(未経験可・転勤無し)に修正。(2) 技術ランキング
+    見出し3箇所(言語/フレームワーク/DB)を「TOP80」→「TOP200」に
+    変更(実際の表示件数は引き続きライブキャッシュの実データ件数に
+    依存する点は正直に開示)。(3) 言語ランキング表の下にVersionlessAPI、
+    フレームワーク表の下にWunderGraph Cosmo(「RestAPI不要などの特徴を
+    持ちます」の一言付き)への日本語/英語それぞれのGoogle検索リンクを
+    新設(`hl=ja`/`hl=en`)。
+  - **本番反映確認**: VPS(`ssh conoha`)で`git pull && cargo build
+    --release && systemctl restart`実施、`https://audiocafe.tokyo/`で
+    `id="acLogoCanvas"`・`danceMotionForChar`関数の存在、
+    `https://audiocafe.tokyo/aruaru/`で新TOP200見出し3箇所・実際の
+    doda絞り込みURL2件・VersionlessAPI/WunderGraph Cosmoリンクの存在を
+    `curl`で確認済み。
+  - 次にすべきこと: 現時点でユーザーからの明示的な未着手要望は無し。
+    可能であれば次回、実ブラウザでダンシングロゴの目視確認を行う。
+
 - **2026-07-19(さらに続き) 言語カード要約画面・エッセイJP/EN分離・
   フォント拡大・ダンシングロゴを追加、nginx新規ルート追加時の注意を発見**:
   同日内の追加ユーザー要望3件に対応した(コミット`88e6113`・`42d5079`・
