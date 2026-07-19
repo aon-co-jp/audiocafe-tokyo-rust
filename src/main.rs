@@ -792,12 +792,28 @@ async fn render_aruaru_body() -> String {
     let empty_rows: Vec<Value> = Vec::new();
     let doda_updated = get_disp(doda, "updated_human");
 
-    let doda_categories: String = [("it", "💼 IT・通信業界(未経験可／転勤無し)"), ("ad", "📢 広告・マーケティング業界(未経験可／転勤無し)")]
+    // PHP版`doda_categories()`(`aruaru/index.php` 4754〜4763行目)と同じ
+    // 実際のdoda検索結果URL(未経験可・転勤無しで絞り込み済み)をフォールバック
+    // に設定(2026-07-19、ユーザー指摘により修正——従来はキャッシュに
+    // `search`フィールドが無い場合、汎用のdoda.jpトップページに飛ぶだけで
+    // 「IT・通信業界」「広告・マーケティング業界」で絞り込まれていなかった)。
+    let doda_categories: String = [
+        (
+            "it",
+            "💼 IT・通信業界(未経験可／転勤無し)",
+            "https://doda.jp/DodaFront/View/JobSearchList.action?ss=1&op=17,70,71,27,24&pic=1&ds=0&ind=01L&tp=1&bf=1&mpsc_sid=10&oldestDayWdtno=0&leftPanelType=1",
+        ),
+        (
+            "ad",
+            "📢 広告・マーケティング業界(未経験可／転勤無し)",
+            "https://doda.jp/DodaFront/View/JobSearchList.action?ss=1&op=17,70,71,27,24&pic=1&ds=0&ci=131041&ind=1101S,1108S&tp=1&bf=1&mpsc_sid=10&oldestDayWdtno=0&leftPanelType=1",
+        ),
+    ]
         .iter()
-        .map(|(key, fallback_label)| {
+        .map(|(key, fallback_label, fallback_search)| {
             let cat = doda.get("categories").and_then(|c| c.get(key));
             let label = cat.and_then(|c| c.get("label")).and_then(|v| v.as_str()).unwrap_or(fallback_label).to_string();
-            let search = cat.and_then(|c| c.get("search")).and_then(|v| v.as_str()).unwrap_or("https://doda.jp/").to_string();
+            let search = cat.and_then(|c| c.get("search")).and_then(|v| v.as_str()).unwrap_or(fallback_search).to_string();
             let items: &[Value] = cat.and_then(|c| c.get("items")).and_then(|v| v.as_array()).map(|v| v.as_slice()).unwrap_or(&empty_rows);
             let item_list: String = items
                 .iter()
@@ -858,6 +874,15 @@ async fn render_aruaru_body() -> String {
     let lang_table = render_data_table(lang_rows, "#00ffff", lang_cols);
     let fw_table = render_data_table(fw_rows, "#ffaa00", fw_cols);
     let db_table = render_data_table(db_rows, "#ff66cc", db_cols);
+
+    // 2026-07-19、ユーザー指示により追加: 言語ランキングの下にVersionlessAPI、
+    // フレームワークランキングの下にWunderGraph Cosmoへの日本語/英語
+    // それぞれのGoogle検索結果リンクを追記(`hl=ja`/`hl=en`で検索UI言語を
+    // 切り替え、`google_search_url`と同じクエリ組み立て方針)。
+    let versionless_api_ja_url = html_escape(&format!("{}&hl=ja", google_search_url("VersionlessAPI")));
+    let versionless_api_en_url = html_escape(&format!("{}&hl=en", google_search_url("VersionlessAPI")));
+    let wundergraph_cosmo_ja_url = html_escape(&format!("{}&hl=ja", google_search_url("WunderGraph Cosmo")));
+    let wundergraph_cosmo_en_url = html_escape(&format!("{}&hl=en", google_search_url("WunderGraph Cosmo")));
 
     let learning_sections: String = ARUARU_LEARNING_CATEGORIES
         .iter()
@@ -946,13 +971,23 @@ async fn render_aruaru_body() -> String {
 </div>
 
 <div class="card" id="aruaru-top80-tech">
-<h2 style="color:#00ffff;">🚀 人気TOP80 技術ランキング（AI自動分析）</h2>
+<h2 style="color:#00ffff;">🚀 人気TOP200 技術ランキング（AI自動分析）</h2>
 <p style="opacity:.7;font-size:15px;">🕐 最終更新: {tech_updated}</p>
-<h3 style="color:#00ffaa;">💻 人気プログラミング言語 TOP80</h3>
+<h3 style="color:#00ffaa;">💻 人気プログラミング言語 TOP200</h3>
 {lang_table}
-<h3 style="color:#ffaa00;">⚡ 人気フレームワーク TOP80</h3>
+<p style="font-size:14px;margin:10px 0 0;">
+<a href="{versionless_api_ja_url}" target="_blank" rel="noopener noreferrer">VersionlessAPI（日本語で検索）</a>
+　|
+<a href="{versionless_api_en_url}" target="_blank" rel="noopener noreferrer">VersionlessAPI (search in English)</a>
+</p>
+<h3 style="color:#ffaa00;">⚡ 人気フレームワーク TOP200</h3>
 {fw_table}
-<h3 style="color:#ff66cc;">🗄 DATABASE ランキング TOP80</h3>
+<p style="font-size:14px;margin:10px 0 0;">WunderGraph Cosmoと言うRestAPI不要などの特徴を持ちます。
+<a href="{wundergraph_cosmo_ja_url}" target="_blank" rel="noopener noreferrer">WunderGraph Cosmo（日本語で検索）</a>
+　|
+<a href="{wundergraph_cosmo_en_url}" target="_blank" rel="noopener noreferrer">WunderGraph Cosmo (search in English)</a>
+</p>
+<h3 style="color:#ff66cc;">🗄 DATABASE ランキング TOP200</h3>
 {db_table}
 </div>
 
@@ -1320,8 +1355,10 @@ const TOP_STYLE: &str = r#"<style>
 .top-page a{color:#7dd3fc}
 .top-page .header{position:relative;overflow:hidden;text-align:center;padding:2rem 1rem 2rem}
 .top-page .logo{display:inline-block;font-size:clamp(2rem,6vw,3.2rem);font-weight:900;letter-spacing:-.02em;background:linear-gradient(90deg,#6366f1,#22c55e,#facc15,#ff1493,#7c3aed,#6366f1);background-size:400% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
-.top-page .subtitle{margin-top:.5rem;font-size:clamp(.95rem,2vw,1.25rem);color:var(--text-dim);font-weight:500}
-.top-page .note{margin-top:.5rem;font-size:.8rem;color:var(--text-muted);max-width:36rem;margin-left:auto;margin-right:auto;line-height:1.6}
+.top-page .subtitle{margin-top:.5rem;font-size:clamp(.95rem,2vw,1.25rem);color:#fff;font-weight:500}
+.top-page .note{margin-top:.5rem;font-size:.8rem;color:#fff;max-width:36rem;margin-left:auto;margin-right:auto;line-height:1.6}
+.top-page .lang-select-link{margin-top:.5rem}
+.top-page .lang-select-link a{color:#fff;font-weight:600}
 .top-page .main{max-width:76rem;margin:0 auto;padding:1rem 1rem 3rem;width:100%}
 .top-page .region-title{font-size:1.4rem;font-weight:700;color:#fff;margin:1.6rem 0 .8rem;letter-spacing:.03em}
 .top-page .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:.65rem}
@@ -1355,39 +1392,17 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-series-controls{padding:0 .8rem .4rem}
 .top-page .yt-next-btn{border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.12);color:#22d3ee;padding:.3rem .8rem;font-size:.75rem;cursor:pointer}
 .top-page .yt-series-list{max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:.3rem;padding:.4rem .8rem}
-.top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.25rem .7rem;font-size:1.05rem;cursor:pointer}
+.top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:#fff;padding:.25rem .7rem;font-size:1.05rem;cursor:pointer}
 .top-page .yt-series-btn.is-active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
 .top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
-.top-page #logoWrap{max-width:640px;margin:1rem auto 0;padding:1.2rem 1rem;text-align:center;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.top-page .logo-letter{display:inline-block;font-size:2rem;font-weight:900;color:#22d3ee;letter-spacing:.02em}
+.top-page #logoWrap{max-width:640px;margin:1rem auto 0;padding:.6rem;text-align:center;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.top-page #acLogoCanvas{width:100%;height:90px;display:block}
 .top-page #logoModeBar,.top-page #danceFixedBar{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem;margin-top:.8rem}
 .top-page #danceFixedBar{display:none;margin-top:.5rem}
 .top-page #danceFixedBar.is-visible{display:flex}
 .top-page .df-label{font-size:.75rem;color:var(--text-dim);align-self:center;margin-right:.2rem}
 .top-page .logo-mode-btn,.top-page .dance-fixed-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.3rem .8rem;font-size:.8rem;cursor:pointer}
 .top-page .logo-mode-btn.active,.top-page .dance-fixed-btn.active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
-@keyframes ac-logo-scroll{0%{background-position:0 0}100%{background-position:200% 0}}
-.top-page #logoWrap.mode-scroll .logo-letter{background:linear-gradient(90deg,#22d3ee,#a78bfa,#fbbf24,#22d3ee);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ac-logo-scroll 3s linear infinite}
-@keyframes ac-logo-dance{0%,100%{transform:translateY(0)}50%{transform:translateY(-.6rem)}}
-.top-page #logoWrap.mode-dance .logo-letter,.top-page #logoWrap.mode-danceFixed .logo-letter{animation:ac-logo-dance .7s ease-in-out infinite}
-.top-page #logoWrap.mode-danceFixed[data-genre="kabuki"] .logo-letter{color:#ef4444}
-.top-page #logoWrap.mode-danceFixed[data-genre="egypt"] .logo-letter{color:#fbbf24}
-.top-page #logoWrap.mode-danceFixed[data-genre="india"] .logo-letter{color:#fb923c}
-.top-page #logoWrap.mode-danceFixed[data-genre="hiphop"] .logo-letter{color:#a3e635}
-.top-page #logoWrap.mode-danceFixed[data-genre="kpop"] .logo-letter{color:#f472b6}
-.top-page #logoWrap.mode-danceFixed[data-genre="latin"] .logo-letter{color:#fb7185}
-.top-page #logoWrap.mode-danceFixed[data-genre="orchestra"] .logo-letter{color:#c4b5fd}
-.top-page #logoWrap.mode-danceFixed[data-genre="jazz"] .logo-letter{color:#38bdf8}
-.top-page #logoWrap.mode-danceFixed[data-genre="ethnic"] .logo-letter{color:#4ade80}
-.top-page #logoWrap.mode-danceFixed[data-genre="freestyle"] .logo-letter{color:#22d3ee}
-@keyframes ac-logo-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
-.top-page #logoWrap.mode-danceAI .logo-letter{animation:ac-logo-pulse .9s ease-in-out infinite;color:#a78bfa}
-@keyframes ac-logo-wave{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-.9rem) rotate(-8deg)}}
-.top-page #logoWrap.mode-wave .logo-letter{animation:ac-logo-wave 1.1s ease-in-out infinite}
-@keyframes ac-logo-explode{0%{transform:translate(0,0) rotate(0);opacity:1}50%{transform:translate(var(--ex,1.5rem),var(--ey,-1.5rem)) rotate(180deg);opacity:.4}100%{transform:translate(0,0) rotate(360deg);opacity:1}}
-.top-page #logoWrap.mode-explode .logo-letter{animation:ac-logo-explode 1.6s ease-in-out infinite}
-@keyframes ac-logo-orbit{0%{transform:rotate(0deg) translateX(.5rem) rotate(0deg)}100%{transform:rotate(360deg) translateX(.5rem) rotate(-360deg)}}
-.top-page #logoWrap.mode-orbit .logo-letter{display:inline-block;animation:ac-logo-orbit 2.4s linear infinite}
 .top-page .yt-wp-head{display:block;font-weight:800;color:#fde68a}
 .top-page .yt-wp-hint{display:block;font-size:.75rem;color:var(--text-muted);margin:.2rem 0 .6rem}
 .top-page .yt-wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem}
@@ -1396,6 +1411,418 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-wp-name{display:block;margin:.25rem 0}
 .top-page .yt-wp-dl{display:inline-block;margin-top:.15rem;color:var(--cyan)}
 </style>"#;
+
+/// PHP版のcanvasパーティクルロゴ(`index.php` 5854行目以降)の描画式を
+/// そのまま移植したJSエンジン。`danceMotionForChar`の10ジャンル分の式・
+/// `drawTextGradient`のグラデーション定義・`getTextPixels`/`initParticles`の
+/// パーティクル物理は原文と同じ計算式を使用している(YouTube音量連動の
+/// `ytEnergy`は接続していないため常に0、Dance AIは音量パターン解析の
+/// 代わりに10ジャンルの定期ローテーション、波モードの帆船装飾は省略——
+/// いずれもこの定数のコメントとHANDOFFに明記済み)。
+const LOGO_CANVAS_SCRIPT: &str = r#"<script>
+(function(){
+  var canvas = document.getElementById('acLogoCanvas');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var TEXT = 'audiocafe.tokyo';
+  var GRAD_SPEED = 18;
+  var CW = 1, CH = 1;
+
+  function calcFontSize(w, h){ return Math.min(w * 0.93 / TEXT.length * 1.62, h * 0.70); }
+
+  function resize(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 4);
+    CW = canvas.offsetWidth; CH = canvas.offsetHeight;
+    canvas.width = Math.round(CW * dpr); canvas.height = Math.round(CH * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    initParticles();
+  }
+
+  var GRAD_STOPS = [
+    [0,'#a855f7'],[0.08,'#3b82f6'],[0.20,'#22d3ee'],[0.32,'#22c55e'],[0.45,'#facc15'],
+    [0.57,'#f97316'],[0.68,'#ef4444'],[0.80,'#ec4899'],[0.90,'#a855f7'],[1.00,'#3b82f6']
+  ];
+
+  function drawTextGradient(now, waveOffset){
+    ctx.clearRect(0, 0, CW, CH);
+    var fs = calcFontSize(CW, CH);
+    ctx.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var textW = ctx.measureText(TEXT).width;
+    var leftPad = 8, baseY = CH / 2;
+    var e = 0;
+    var pulse = 1 + e * 0.05;
+    var gradShift = (now * GRAD_SPEED / 360 * textW * 1.5) % textW;
+    var grad = ctx.createLinearGradient(leftPad - gradShift, 0, leftPad - gradShift + textW * 1.5, 0);
+    GRAD_STOPS.forEach(function(s){ grad.addColorStop(s[0], s[1]); });
+
+    if (waveOffset) {
+      var curX = leftPad;
+      TEXT.split('').forEach(function(ch){
+        var chW = ctx.measureText(ch).width;
+        var ratio = (curX + chW / 2 - leftPad) / textW;
+        var dy = waveOffset(ratio, now);
+        ctx.save();
+        ctx.shadowColor = 'rgba(168,85,247,0.6)'; ctx.shadowBlur = 18 + e * 18;
+        ctx.fillStyle = grad;
+        ctx.fillText(ch, curX, baseY + dy);
+        ctx.restore();
+        curX += chW;
+      });
+    } else {
+      ctx.save();
+      ctx.shadowColor = 'rgba(168,85,247,0.5)'; ctx.shadowBlur = 16 + e * 20;
+      ctx.fillStyle = grad;
+      ctx.translate(leftPad + textW / 2, baseY);
+      ctx.scale(pulse, pulse);
+      ctx.fillText(TEXT, -textW / 2, 0);
+      ctx.restore();
+    }
+  }
+
+  var DANCE_GENRE_NAMES = {
+    kabuki:'🎭 歌舞伎', egypt:'🏛 エジプト', india:'🕉 インド', hiphop:'🎤 HIPHOP', kpop:'💖 K-POP',
+    latin:'💃 ラテン', orchestra:'🎻 オーケストラ', jazz:'🎷 JAZZ', ethnic:'🪘 民族', freestyle:'✨ フリースタイル'
+  };
+  var DANCE_GENRE_COLORS = {
+    kabuki:['#d71b3b','#1a1a1a','#ffd700','#ffffff'], egypt:['#ffd700','#d4a017','#3fb6bc','#8b4513'],
+    india:['#ff6f00','#ff9933','#ec407a','#138808'], hiphop:['#ff0080','#8000ff','#00ffff','#ffff00'],
+    kpop:['#ff6b9d','#c471ed','#12c2e9','#f7797d'], latin:['#ff0040','#ff8c00','#ffd700','#ff1493'],
+    orchestra:['#4b0082','#9370db','#daa520','#f5f5dc'], jazz:['#2e1a47','#6a0dad','#d4af37','#4169e1'],
+    ethnic:['#8b4513','#cd853f','#d2691e','#ff4500'], freestyle:['#00ffff','#ff00ff','#ffff00','#00ff00']
+  };
+
+  function danceMotionForChar(genre, now, i, ratio, beat){
+    var dx = 0, dy = 0, rot = 0, scale = 1;
+    if (genre === 'kabuki') {
+      var pose = Math.floor(now * 0.5) % 4;
+      var poseT = (now * 0.5) % 1;
+      var freeze = poseT < 0.3 ? 1 : poseT > 0.7 ? 1 : Math.sin((poseT - 0.3) * Math.PI / 0.4);
+      var tilt = [0, 0.15, -0.12, 0.2][pose];
+      dy = Math.sin(ratio * Math.PI) * 10 * (1 - freeze) + beat * 6;
+      rot = tilt * (1 - freeze * 0.7);
+      scale = 1 + beat * 0.08;
+    } else if (genre === 'egypt') {
+      var step = Math.floor(now * 3);
+      var stepT = (now * 3) % 1;
+      dx = (step % 2 === 0 ? 1 : -1) * (8 + beat * 8) * Math.pow(stepT, 2);
+      dy = -Math.abs(Math.sin(now * Math.PI * 2 + i * 0.5)) * (6 + beat * 6);
+      scale = 1 + beat * 0.07;
+    } else if (genre === 'india') {
+      dx = Math.sin(now * 3 + i * 0.3) * (12 + beat * 10);
+      dy = Math.cos(now * 2.5 + i * 0.2) * (8 + beat * 8);
+      rot = Math.sin(now * 3) * 0.1;
+      scale = 1 + Math.sin(now * 4 + i) * 0.08 + beat * 0.08;
+    } else if (genre === 'hiphop') {
+      var bounce = Math.pow(Math.abs(Math.sin(now * Math.PI * 3 + i * 0.4)), 3);
+      dy = -bounce * (18 + beat * 20);
+      dx = Math.sin(now * 8 + i) * (3 + beat * 6);
+      rot = (Math.random() < 0.05 ? (Math.random() - 0.5) * 0.3 : 0) * (0.5 + beat);
+      scale = 1 + bounce * 0.15 + beat * 0.12;
+    } else if (genre === 'kpop') {
+      var wave = Math.sin(ratio * Math.PI * 2 - now * 3.5);
+      dy = wave * (14 + beat * 14);
+      dx = Math.cos(ratio * Math.PI * 2 - now * 3.5) * (4 + beat * 4);
+      rot = wave * 0.08;
+      scale = 1 + Math.abs(wave) * 0.06 + beat * 0.08;
+    } else if (genre === 'latin') {
+      var hip = Math.sin(now * Math.PI * 2.5) * (12 + beat * 10);
+      dx = hip + Math.sin(now * 4 + i * 0.3) * 3;
+      dy = Math.abs(Math.sin(now * 5)) * -(6 + beat * 6) + beat * 6;
+      rot = Math.sin(now * 2.5) * 0.15;
+      scale = 1 + beat * 0.12;
+    } else if (genre === 'orchestra') {
+      var swing = Math.sin(now * 1.2 + ratio * Math.PI);
+      dy = swing * (10 + beat * 16);
+      dx = Math.cos(now * 0.8 + i * 0.15) * (2 + beat * 4);
+      rot = Math.sin(now * 0.6) * 0.04;
+      scale = 1 + Math.abs(swing) * 0.04 + beat * 0.1;
+    } else if (genre === 'jazz') {
+      var jswing = Math.sin(now * Math.PI * 1.8 + i * 0.3);
+      var shuffle = ((now * 2) % 1) < 0.67 ? 1 : 0.5;
+      dx = jswing * (6 + beat * 6) * shuffle;
+      dy = Math.cos(now * 2.4 + i * 0.4) * (8 + beat * 6) * shuffle;
+      rot = jswing * 0.06;
+      scale = 1 + beat * 0.09;
+    } else if (genre === 'ethnic') {
+      var phase = now * 1.8 + i * 0.35;
+      dx = Math.cos(phase) * (5 + beat * 6);
+      dy = Math.sin(phase * 2) * (4 + beat * 4) + Math.abs(Math.sin(now * 3)) * (4 + beat * 8);
+      rot = Math.sin(phase) * 0.05;
+      scale = 1 + beat * 0.1;
+    } else if (genre === 'freestyle') {
+      var r1 = Math.sin(now * (2 + i * 0.2) + i);
+      var r2 = Math.cos(now * (3 + i * 0.15));
+      dx = r1 * (10 + beat * 10);
+      dy = r2 * (12 + beat * 12);
+      rot = r1 * r2 * 0.15;
+      scale = 1 + Math.abs(r1 * r2) * 0.1 + beat * 0.1;
+    }
+    return { dx: dx, dy: dy, rot: rot, scale: scale };
+  }
+
+  function renderDanceFrame(genre, now, energy, fade){
+    ctx.clearRect(0, 0, CW, CH);
+    var simulatedBeat = 0.5 + 0.5 * Math.sin(now * 2 * Math.PI * 2);
+    var beat = energy > 0.05 ? (energy * 0.85 + simulatedBeat * 0.15) : simulatedBeat * 0.35;
+    var fs = calcFontSize(CW, CH);
+    ctx.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    var textW = ctx.measureText(TEXT).width;
+    var leftPad = 8, baseY = CH / 2;
+    var colors = DANCE_GENRE_COLORS[genre] || DANCE_GENRE_COLORS.freestyle;
+    var gradShift = (now * (30 + energy * 40)) % textW;
+    var grad = ctx.createLinearGradient(leftPad - gradShift, 0, leftPad - gradShift + textW, 0);
+    colors.forEach(function(c, i){ grad.addColorStop(i / (colors.length - 1), c); });
+
+    ctx.save();
+    ctx.globalAlpha = fade;
+    ctx.shadowColor = colors[0];
+    ctx.shadowBlur = 18 + beat * 22;
+
+    var curX = leftPad;
+    TEXT.split('').forEach(function(ch, i){
+      var chW = ctx.measureText(ch).width;
+      var ratio = (curX + chW / 2 - leftPad) / textW;
+      var m = danceMotionForChar(genre, now, i, ratio, beat);
+      ctx.save();
+      ctx.translate(curX + chW / 2 + m.dx, baseY + m.dy);
+      ctx.rotate(m.rot);
+      ctx.scale(m.scale, m.scale);
+      ctx.fillStyle = grad;
+      ctx.textAlign = 'center';
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+      curX += chW;
+    });
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalAlpha = fade * 0.75;
+    ctx.font = '700 ' + Math.max(14, fs * 0.18) + "px 'Segoe UI',system-ui,sans-serif";
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillStyle = colors[0];
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8;
+    ctx.fillText(DANCE_GENRE_NAMES[genre] || genre, 12, 10);
+    ctx.restore();
+  }
+
+  var particles = [];
+  var exploding = false, explodeTimer = 0;
+  var EXPLODE_HOLD = 90, REFORM_SPEED = 0.025;
+
+  function getTextPixels(w, h){
+    var scale = Math.min(window.devicePixelRatio || 1, 4);
+    var ow = Math.round(w * scale), oh = Math.round(h * scale);
+    var off = document.createElement('canvas');
+    off.width = ow; off.height = oh;
+    var ox = off.getContext('2d');
+    var fs = calcFontSize(w, h) * scale;
+    ox.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
+    ox.fillStyle = '#fff'; ox.textAlign = 'left'; ox.textBaseline = 'middle';
+    ox.fillText(TEXT, 8 * scale, oh / 2);
+    var d;
+    try { d = ox.getImageData(0, 0, ow, oh).data; } catch (e) { return []; }
+    var pts = [];
+    var step = Math.max(2, Math.round(scale * 2.5));
+    for (var y = 0; y < oh; y += step) {
+      for (var x = 0; x < ow; x += step) {
+        if (d[(y * ow + x) * 4 + 3] > 128) { pts.push({ x: x / scale, y: y / scale }); }
+      }
+    }
+    return pts;
+  }
+
+  function initParticles(){
+    var W = CW, H = CH;
+    if (!W || !H) return;
+    var pts = getTextPixels(W, H);
+    if (!pts.length) return;
+    particles = pts.map(function(p){
+      return {
+        tx: p.x, ty: p.y, x: p.x, y: p.y, vx: 0, vy: 0,
+        ex: (Math.random() - 0.5) * 18, ey: (Math.random() - 0.5) * 14 - 6,
+        size: Math.random() * 1.6 + 1.0,
+        phase: Math.random() * Math.PI * 2, phaseY: Math.random() * Math.PI * 2
+      };
+    });
+    exploding = false; explodeTimer = 0;
+  }
+
+  function particleColor(p, now, W){
+    var hue = (p.tx / W * 360 + now * GRAD_SPEED) % 360;
+    return 'hsl(' + hue + ',100%,62%)';
+  }
+
+  function triggerExplode(){
+    exploding = true; explodeTimer = 0;
+    particles.forEach(function(p){
+      var angle = Math.atan2(p.ty - CH / 2, p.tx - CW / 2);
+      var speed = 8 + Math.random() * 16;
+      p.ex = Math.cos(angle) * speed + (Math.random() - 0.5) * 10;
+      p.ey = Math.sin(angle) * speed + (Math.random() - 0.5) * 10;
+    });
+  }
+
+  var EFFECT_SEC = 5.0, REST_SEC = 10.0;
+  var cycleStart = performance.now() / 1000;
+  var cycleSubPhase = 'rest';
+
+  function updateCycle(now, mode){
+    var elapsed = now - cycleStart;
+    if (cycleSubPhase === 'effect' && elapsed >= EFFECT_SEC) {
+      cycleSubPhase = 'rest'; cycleStart = now;
+    } else if (cycleSubPhase === 'rest' && elapsed >= REST_SEC) {
+      cycleSubPhase = 'effect'; cycleStart = now;
+      if (mode === 'explode') triggerExplode();
+    }
+  }
+
+  function resetCycle(){
+    cycleStart = performance.now() / 1000;
+    cycleSubPhase = 'effect';
+  }
+
+  var logoMode = 'scroll';
+  var danceFixedGenre = 'kabuki';
+  var danceAiGenres = ['kabuki','egypt','india','hiphop','kpop','latin','orchestra','jazz','ethnic','freestyle'];
+  var DANCE_AI_DURATION = 6;
+  var danceAiStart = null;
+
+  function animate(){
+    requestAnimationFrame(animate);
+    if (!CW || !CH) return;
+    var energy = 0;
+    var now = performance.now() / 1000;
+    var mode = logoMode;
+
+    if (mode === 'scroll') { drawTextGradient(now, null); return; }
+
+    if (mode === 'dance') {
+      var GENRES = ['kabuki','egypt','india','hiphop','kpop','latin'];
+      var GENRE_DURATION = 8;
+      if (animate._danceStart == null) animate._danceStart = now;
+      var elapsed = now - animate._danceStart;
+      var genreIdx = Math.floor(elapsed / GENRE_DURATION) % GENRES.length;
+      var genre = GENRES[genreIdx];
+      var phaseInGenre = (elapsed % GENRE_DURATION) / GENRE_DURATION;
+      var fade = phaseInGenre < 0.15 ? phaseInGenre / 0.15 : phaseInGenre > 0.85 ? (1 - phaseInGenre) / 0.15 : 1;
+      renderDanceFrame(genre, now, energy, fade);
+      return;
+    }
+
+    if (mode === 'danceFixed') { renderDanceFrame(danceFixedGenre, now, energy, 1); return; }
+
+    if (mode === 'danceAI') {
+      if (danceAiStart == null) danceAiStart = now;
+      var aiElapsed = now - danceAiStart;
+      var aiIdx = Math.floor(aiElapsed / DANCE_AI_DURATION) % danceAiGenres.length;
+      var aiGenre = danceAiGenres[aiIdx];
+      var aiPhase = (aiElapsed % DANCE_AI_DURATION) / DANCE_AI_DURATION;
+      var aiFade = aiPhase < 0.1 ? aiPhase / 0.1 : aiPhase > 0.9 ? (1 - aiPhase) / 0.1 : 1;
+      renderDanceFrame(aiGenre, now, energy, aiFade);
+      return;
+    }
+
+    if (mode === 'wave') {
+      ctx.clearRect(0, 0, CW, CH);
+      var waveAmpX = 22 + energy * 28;
+      var fs = calcFontSize(CW, CH);
+      ctx.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      var textW = ctx.measureText(TEXT).width;
+      var leftPad = 8, baseY = CH * 0.5;
+      var gradShift = (now * GRAD_SPEED / 360 * textW * 1.5) % textW;
+      var grad = ctx.createLinearGradient(leftPad - gradShift, 0, leftPad - gradShift + textW * 1.5, 0);
+      GRAD_STOPS.forEach(function(s){ grad.addColorStop(s[0], s[1]); });
+      var curX = leftPad;
+      TEXT.split('').forEach(function(ch){
+        var chW = ctx.measureText(ch).width;
+        var ratio = (curX + chW / 2 - leftPad) / textW;
+        var dy = Math.sin(ratio * Math.PI * 2.5 - now * 2.8) * waveAmpX * 0.7
+               + Math.sin(ratio * Math.PI * 4.5 + now * 1.9) * waveAmpX * 0.3;
+        ctx.save();
+        ctx.shadowColor = 'rgba(168,85,247,0.55)'; ctx.shadowBlur = 16;
+        ctx.fillStyle = grad;
+        ctx.fillText(ch, curX, baseY + dy);
+        ctx.restore();
+        curX += chW;
+      });
+      return;
+    }
+
+    if (!particles.length) return;
+    updateCycle(now, mode);
+    var isResting = cycleSubPhase === 'rest';
+    var restT = isResting ? Math.min(1, (now - cycleStart) / REST_SEC) : 0;
+    var returnProgress = Math.min(1, restT / 0.4);
+    var spring = isResting ? REFORM_SPEED + returnProgress * REFORM_SPEED * 2 : REFORM_SPEED;
+
+    ctx.clearRect(0, 0, CW, CH);
+
+    if (mode === 'explode') {
+      if (isResting) {
+        particles.forEach(function(p){
+          p.vx = p.vx * 0.80 + (p.tx - p.x) * spring;
+          p.vy = p.vy * 0.80 + (p.ty - p.y) * spring;
+          p.x += p.vx; p.y += p.vy;
+        });
+      } else if (exploding) {
+        explodeTimer++;
+        particles.forEach(function(p){
+          p.x += p.ex * (1 + energy * 2.5); p.y += p.ey * (1 + energy * 2.5);
+          p.ex *= 0.91; p.ey *= 0.91; p.ey += 0.28;
+        });
+        if (explodeTimer > EXPLODE_HOLD) exploding = false;
+      } else {
+        particles.forEach(function(p){
+          p.vx = p.vx * 0.80 + (p.tx - p.x) * REFORM_SPEED;
+          p.vy = p.vy * 0.80 + (p.ty - p.y) * REFORM_SPEED;
+          p.x += p.vx; p.y += p.vy;
+        });
+      }
+    } else if (mode === 'orbit') {
+      var orbitAmp = 1 + energy * 1.5, orbitSpeed = 1 + energy * 0.8;
+      particles.forEach(function(p){
+        var tx = p.tx, ty = p.ty;
+        if (!isResting) {
+          tx += 20 * orbitAmp * Math.cos(now * 1.6 * orbitSpeed + p.phase);
+          ty += 14 * orbitAmp * Math.sin(now * 1.6 * orbitSpeed + p.phaseY);
+        }
+        var sp = isResting ? spring : 0.08, damp = 0.78;
+        p.vx = p.vx * damp + (tx - p.x) * sp;
+        p.vy = p.vy * damp + (ty - p.y) * sp;
+        p.x += p.vx; p.y += p.vy;
+      });
+    }
+
+    particles.forEach(function(p){
+      var col = particleColor(p, now, CW);
+      ctx.shadowColor = col; ctx.shadowBlur = isResting ? 3 : 7;
+      ctx.fillStyle = col; ctx.globalAlpha = 0.93;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+    });
+  }
+
+  window.addEventListener('resize', resize);
+  setTimeout(function(){ resize(); animate(); }, 80);
+
+  window.acSetLogoMode = function(mode){
+    logoMode = mode;
+    var btns = document.querySelectorAll('.logo-mode-btn');
+    for (var i = 0; i < btns.length; i++) { btns[i].className = 'logo-mode-btn' + (btns[i].dataset.mode === mode ? ' active' : ''); }
+    document.getElementById('danceFixedBar').className = mode === 'danceFixed' ? 'is-visible' : '';
+    resetCycle();
+    if (mode === 'explode') triggerExplode();
+  };
+  window.acSetLogoGenre = function(genre){
+    danceFixedGenre = genre;
+    var btns = document.querySelectorAll('.dance-fixed-btn');
+    for (var i = 0; i < btns.length; i++) { btns[i].className = 'dance-fixed-btn' + (btns[i].dataset.genre === genre ? ' active' : ''); }
+  };
+})();
+</script>"#;
 
 /// 無料スマホ壁紙ダウンロードコーナーの実データ(`index.php` 1492〜1524行目、
 /// `curl`で実データ確認済みの実画像URL、`o0499108015778827097.png`等の
@@ -1819,7 +2246,6 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
         .and_then(|s| s.urls.iter().find_map(|u| scraper::extract_yt_id(u)))
         .unwrap_or_else(|| TOP_DEFAULT_BG_VIDEO_ID.to_string());
     let default_series_label_esc = html_escape(&default_series_label);
-    let logo_letters: String = "audiocafe.tokyo".chars().map(|c| format!(r#"<span class="logo-letter">{}</span>"#, html_escape(&c.to_string()))).collect();
 
     let list: String = RANKINGS
         .iter()
@@ -1885,12 +2311,18 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 }})();
 </script>
 <!-- PHP版のcanvasパーティクルロゴ+YouTube音楽連動(`index.php` 5854行目以降、
-     1000行超)の簡略復刻。モード切替ボタン7種+Dance Fixedのジャンル10種は
-     PHP版と同一構成だが、実際のアニメーションはcanvasパーティクル物理演算・
-     音声ビート検出ではなく、文字ごとのCSS `@keyframes`(バウンス・パルス・
-     波打ち・回転等)に簡略化している(2026-07-19、スコープ縮小として正直に
-     開示)。 -->
-<div id="logoWrap" class="mode-scroll" data-genre="kabuki">{logo_letters}</div>
+     1000行超)の移植。文字の描画式(`danceMotionForChar`の10ジャンル分の
+     dx/dy/rot/scale計算式、波モードの二重sin波、爆発/オービットの
+     パーティクル物理)はPHP版のものをそのままJSへ移植し、実際にcanvas上で
+     文字が動く——CSSキーフレームでの簡略化(旧版)をやめた(2026-07-19、
+     ユーザー指摘により再実装)。省略したのはYouTube音量連動(`ytEnergy`、
+     このRust版はYouTube Player APIと接続していないため常に0扱い=PHP版の
+     「無音時のBPM模擬フォールバック」相当の動きになる)と、波モード専用の
+     帆船装飾(`drawSailingShip`、ロゴ本体の動きとは別の付随演出)、Dance AI
+     モードの音量パターン解析(`detectGenreFromEnergy`、実音声エネルギー
+     入力が無いため10ジャンルを一定間隔でローテーションする方式に簡略化)の
+     3点のみ——正直に開示。 -->
+<div id="logoWrap"><canvas id="acLogoCanvas"></canvas></div>
 <div id="logoModeBar">
 <button type="button" class="logo-mode-btn active" data-mode="scroll" onclick="acSetLogoMode('scroll')">🌈 スクロール</button>
 <button type="button" class="logo-mode-btn" data-mode="dance" onclick="acSetLogoMode('dance')">💃 Dance</button>
@@ -1913,22 +2345,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <button type="button" class="dance-fixed-btn" data-genre="ethnic" onclick="acSetLogoGenre('ethnic')">🪘 民族</button>
 <button type="button" class="dance-fixed-btn" data-genre="freestyle" onclick="acSetLogoGenre('freestyle')">✨ フリースタイル</button>
 </div>
-<script>
-(function(){{
-  var wrap = document.getElementById('logoWrap');
-  window.acSetLogoMode = function(mode) {{
-    wrap.className = 'mode-' + mode;
-    var btns = document.querySelectorAll('.logo-mode-btn');
-    for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'logo-mode-btn' + (btns[i].dataset.mode === mode ? ' active' : ''); }}
-    document.getElementById('danceFixedBar').className = mode === 'danceFixed' ? 'is-visible' : '';
-  }};
-  window.acSetLogoGenre = function(genre) {{
-    wrap.setAttribute('data-genre', genre);
-    var btns = document.querySelectorAll('.dance-fixed-btn');
-    for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'dance-fixed-btn' + (btns[i].dataset.genre === genre ? ' active' : ''); }}
-  }};
-}})();
-</script>
+{LOGO_CANVAS_SCRIPT}
 <div class="yt-wp-corner">
 <span class="yt-wp-head">🎁 無料 スマホ壁紙コーナー</span>
 <span class="yt-wp-hint">画像をタップで原寸表示 →「⬇ 保存」または画像長押しで端末に保存できます。</span>
