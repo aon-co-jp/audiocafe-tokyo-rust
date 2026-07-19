@@ -29,6 +29,8 @@ use open_runo_router::hyper_compat::{self, Params};
 use hyper::{Method, StatusCode};
 use serde_json::Value;
 use std::sync::Arc;
+use once_cell::sync::Lazy;
+use serde::Deserialize;
 
 const CACHE_BASE: &str = "https://audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
@@ -1247,65 +1249,51 @@ fn healthz_response() -> hyper_compat::Response {
         .expect("building a response from a fixed set of valid headers cannot fail")
 }
 
-/// PHP版トップページ(`https://audiocafe.tokyo/`本体、`curl`で実データ確認済み)の
-/// 実際の見た目・CSS(`.header`/`.subtitle`/`.note`/`.card`/`.card-flag`/
-/// `.card-code`/`.card-native`/`.card-country`/`.grid`/`.footer`、
-/// `--bg:#000`・`--cyan:#22d3ee`のダークテーマ)を`.top-page`配下にスコープして移植。
-/// (g, native表記, カードラベル, 地域, flagcdn国コード)の5要素タプル。
-/// 実ページの`var L=[...]`(147件)から、各カードの長文バイオグラフィー
-/// (`c`/`d`フィールド、政治・宗教的な主張を含む個人エッセイ)と`cardLinks`は
-/// 意図的に除外し(下記コメント参照)、カード表示に使う安全な短いフィールド
-/// (フラグ・現地語表記・国名ラベル・地域・英語名)のみを抜粋して移植した。
-type TopLangEntry = (&'static str, &'static str, &'static str, &'static str, &'static str);
-const TOP_LANGUAGES: &[TopLangEntry] = &[
-    // (flagcdn国コード, 現地語表記(t), カードラベル(a), 地域(r), 英語名(n))
-    ("jp", "日本語", "JAPAN", "Asia", "Japanese"),
-    ("us", "English", "USA", "Americas", "English"),
-    ("cn", "简体中文", "CHINA", "Asia", "Chinese (Simplified)"),
-    ("tw", "繁體中文", "TAIWAN", "Asia", "Chinese (Traditional)"),
-    ("kr", "한국어", "KOREA", "Asia", "Korean"),
-    ("in", "हिन्दी", "INDIA", "Asia", "Hindi"),
-    ("th", "ไทย", "THAI", "Asia", "Thai"),
-    ("vn", "Tiếng Việt", "VIET", "Asia", "Vietnamese"),
-    ("id", "Bahasa Indonesia", "INDO", "Asia", "Indonesian"),
-    ("my", "Bahasa Melayu", "MALAY", "Asia", "Malay"),
-    ("ph", "Filipino", "PHIL", "Asia", "Filipino"),
-    ("kh", "ខ្មែរ", "KHMER", "Asia", "Khmer"),
-    ("mm", "မြန်မာ", "MYANM", "Asia", "Myanmar (Burmese)"),
-    ("bd", "বাংলা", "BANGLA", "Asia", "Bengali"),
-    ("np", "नेपाली", "NEPAL", "Asia", "Nepali"),
-    ("lk", "සිංහල", "LANKA", "Asia", "Sinhala"),
-    ("sa", "العربية", "ARAB", "Middle East", "Arabic"),
-    ("ir", "فارسی", "IRAN", "Middle East", "Persian"),
-    ("iq", "العراقية", "IRAQ", "Middle East", "Arabic (Iraq)"),
-    ("eg", "العربية المصرية", "EGYPT", "Middle East", "Arabic (Egypt)"),
-    ("ru", "Русский", "RUSSIA", "Europe", "Russian"),
-    ("ua", "Українська", "UKR", "Europe", "Ukrainian"),
-    ("de", "Deutsch", "GER", "Europe", "German"),
-    ("fr", "Français", "FRANCE", "Europe", "French"),
-    ("it", "Italiano", "ITALY", "Europe", "Italian"),
-    ("es", "Español", "SPAIN", "Europe", "Spanish"),
-    ("pt", "Português", "PORT", "Europe", "Portuguese"),
-    ("nl", "Nederlands", "NLD", "Europe", "Dutch"),
-    ("pl", "Polski", "POLAND", "Europe", "Polish"),
-    ("se", "Svenska", "SWEDEN", "Europe", "Swedish"),
-    ("gr", "Ελληνικά", "GREECE", "Europe", "Greek"),
-    ("ch", "Schweiz", "SWITZERLAND", "Europe", "German (Switzerland)"),
-    ("gb", "English (UK)", "UK", "Europe", "English (UK)"),
-    ("ca", "Canada", "CANADA", "Americas", "English (Canada)"),
-    ("mx", "Español (México)", "MEXICO", "Americas", "Spanish (Mexico)"),
-    ("br", "Português (Brasil)", "BRAZIL", "Americas", "Portuguese (Brazil)"),
-    ("tz", "Kiswahili", "SWAHL", "Africa", "Swahili"),
-    ("et", "አማርኛ", "ETHIO", "Africa", "Amharic"),
-    ("ng", "Hausa", "HAUSA", "Africa", "Hausa"),
-    ("za", "isiZulu", "ZULU", "Africa", "Zulu"),
-    ("za", "Afrikaans", "SAFR", "Africa", "Afrikaans"),
-];
+/// PHP版トップページの実データ本体。実ページの`var L=[...]`(147件、
+/// `index.php` 1609〜1757行目)を、Node.js(`new Function('return ('+src+')')`)
+/// で一度JSとして評価して`JSON.stringify`し、`assets/top_languages.json`
+/// (147件全件、フィールドの取捨選択なし)として保存したものを`include_str!`で
+/// 埋め込み、起動時に一度だけデシリアライズする(2026-07-19、完全版へ拡張)。
+/// フィールド対応: `g`=Google翻訳用言語コード、`n`=英語名、`t`=現地語表記、
+/// `a`=カードラベル(国名等)、`r`=地域、`c`=英語エッセイ本文(全147件に存在、
+/// 短い1行のみのカードもあれば政治・宗教・地政学的な主張を含む長文のカードも
+/// ある)、`d`=日本語エッセイ本文(10件のみ存在)、`p`=正式国名(1件のみ存在)、
+/// `cardLinks`=カード別関連リンク(8件のみ存在)、`fc`=flagcdn国コード。
+#[derive(Debug, Clone, Deserialize)]
+struct CardLink {
+    href: String,
+    label: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct LangCard {
+    g: String,
+    n: String,
+    t: String,
+    a: String,
+    r: String,
+    c: String,
+    #[serde(default)]
+    d: Option<String>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    p: Option<String>,
+    #[serde(default, rename = "cardLinks")]
+    card_links: Option<Vec<CardLink>>,
+    fc: String,
+}
+
+static TOP_LANGUAGES: Lazy<Vec<LangCard>> = Lazy::new(|| {
+    serde_json::from_str::<Vec<LangCard>>(include_str!("../assets/top_languages.json"))
+        .expect("assets/top_languages.json must be valid JSON matching LangCard (147 entries)")
+});
 
 /// PHP版トップページの実際のCSS(`<style>`ブロック冒頭、`:root`変数・
 /// `.header`/`.card`系クラス)を`.top-page`配下にスコープして移植。
 /// 元CSSはbody直下の裸セレクタだったため、既存の他ページ(`ARUARU_STYLE`等)と
-/// 同じ手法で`.top-page`プレフィックスを付与した。
+/// 同じ手法で`.top-page`プレフィックスを付与した。2026-07-19、完全版への
+/// 拡張に伴い、エッセイ本文・カードリンク・言語別導線リンク・検索フォーム・
+/// 地域ピル・YouTube背景プレイヤー・壁紙コーナー用のクラスを追加した。
 const TOP_STYLE: &str = r#"<style>
 .top-page{--bg:#000;--surface:rgba(15,23,42,.52);--border:rgba(255,255,255,.06);--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--cyan:#22d3ee;--cyan-glow:rgba(34,211,238,.15);margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
 .top-page a{color:#7dd3fc}
@@ -1315,54 +1303,216 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .note{margin-top:.5rem;font-size:.8rem;color:var(--text-muted);max-width:36rem;margin-left:auto;margin-right:auto;line-height:1.6}
 .top-page .main{max-width:76rem;margin:0 auto;padding:1rem 1rem 3rem;width:100%}
 .top-page .region-title{font-size:1.4rem;font-weight:700;color:#fff;margin:1.6rem 0 .8rem;letter-spacing:.03em}
-.top-page .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,158px),1fr));gap:.65rem}
+.top-page .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:.65rem}
 .top-page .card{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:1rem .55rem;border-radius:.75rem;border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(6px);text-align:center}
 .top-page .card-flag{width:60px;height:40px;object-fit:cover;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
 .top-page .card-code{display:block;font-size:.95rem;font-weight:800;letter-spacing:.08em;color:var(--cyan)}
 .top-page .card-native{display:block;font-size:.95rem;font-weight:600;color:rgba(255,255,255,.9)}
 .top-page .card-country{display:block;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.75)}
+.top-page .card-essay{text-align:left;font-size:.78rem;color:var(--text-dim);max-height:9.5rem;overflow-y:auto;margin-top:.3rem;line-height:1.55}
+.top-page .card-essay p{margin:0 0 .5rem}
+.top-page .card-essay-d{border-top:1px dashed var(--border);margin-top:.4rem;padding-top:.4rem}
+.top-page .card-links{list-style:none;padding:0;margin:.4rem 0 0;text-align:left;font-size:.72rem;line-height:1.6}
+.top-page .card-links li{margin-bottom:.15rem}
+.top-page .card-actions{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:.5rem}
+.top-page .card-actions a{font-size:.68rem;padding:.15rem .45rem;border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.08)}
 .top-page .nav-box{background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:1.5rem 0}
 .top-page .nav-box h2{color:#7dd3fc;font-size:1.05rem;margin-bottom:.6rem}
 .top-page .nav-box ul{list-style:none;padding:0;margin:0;line-height:1.9}
 .top-page .footer{border-top:1px solid rgba(255,255,255,.05);padding:1.5rem 1rem;text-align:center;font-size:.75rem;color:var(--text-muted);line-height:1.7}
+.top-page .search-wrap{display:flex;justify-content:center;gap:.4rem;margin:1rem auto 0;max-width:26rem}
+.top-page .search-wrap input{flex:1;padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text)}
+.top-page .search-wrap button{padding:.5rem 1rem;border-radius:999px;border:1px solid var(--cyan);background:rgba(34,211,238,.12);color:var(--cyan);font-weight:700}
+.top-page .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:.7rem}
+.top-page .pill{padding:.3rem .8rem;border-radius:999px;border:1px solid var(--border);font-size:.78rem;background:rgba(255,255,255,.04)}
+.top-page .pill.is-active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
+.top-page .yt-bg-player{max-width:640px;margin:1rem auto;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
+.top-page .yt-wp-head{display:block;font-weight:800;color:#fde68a}
+.top-page .yt-wp-hint{display:block;font-size:.75rem;color:var(--text-muted);margin:.2rem 0 .6rem}
+.top-page .yt-wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem}
+.top-page .yt-wp-item{text-align:center;font-size:.72rem}
+.top-page .yt-wp-thumb{width:100%;border-radius:8px}
+.top-page .yt-wp-name{display:block;margin:.25rem 0}
+.top-page .yt-wp-dl{display:inline-block;margin-top:.15rem;color:var(--cyan)}
 </style>"#;
 
-/// PHP版トップページ(`index.php`、8150行)の実際の内容を移植。
+/// 無料スマホ壁紙ダウンロードコーナーの実データ(`index.php` 1492〜1524行目、
+/// `curl`で実データ確認済みの実画像URL、`o0499108015778827097.png`等の
+/// Ameba(stat.ameba.jp)ホスティング画像4件)。画像・ダウンロードリンクとも
+/// PHP版と同一の実URLをそのまま使用する(プレースホルダではない)。
+const TOP_WALLPAPERS: &[(&str, &str, &str)] = &[
+    // (画像URL, alt/表示名, download属性のファイル名)
+    (
+        "https://stat.ameba.jp/user_images/20260505/16/www-aon/87/8b/p/o0499108015778827097.png",
+        "NTT IOWN 井上飛鳥さん 黒服",
+        "ino-asuka-black.png",
+    ),
+    (
+        "https://stat.ameba.jp/user_images/20260505/16/www-aon/1e/87/j/o0499108015778824305.jpg",
+        "NTT IOWN 井上飛鳥さん 白服",
+        "ino-asuka-white.jpg",
+    ),
+    (
+        "https://stat.ameba.jp/user_images/20260505/16/www-aon/c2/90/p/o0499108015778820256.png",
+        "大阪の神様ビリケン",
+        "osaka-billiken.png",
+    ),
+    (
+        "https://stat.ameba.jp/user_images/20260505/18/www-aon/16/38/p/o0498108015778869116.png",
+        "大型スピーカー紹介のTONOさん",
+        "tono-speaker.png",
+    ),
+];
+
+/// PHP版がYouTube背景プレイヤーの初期状態(未クリック時のフォールバック)として
+/// 実際に読み込む動画ID(`index.php` 3272行目 `DEFAULT_BG_VIDEO_ID='mSDVnO5gFYk'`、
+/// `instantiateYtBgPlayer(DEFAULT_BG_VIDEO_ID, 0)`の呼び出し元複数箇所で実際に
+/// 使用されている)。本ポートではPHP側のような検索駆動の動画切り替え
+/// (`fetchAndCollect`等、クライアント側の巨大なJSロジック)は移植せず
+/// (クライアントJSを持たないこのRustサイトのアーキテクチャ方針)、実際に
+/// ページ初期表示で使われる本物の埋め込みIDをそのまま`<iframe>`で埋め込む。
+const TOP_DEFAULT_BG_VIDEO_ID: &str = "mSDVnO5gFYk";
+
+/// 言語コード(`g`フィールド)から、PHP版`makeAcNavAudiocafeRoot()`
+/// (`index.php` 1786〜1789行目)と同じ式でGoogle翻訳プロキシURLを組み立てる。
+/// 日本語のみ翻訳なしの素のURL。
+fn google_translate_proxy_url(target_url: &str, gc: &str) -> String {
+    if gc == "ja" {
+        target_url.to_string()
+    } else {
+        format!(
+            "https://translate.google.com/translate?sl=ja&tl={}&u={}",
+            percent_encode(gc),
+            percent_encode(target_url)
+        )
+    }
+}
+
+/// PHP版`makeAcNavGoogleTransUrl()`(`index.php` 1835〜1844行目)と同じ
+/// tld割り当て表・パラメータ構成でGoogle翻訳サイト自体のURL(テキスト翻訳UI)を
+/// 組み立てる(「🌐 Google翻訳サイトへ移動」ボタン相当)。
+fn google_translate_site_url(gc: &str, page_url: &str) -> String {
+    let (tl, hl) = if gc == "ja" { ("en", "ja") } else { (gc, gc) };
+    let tld = match hl {
+        "zh-CN" => "com.cn",
+        "zh-TW" => "com.tw",
+        "ru" => "ru",
+        "de" => "de",
+        "fr" => "fr",
+        "it" => "it",
+        "es" => "es",
+        "pt" => "com.br",
+        "ko" => "co.kr",
+        "ja" => "co.jp",
+        _ => "com",
+    };
+    format!(
+        "https://translate.google.{}/?hl={}&sl=ja&tl={}&text={}&op=translate",
+        tld,
+        percent_encode(hl),
+        percent_encode(tl),
+        percent_encode(page_url)
+    )
+}
+
+/// エッセイ本文(`c`/`d`フィールド)を段落表示用HTMLに変換する。PHP版JSでは
+/// プレーンテキストのまま`textContent`風に描画していたが、Rust版はSSRのため
+/// 空行(`\n\n`)を`<p>`区切り、単独改行(`\n`)を`<br>`に変換して読みやすくする
+/// (内容自体は無加工、HTMLエスケープのみ実施)。
+fn essay_to_html(text: &str) -> String {
+    text.split("\n\n")
+        .map(|para| format!("<p>{}</p>", html_escape(para).replace('\n', "<br>")))
+        .collect::<String>()
+}
+
+/// 言語カード1件を描画する。実際のPHP版が持つ全フィールド
+/// (国旗・現地語表記・カードラベル・国名・地域に加え、`c`/`d`の全文エッセイ・
+/// `cardLinks`・モーダル相当の遷移先リンク一式)をここで復元する
+/// (2026-07-19、40件抜粋+短いフィールドのみ、という前回のスコープ縮小を解消)。
+fn render_lang_card(card: &LangCard) -> String {
+    let mut essay = format!(r#"<div class="card-essay">{}"#, essay_to_html(&card.c));
+    if let Some(d) = &card.d {
+        essay.push_str(&format!(r#"<div class="card-essay-d">{}</div>"#, essay_to_html(d)));
+    }
+    essay.push_str("</div>");
+
+    let links = card
+        .card_links
+        .as_ref()
+        .map(|links| {
+            let items: String = links
+                .iter()
+                .map(|l| format!(r#"<li><a href="{}" target="_blank" rel="noopener noreferrer">{}</a></li>"#, html_escape(&l.href), html_escape(&l.label)))
+                .collect();
+            format!(r#"<ul class="card-links">{items}</ul>"#)
+        })
+        .unwrap_or_default();
+
+    // PHP版の「言語カード選択後の遷移先を尋ねるモーダル」(`#acNavChoiceModal`、
+    // `index.php` 1578〜1598行目)が提示する実際の遷移先(audiocafe.tokyo本体/
+    // /aruaru/aruaru-lady/rakuten-mobile/Google翻訳サイト/aruaru.tokyo)を、
+    // モーダルではなく直リンク行として復元する(このRustサイトはクライアント
+    // 側JSを持たないアーキテクチャのため、(b)のプレーンHTML化を採用——
+    // ユーザーはモーダルを経由せず1クリックで同じ行き先へ実際に到達できる)。
+    let gc = &card.g;
+    let actions = format!(
+        r#"<div class="card-actions">
+<a href="{ac}" target="_blank" rel="noopener noreferrer">audiocafe.tokyo</a>
+<a href="/aruaru">/aruaru</a>
+<a href="/aruaru-lady">/aruaru-lady</a>
+<a href="/rakuten-mobile">/rakuten-mobile</a>
+<a href="{aruaru_tokyo}" target="_blank" rel="noopener noreferrer">aruaru.tokyo</a>
+<a href="{gt}" target="_blank" rel="noopener noreferrer">🌐 Google Translate</a>
+</div>"#,
+        ac = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/", gc)),
+        aruaru_tokyo = html_escape(ARUARU_TOKYO_URL),
+        gt = html_escape(&google_translate_site_url(gc, "https://audiocafe.tokyo/")),
+    );
+
+    format!(
+        r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{essay}{links}{actions}</div>"#,
+        fc = html_escape(&card.fc),
+        label = html_escape(&card.a),
+        native = html_escape(&card.t),
+        name = html_escape(&card.n),
+    )
+}
+
+/// PHP版トップページ(`index.php`、8150行)の実際の内容を移植した完全版
+/// (2026-07-19、ユーザー指示により前回の40件抜粋+装飾機能除外という
+/// スコープ縮小を解消し、フル移植へ拡張)。
 ///
 /// **実際の内容(`curl https://audiocafe.tokyo/`で実データ確認済み)**:
 /// `<title>AUDIOCAFE | World — Select Your Language</title>`を持つ、
 /// 「147言語のうち好きな言語カードを選んでGoogle翻訳版へ進む」ための
 /// 言語選択ランディングページ(ダークテーマ、`#000`背景・`#22d3ee`シアン
-/// アクセント)。実際の構成は (1) ヘッダー(サブタイトル
-/// "Please select your native language."・日本語の注記・検索ボックス・
-/// 地域絞り込みピル)、(2) 147件の言語カードグリッド(`var L=[...]`という
-/// JS配列をクライアント側でDOM生成、各カードは国旗画像・現地語表記・
-/// 英語名・国名に加え、政治/宗教的な主張を含む長文バイオグラフィー
-/// エッセイと関連リンク一式を持つ)、(3) YouTube背景プレイヤー(全画面
-/// 動画+音量/検索パネルUI、無料スマホ壁紙ダウンロードコーナーを内包)、
-/// (4) 言語カード選択後の遷移先を尋ねるモーダル(audiocafe.tokyo本体/
-/// /aruaru/aruaru-lady/rakuten-mobile/Google翻訳サイトへの導線)、
-/// (5) フッター(Copyright表記)。**旧`top_body()`(このRust版が独自に
-/// 発明した`/ranking/:slug`・`/page/:slug`への内部ナビ一覧)とは全く別の
-/// ページであり、これまでの想定(「build_lists()の埋め込み結果を表示する
-/// ページ」)は誤りだったことをここで訂正する——実際には`build_lists()`
-/// (シードURLスクレイピング、既に`/discover`として移植済み)とは無関係の、
-/// 完全に独立した言語カードスイッチャーであることが実データ確認で判明した。
+/// アクセント)。実際の構成は (1) ヘッダー(サブタイトル・日本語の注記・
+/// 検索ボックス・地域絞り込みピル)、(2) 147件全件の言語カードグリッド
+/// (国旗画像・現地語表記・英語名・国名・全文エッセイ・`cardLinks`・
+/// 遷移先リンク一式)、(3) YouTube背景プレイヤー・無料スマホ壁紙
+/// ダウンロードコーナー、(4) フッター(Copyright表記)。
 ///
-/// **今回のスコープ外(正直に開示)**: 3ページ移植時の precedent(言語カード
-/// 切替・YouTube背景プレイヤー・モーダルナビ等の装飾JSは対象外)がこの
-/// トップページにもそのまま当てはまる——このページの視覚的な中身の大半
-/// (147言語カード本体・YouTube背景・モーダル)は、まさにその「言語カード
-/// 切替」「モーダルナビ」自体であるため、装飾JS/データとして対象外と判断した。
-/// 147件のカードデータ(`var L`)は政治・宗教・地政学的な主張を含む長大な
-/// 個人エッセイ(`c`/`d`フィールド、各データケースあたり最大数千文字)を
-/// 持つため、それらの本文は移植していない——`TOP_LANGUAGES`には各カードの
-/// 安全な短いフィールド(国旗・現地語表記・カードラベル・地域・英語名)のみを
-/// 40件抜粋し、視覚的な構造(グリッド・カードクラス名・配色)の再現に留めた。
-/// 無料スマホ壁紙ダウンロードコーナー・YouTube背景プレイヤー・モーダルの
-/// 遷移選択肢は実データ確認済みだが、いずれも装飾JS/UI演出であり対象外。
-fn render_top_body() -> String {
-    let region_order = ["Asia", "Middle East", "Europe", "Americas", "Africa"];
+/// **今回のスコープ内(完了)**: 147件全カード(前回40件から拡張)、各カードの
+/// `c`(英語)/`d`(日本語、10件)の全文エッセイ本文(政治・宗教・地政学的な
+/// 主張を含め、実際に公開済みのPHP版コンテンツをそのまま複製)、`cardLinks`
+/// (8件のカードに存在、実際の`<a href>`として復元)、YouTube背景プレイヤー
+/// (実際に使われるデフォルト動画ID`mSDVnO5gFYk`を`<iframe>`埋め込み)、
+/// 無料スマホ壁紙コーナー(実画像4件、実ダウンロードリンク)、検索/地域
+/// フィルタ(`?q=`/`?region=`のクエリパラメータによるサーバーサイド絞り込み、
+/// クライアントJSを持たないこのサイトのアーキテクチャに合わせた実装)。
+///
+/// **今回のスコープ外(正直に開示)**: (1) PHP版の「クリックすると遷移先を
+/// 尋ねるモーダル」(`#acNavChoiceModal`)自体はJSモーダルとして再現せず、
+/// 各カードに直リンク行(`.card-actions`)として展開した(モーダルを経由
+/// しないだけで、到達できる行き先自体はモーダルの選択肢と同一)。
+/// (2) YouTube背景プレイヤーの検索駆動での動画切り替え(`fetchAndCollect`
+/// 等、数千行のクライアントJS)は移植せず、初期表示の実際の動画のみ埋め込み。
+/// (3) 壁紙コーナーの「タップで原寸表示」インタラクションはブラウザ標準の
+/// 画像リンク遷移で代替(画像自体・ダウンロードリンクは実物)。
+fn render_top_body(query: &std::collections::HashMap<String, String>) -> String {
+    // Pacific地域を含む6地域(前回は太平洋諸国を含む未検証の5地域のみだった)。
+    let region_order = ["Asia", "Middle East", "Europe", "Americas", "Africa", "Pacific"];
     let region_label = |r: &str| -> &'static str {
         match r {
             "Asia" => "アジア",
@@ -1370,33 +1520,85 @@ fn render_top_body() -> String {
             "Europe" => "ヨーロッパ",
             "Americas" => "南北アメリカ",
             "Africa" => "アフリカ",
+            "Pacific" => "太平洋",
             _ => "その他",
         }
     };
 
+    let q = query.get("q").map(|s| s.to_lowercase()).unwrap_or_default();
+    let region_filter = query.get("region").filter(|s| !s.is_empty());
+
+    let matches = |card: &LangCard| -> bool {
+        if let Some(rf) = region_filter {
+            if card.r != *rf {
+                return false;
+            }
+        }
+        if q.is_empty() {
+            return true;
+        }
+        card.n.to_lowercase().contains(&q) || card.t.to_lowercase().contains(&q) || card.a.to_lowercase().contains(&q)
+    };
+
     let mut sections = String::new();
+    let mut shown = 0usize;
     for region in region_order {
-        let cards: String = TOP_LANGUAGES
-            .iter()
-            .filter(|(_, _, _, r, _)| *r == region)
-            .map(|(fc, native, label, _, name)| {
-                format!(
-                    r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span></div>"#,
-                    fc = html_escape(fc),
-                    label = html_escape(label),
-                    native = html_escape(native),
-                    name = html_escape(name),
-                )
-            })
-            .collect();
+        let cards: String = TOP_LANGUAGES.iter().filter(|c| c.r == region && matches(c)).map(render_lang_card).collect();
         if cards.is_empty() {
             continue;
         }
+        shown += TOP_LANGUAGES.iter().filter(|c| c.r == region && matches(c)).count();
         sections.push_str(&format!(
             r#"<section class="region-section"><h2 class="region-title">{}</h2><div class="grid">{cards}</div></section>"#,
             region_label(region)
         ));
     }
+    if shown == 0 {
+        sections = r#"<p class="note">条件に一致する言語カードが見つかりません。</p>"#.to_string();
+    }
+
+    // 地域絞り込みピル(PHP版`#pills`相当、JSでのDOM生成をサーバーサイドの
+    // クエリパラメータリンクへ置き換え——クリックのみで動作し、JS不要)。
+    let mut pills = format!(
+        r#"<a class="pill{}" href="/{}">All ({})</a>"#,
+        if region_filter.is_none() { " is-active" } else { "" },
+        if q.is_empty() { String::new() } else { format!("?q={}", percent_encode(query.get("q").unwrap())) },
+        TOP_LANGUAGES.len(),
+    );
+    for region in region_order {
+        let count = TOP_LANGUAGES.iter().filter(|c| c.r == region).count();
+        if count == 0 {
+            continue;
+        }
+        let is_active = region_filter.map(|r| r == region).unwrap_or(false);
+        let qs = if q.is_empty() {
+            format!("?region={}", percent_encode(region))
+        } else {
+            format!("?region={}&q={}", percent_encode(region), percent_encode(query.get("q").unwrap()))
+        };
+        pills.push_str(&format!(
+            r#"<a class="pill{}" href="/{qs}">{} ({count})</a>"#,
+            if is_active { " is-active" } else { "" },
+            region_label(region),
+        ));
+    }
+
+    let q_value = query.get("q").map(|s| html_escape(s)).unwrap_or_default();
+    let region_hidden = region_filter
+        .map(|r| format!(r#"<input type="hidden" name="region" value="{}">"#, html_escape(r)))
+        .unwrap_or_default();
+
+    let wallpapers: String = TOP_WALLPAPERS
+        .iter()
+        .map(|(url, name, filename)| {
+            format!(
+                r#"<div class="yt-wp-item"><a href="{url}" target="_blank" rel="noopener noreferrer"><img class="yt-wp-thumb" loading="lazy" src="{url}?caw=200" alt="{name} スマホ壁紙"></a><span class="yt-wp-name">{name}</span><a class="yt-wp-dl" href="{url}" download="{filename}" target="_blank" rel="noopener noreferrer">⬇ 保存</a></div>"#,
+                url = html_escape(url),
+                name = html_escape(name),
+                filename = html_escape(filename),
+            )
+        })
+        .collect();
 
     let list: String = RANKINGS
         .iter()
@@ -1414,6 +1616,18 @@ fn render_top_body() -> String {
 <span class="logo">audiocafe.tokyo</span>
 <p class="subtitle">Please select your native language.</p>
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
+<div class="yt-bg-player"><iframe width="100%" height="220" src="https://www.youtube.com/embed/{TOP_DEFAULT_BG_VIDEO_ID}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>
+<div class="yt-wp-corner">
+<span class="yt-wp-head">🎁 無料 スマホ壁紙コーナー</span>
+<span class="yt-wp-hint">画像をタップで原寸表示 →「⬇ 保存」または画像長押しで端末に保存できます。</span>
+<div class="yt-wp-grid">{wallpapers}</div>
+</div>
+<form class="search-wrap" method="get" action="/">
+<input type="text" name="q" value="{q_value}" placeholder="Search languages...">
+{region_hidden}
+<button type="submit">Search</button>
+</form>
+<div class="pills">{pills}</div>
 </div>
 <div class="main">
 {sections}
@@ -1609,9 +1823,10 @@ async fn main() -> Result<(), std::io::Error> {
         .route(
             Method::GET,
             "/",
-            Arc::new(|_req, _params| {
+            Arc::new(|req, _params| {
                 Box::pin(async move {
-                    hyper_compat::html_response(StatusCode::OK, page_shell("AUDIOCAFE | World — Select Your Language", &render_top_body()))
+                    let query = hyper_compat::query_params(&req);
+                    hyper_compat::html_response(StatusCode::OK, page_shell("AUDIOCAFE | World — Select Your Language", &render_top_body(&query)))
                 })
             }),
         )
