@@ -147,6 +147,49 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19 本番カットオーバー前検証: aruaru.tokyoが依存する`/aruaru/`・
+  `/aruaru-lady/`・`/rakuten-mobile/`パスの404を発見・修正、ただし
+  ページ内容自体の乖離が大きく本カットオーバーは見送り**: ユーザーから
+  「audiocafe.tokyoのPHP→Rust本番切り替え」の指示を受け、切り替え前に
+  実際の依存関係を検証した。`aruaru.tokyo`側のnginx設定
+  (`/etc/nginx/conf.d/aruaru.tokyo.conf`)を確認したところ、
+  `location /aruaru/`・`/aruaru-lady/`・`/rakuten-mobile/`が
+  `Host: audiocafe.tokyo`指定でport 80(PHP側の`location /`)へ直接
+  プロキシしていることを確認。一方、Rust側(`src/main.rs`)は
+  `/page/:slug`という別名パスでしか同じ内容を提供しておらず、
+  `/aruaru/`等のリテラルパス自体は未登録だった——もし`location /`を
+  Rustへ丸ごと切り替えていたら、aruaru.tokyoの該当セクションが
+  実際に404になっていたはずの、確認済みの実害バグ。
+  - **修正**: `composite_page`のロジックを`composite_page_by_slug(slug:
+    &str)`に切り出し、`/aruaru`・`/aruaru-lady`・`/rakuten-mobile`の
+    3つのリテラルパスルートを追加(`hyper_compat::Router`の
+    パス正規化により前後スラッシュの有無を問わず一致することを
+    実バイナリで確認: `/aruaru`・`/aruaru/`ともに200)。
+  - **検証**: `cargo build`/`cargo test`(14件全green)に加え、実バイナリを
+    起動し`curl`で3ルートすべて200・`<h1>`/`<h2>`を含む正しい構造で
+    あることを確認。
+  - **重大な発見(カットオーバーを見送った理由)**: 404は解消したが、
+    実際にPHP版とRust版のページ内容を突き合わせたところ、
+    **単なる見た目の違いではなく、ページの目的・構成自体が別物**
+    だったことが判明。例: PHP `/aruaru/`の実際の`<h1>`は
+    「楽天モバイル 最新情報」で、doda求人ピックアップ・学習サービス
+    TOP50等の装飾済み独自レイアウトを持つのに対し、Rust `/aruaru`の
+    `<h1>`は「aruaru(IT・建築系求人 総合ページ)」で、キャバクラ求人
+    ランキング等、全く異なるセクション構成だった。この乖離は
+    「HTML構造・デザインは未再現、機能等価の最小限HTMLのみ」という
+    既存の既知の制約(本ファイル冒頭のCLAUDE.md参照)の範囲内では
+    あるが、実際に突き合わせて初めて「見た目が違う」ではなく
+    「別のページが表示される」レベルの差だと確認できた。
+  - **結論**: 404を防ぐ今回の修正はcommit・push済みだが、この内容差分が
+    解消されない限り`location /`の本番カットオーバーは推奨しない
+    (訪問者に全く異なるページが見えてしまう実害があるため)。
+  - 次にすべきこと: (1) `/aruaru/`・`/aruaru-lady/`・`/rakuten-mobile/`の
+    実際のPHP版コンテンツ(doda求人・学習サービスTOP50・装飾済み
+    レイアウト)をRust側に移植し、内容を一致させる、(2) 一致確認後、
+    `location /`丸ごとではなくパス単位での段階的切替を検討する、
+    (3) それ以外の未移植パス(元のPHPトップページ自体の内容等)も
+    同様に突き合わせて確認する。
+
 - **2026-07-18(続きの続きの続き) Poem → RPoem`open-runo-router::hyper_compat`への移行完了
   (エコシステム方針、Poem/Tauriパッケージへの直接依存を断つ)**:
   前セッションが`Cargo.toml`の`poem = "3.1"`を
