@@ -68,10 +68,13 @@ a {{ color: #222; }}
 a:visited {{ color: #222; }}
 nav a {{ margin-right: 1rem; }}
 .nav-php-link {{ font-size: 1.4em; font-weight: 800; }}
+.ac-credit {{ font-size: 0.85rem; }}
 </style>
 </head>
 <body>
 <nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
+<br>
+<p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem（<a href="https://github.com/aon-co-jp/audiocafe-tokyo-rust" target="_blank" rel="noopener noreferrer">GitHub</a>）へ日本語で命令して、移植が成功致しました。</p>
 {body}
 </body>
 </html>"#
@@ -1355,6 +1358,8 @@ const TOP_STYLE: &str = r#"<style>
 nav{color:#fff}
 nav a{color:#7dd3fc}
 .nav-php-link{color:#fbbf24 !important}
+.ac-credit{color:#fff}
+.ac-credit a{color:#7dd3fc}
 .top-page{--bg:#000;--surface:rgba(15,23,42,.52);--border:rgba(255,255,255,.06);--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--cyan:#22d3ee;--cyan-glow:rgba(34,211,238,.15);margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
 .top-page a{color:#7dd3fc}
 .top-page .header{position:relative;overflow:hidden;text-align:center;padding:2rem 1rem 2rem}
