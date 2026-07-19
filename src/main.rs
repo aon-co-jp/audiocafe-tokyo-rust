@@ -306,8 +306,7 @@ async fn ranking_page(params: Params) -> hyper_compat::Response {
     }
 }
 
-async fn composite_page(params: Params) -> hyper_compat::Response {
-    let slug = params.get("slug").unwrap_or("");
+async fn composite_page_by_slug(slug: &str) -> hyper_compat::Response {
     let Some(page) = COMPOSITE_PAGES.iter().find(|p| p.slug == slug) else {
         return hyper_compat::html_response(
             StatusCode::NOT_FOUND,
@@ -315,6 +314,10 @@ async fn composite_page(params: Params) -> hyper_compat::Response {
         );
     };
     hyper_compat::html_response(StatusCode::OK, page_shell(page.title, &render_composite_body(page).await))
+}
+
+async fn composite_page(params: Params) -> hyper_compat::Response {
+    composite_page_by_slug(params.get("slug").unwrap_or("")).await
 }
 
 /// PHP側の`build_lists($SEED_URLS)`(テキストリンク・動画リンク・写真の
@@ -442,7 +445,16 @@ async fn main() -> Result<(), std::io::Error> {
             Method::GET,
             "/page/:slug",
             Arc::new(|_req, params: Params| Box::pin(async move { composite_page(params).await })),
-        );
+        )
+        // PHP版と完全に同じURLパス(`/aruaru/`・`/aruaru-lady/`・
+        // `/rakuten-mobile/`)への別名ルート。aruaru.tokyo側のnginxが
+        // `Host: audiocafe.tokyo`指定でこれらのパスへ直接プロキシして
+        // いるため(`location /aruaru/`等)、`/page/:slug`だけでは
+        // 本番切り替え時にaruaru.tokyoが壊れる(404)ことが判明したため
+        // 追加した(2026-07-19)。内容は`/page/aruaru`等と同一。
+        .route(Method::GET, "/aruaru", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("aruaru").await })))
+        .route(Method::GET, "/aruaru-lady", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("aruaru-lady").await })))
+        .route(Method::GET, "/rakuten-mobile", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("rakuten-mobile").await })));
 
     tracing::info!("audiocafe-tokyo-server listening on 127.0.0.1:4400");
     let (_, handle) = hyper_compat::serve(router, "127.0.0.1:4400".parse().unwrap()).await?;
