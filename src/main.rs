@@ -1470,8 +1470,15 @@ fn render_lang_card(card: &LangCard) -> String {
         gt = html_escape(&google_translate_site_url(gc, "https://audiocafe.tokyo/")),
     );
 
+    // 遷移先リンク(`actions`)は、エッセイ本文(数百〜千文字を超える
+    // カードもある)より前、国旗・ラベル直後に配置する。エッセイの後に
+    // 置くと、長いカードではスクロールしないと遷移先リンクに到達できず、
+    // 「国旗をクリックしても遷移先を選ぶ画面が出ない」ように見える実バグ
+    // になっていたため(2026-07-19発見・修正)。PHP版のモーダルは
+    // クリック直後に(本文を読まずとも)遷移先を選べる体験だったため、
+    // このRust版でも同じ即時性を静的リンクで再現する。
     format!(
-        r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{essay}{links}{actions}</div>"#,
+        r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
         fc = html_escape(&card.fc),
         label = html_escape(&card.a),
         native = html_escape(&card.t),
