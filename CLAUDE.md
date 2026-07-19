@@ -181,6 +181,33 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-19(さらに続き×6) karu.tokyoリンク追加、再生中タイトル/URLを
+  動画上部+両方クリック可能化、ヘッダー帯を黒背景に統一**: ユーザーから
+  3件の要望に対応。
+  1. **karu.tokyoリンク**: 共有navの`aruaru.tokyo`と`PHP`の間に
+     `https://karu.tokyo/`を追加。
+  2. **再生中タイトル/URL表示**: `#ytNowPlaying`を動画(iframe)の**上**に
+     移動(旧実装は下)、タイトル(`#ytNowTitle`)とURL文字列
+     (`#ytNowUrl`)を別々の`<a>`要素にし、どちらをクリックしても
+     タイムスタンプ無しの本物のYouTube視聴URLへ新規タブ遷移(常に
+     最初から再生)するようにした。`acPlaySeries`/`acNextVideo`双方を
+     `setNowPlaying()`ヘルパーに統合。
+  3. **ヘッダー帯の黒背景統一**: nav+クレジット文を`.site-header-band`
+     (`margin:-2rem calc(-50vw + 50%) 0;width:100vw`のフルブリード
+     手法)でラップし、ページ最上部から黒背景+白/シアン文字になるよう
+     全ページ共通で統一(旧実装はトップページ限定の`TOP_STYLE`にのみ
+     色指定があり、他ページのnavは暗いテキストのままだった問題も
+     ついでに解消——重複していた色指定を`TOP_STYLE`から削除し
+     `page_shell`側の1箇所に集約)。
+  - **検証**: `cargo build`(新規警告なし)・`cargo test`(14件全green)。
+    実バイナリでのcurl確認(`site-header-band`・`karu.tokyo`2箇所・
+    `ytNowUrl`の初期値)、ブラウザでの`javascript_tool`実行で
+    `acPlaySeries(2)`後にタイトル・URL両方が同じ実際のYouTube URLに
+    更新されること、`.site-header-band`の`background-color`が実際に
+    `rgb(0,0,0)`であることを確認(コンソールエラー無し)。本番
+    `https://audiocafe.tokyo/`でも同内容を確認済み(コミット`95046ab`)。
+  - 次にすべきこと: 現時点で明示的な未着手要望は無し。
+
 - **2026-07-19(またさらに続きの続きの続きの続き) PHPリンク下にクレジット文を追加**:
   ユーザー指示で、共有nav(全ページ)のPHPリンク直下に一行空けて
   「Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリや
