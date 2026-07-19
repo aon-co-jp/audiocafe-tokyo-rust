@@ -67,10 +67,11 @@ th {{ background: #f5f5f5; }}
 a {{ color: #222; }}
 a:visited {{ color: #222; }}
 nav a {{ margin-right: 1rem; }}
+.nav-php-link {{ font-size: 1.4em; font-weight: 800; }}
 </style>
 </head>
 <body>
-<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a></nav>
+<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
 {body}
 </body>
 </html>"#
@@ -1351,6 +1352,9 @@ static SEARCH_SERIES: Lazy<Vec<SearchSeries>> = Lazy::new(|| {
 /// 拡張に伴い、エッセイ本文・カードリンク・言語別導線リンク・検索フォーム・
 /// 地域ピル・YouTube背景プレイヤー・壁紙コーナー用のクラスを追加した。
 const TOP_STYLE: &str = r#"<style>
+nav{color:#fff}
+nav a{color:#7dd3fc}
+.nav-php-link{color:#fbbf24 !important}
 .top-page{--bg:#000;--surface:rgba(15,23,42,.52);--border:rgba(255,255,255,.06);--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--cyan:#22d3ee;--cyan-glow:rgba(34,211,238,.15);margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
 .top-page a{color:#7dd3fc}
 .top-page .header{position:relative;overflow:hidden;text-align:center;padding:2rem 1rem 2rem}
@@ -1388,7 +1392,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-bg-player{max-width:640px;margin:1rem auto;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:rgba(15,23,42,.85);padding-bottom:.5rem;position:relative}
 .top-page .yt-panel-close{position:sticky;top:0;z-index:2;width:100%;border:none;background:rgba(15,23,42,.95);color:#22d3ee;font-weight:800;padding:.4rem;cursor:pointer;letter-spacing:.06em}
 .top-page .yt-panel-open{position:fixed;top:1rem;right:1rem;z-index:999;font-weight:800;padding:.5rem 1rem;border-radius:14px;border:2px solid rgba(34,211,238,.8);background:rgba(15,23,42,.95);color:#22d3ee;cursor:pointer;letter-spacing:.06em}
-.top-page .yt-now-playing{padding:.4rem .8rem;font-size:.8rem;color:var(--text-dim)}
+.top-page .yt-now-playing{display:block;padding:.4rem .8rem;font-size:.8rem;color:#fff;text-decoration:underline;cursor:pointer}
 .top-page .yt-series-controls{padding:0 .8rem .4rem}
 .top-page .yt-next-btn{border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.12);color:#22d3ee;padding:.3rem .8rem;font-size:.75rem;cursor:pointer}
 .top-page .yt-series-list{max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:.3rem;padding:.4rem .8rem}
@@ -2381,6 +2385,12 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
         .and_then(|s| s.urls.iter().find_map(|u| scraper::extract_yt_id(u)))
         .unwrap_or_else(|| TOP_DEFAULT_BG_VIDEO_ID.to_string());
     let default_series_label_esc = html_escape(&default_series_label);
+    // PHP版`#ytNowPlaying`(`index.php` 1459〜1463行目、「タップ→動画/
+    // ページを開く」)相当。「今再生中」表示をクリック可能なリンクにし、
+    // 実際のYouTube視聴ページ(`watch?v=`)へ遷移できるようにする
+    // (2026-07-19、ユーザー指摘により復活——旧実装は非クリック可能な
+    // ただのテキストだった)。
+    let default_now_url = html_escape(&format!("https://www.youtube.com/watch?v={default_id}"));
 
     let list: String = RANKINGS
         .iter()
@@ -2402,7 +2412,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <div class="yt-bg-player" id="ytBgPlayer">
 <button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
 <iframe id="ytBgIframe" width="100%" height="220" src="https://www.youtube.com/embed/{default_id}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-<div class="yt-now-playing" id="ytNowPlaying">▶ {default_series_label_esc}</div>
+<a class="yt-now-playing" id="ytNowPlaying" href="{default_now_url}" target="_blank" rel="noopener noreferrer" title="タップ → 本物のYouTubeへ移動">▶ <span id="ytNowTitle">{default_series_label_esc}</span></a>
 <div class="yt-series-controls"><button type="button" class="yt-next-btn" onclick="acNextVideo()">⏭ NEXT</button></div>
 <div class="yt-series-list">{series_buttons}</div>
 </div>
@@ -2414,21 +2424,30 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
   var cur = 0, idx = 0;
   var iframe = document.getElementById('ytBgIframe');
   var nowPlaying = document.getElementById('ytNowPlaying');
+  var nowTitle = document.getElementById('ytNowTitle');
   function embedUrl(id) {{ return 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&rel=0'; }}
+  function watchUrl(id) {{ return 'https://www.youtube.com/watch?v=' + id; }}
   function updateActive() {{
     var btns = document.querySelectorAll('.yt-series-btn');
     for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'yt-series-btn' + (i === cur ? ' is-active' : ''); }}
   }}
+  // PHP版`#ytNowPlaying`(タップ→動画/ページを開く)相当。再生中の
+  // シリーズ名を表示しつつ、リンク先(`href`)を実際に再生している
+  // 動画の本物のYouTube視聴ページ、または再生可能な動画が無い
+  // シリーズの場合はYouTube検索結果ページへ切り替える
+  // (2026-07-19、ユーザー指摘により復活)。
   window.acPlaySeries = function(i) {{
     var s = data[i];
     if (!s) return;
     cur = i; idx = 0;
     if (s.ids.length > 0) {{
       iframe.src = embedUrl(s.ids[0]);
-      nowPlaying.textContent = '▶ ' + s.label;
+      nowTitle.textContent = s.label;
+      nowPlaying.href = watchUrl(s.ids[0]);
     }} else {{
       window.open(s.searchUrl, '_blank', 'noopener');
-      nowPlaying.textContent = '🔍 ' + s.label + '（YouTube検索結果へ）';
+      nowTitle.textContent = s.label + '（YouTube検索結果へ）';
+      nowPlaying.href = s.searchUrl;
     }}
     updateActive();
   }};
@@ -2438,6 +2457,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     if (s.ids.length === 0) {{ window.open(s.searchUrl, '_blank', 'noopener'); return; }}
     idx = (idx + 1) % s.ids.length;
     iframe.src = embedUrl(s.ids[idx]);
+    nowPlaying.href = watchUrl(s.ids[idx]);
   }};
   window.acToggleYtPanel = function(open) {{
     document.getElementById('ytBgPlayer').style.display = open ? '' : 'none';
