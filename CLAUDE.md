@@ -147,6 +147,79 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(続き) `/rakuten-mobile`の内容乖離を解消(汎用JSONダンプ→PHP版の実際のページ内容を専用レンダラーで再現)**:
+  直前のHANDOFF(本セクション次項)で「訪問者に全く異なるページが見えて
+  しまう」実害が判明していた3ページのうち、まず`/rakuten-mobile`
+  (PHP側`F:\open-runo\audiocafe.tokyo\rakuten-mobile\index.php`、917行)
+  に着手した。
+  - **PHP版の実際の内容(`index.php`精読+`curl https://audiocafe.tokyo/
+    rakuten-mobile/`で実データ確認済み)**: 汎用ランキング表ではなく、
+    見出し「📶 楽天モバイル 最新情報」を持つ独立したマーケティング
+    ページ。構成は (1) ヒーロー(バッジ・料金・公式リンク)、
+    (2) カバレッジ3枚(楽天回線エリア99.9%・パートナー回線au
+    5GBまで・注意点)、(3) エリア確認ツールのリンク2つ、
+    (4) Google検索リンク3つ(最新料金・乗り換えキャンペーン・
+    1円スマホ)、(5) カード3枚(国際通話プラン詳細・衛星ブロードバンド
+    通話〈AST SpaceMobile提携〉・プラチナ回線〈700MHz帯〉、
+    いずれも`rakuten-mobile-cache.json`/`rakuten-intl-call-cache.json`/
+    `rakuten-platinum-cache.json`の実データ埋め込み)、(6) 1円スマホ・
+    パケット放題・電話放題の乗り換え訴求リンク一式、(7) cron自動更新の
+    注記、(8) トップ/aruaru/aruaru-lady/aruaru.tokyoへの導線。
+    旧Rust版はこれを完全に無視し、3キャッシュのJSONを
+    「基本プラン」「国際通話」「プラチナバンド・衛星」という汎用見出しの
+    下に`render_value_generic`でキー:値の羅列として出すだけだった
+    (ページの目的・見出し・マーケティング文言が完全に別物)。
+  - **変更**: `src/main.rs`に`render_rakuten_mobile_body()`を新設し、
+    PHP版のセクション構成・見出し・静的マーケティング文言(エリア説明・
+    注意点・乗り換え訴求コピー等)をそのまま1対1で移植。データ部分
+    (料金・国際通話・プラチナバンド/衛星)は既存の`fetch_cache`
+    アーキテクチャ(HTTP経由で`*-cache.json`取得)をそのまま使い、
+    JSON欠損時はPHP版と同じデフォルト文言にフォールバックする
+    `get_str`/`get_bool`ヘルパーを追加。Google検索リンク生成用に
+    `percent_encode`/`google_search_url`も追加(PHP版`rawurlencode()`
+    相当、外部crateなしの単純なUTF-8バイト単位percent-encode)。
+    `composite_page_by_slug`内で`slug == "rakuten-mobile"`の場合だけ
+    この専用関数を呼ぶよう分岐し(`/rakuten-mobile`・`/page/rakuten-mobile`
+    両ルートが対象)、`aruaru`/`aruaru-lady`(まだ内容乖離が残っている、
+    次回対応予定)は既存の汎用`render_composite_body`のまま変更していない。
+    データ取得アーキテクチャ(DB非依存・HTTP経由`fetch_cache`)自体は
+    一切変更せず、レンダリング層のみを差し替えた。
+  - **検証(実施済み、報告のみでなく実際に確認)**: `cargo build`成功
+    (RPoem側の既存3警告のみ、新規警告なし)。`cargo test`で
+    **14件全green**(既存と同数、テスト追加なし——今回はレンダリングの
+    移植でロジック分岐が薄いため新規ユニットテストは追加していない)。
+    実バイナリを起動し`curl http://127.0.0.1:4400/rakuten-mobile`で
+    実際のレンダリング結果を取得、`curl https://audiocafe.tokyo/
+    rakuten-mobile/`(本番PHP)の実データと突き合わせ、以下の
+    **具体的な文字列**がRust版出力に実際に含まれることを`grep`で確認済み:
+    「楽天モバイル 最新情報」「自社の楽天回線エリアとau回線」
+    「人口カバー率」「99.9%」「5GBまで」「パートナー回線」
+    「プラチナバンド（700MHz帯）を拡大中」「エリア確認ツール」
+    「国際通話プラン詳細」「AST SpaceMobile」「プラチナ回線（700MHz帯」
+    「we2 plus」「楽天リンク Android版」「aruaru.tokyo」(いずれも1件以上
+    ヒット)。さらに`fetch_cache`が実際に本番の3キャッシュへ到達し
+    実データ(基本料金「最大3,278円（税込）」、国際通話「月980円（税込）
+    /66カ国/クロール成功」、衛星「AST SpaceMobile」公式文言、
+    プラチナバンド「全国整備進行中（順次拡大中）」)を正しく埋め込んで
+    いることも確認した。なお料金表示に「（税込）（税込）」という
+    見た目上の重複があるが、これは`rakuten-mobile-cache.json`の
+    `price`フィールド自体が既に「（税込）」を含んでいるためで、
+    本番PHP版(`curl`で確認済み、同じく「最大3,278円（税込）（税込）」
+    と表示される)を忠実に再現した結果であり、Rust版固有のバグではない。
+    `/page/rakuten-mobile`・`/aruaru`・`/aruaru-lady`もそれぞれ200を
+    確認(後2者は今回意図的に未変更)。検証後サーバープロセスは停止済み。
+  - **今回のスコープ外(正直に開示)**: 元PHP版のCSS装飾(グラデーション・
+    カード枠線・レスポンシブレイアウト等)・Google翻訳ウィジェット・
+    OPEN/CLOSEパネルのJS演出は再現していない(本タスクの目的は
+    「訪問者に全く違うページが表示される」問題の解消=コンテンツの
+    一致であり、ピクセル完全一致ではないと明示された指示に基づく)。
+    `/aruaru`・`/aruaru-lady`は依然として前回HANDOFFで指摘された
+    内容乖離(doda求人・学習サービスTOP50等の未移植)が残っている。
+  - 次にすべきこと: `/aruaru`・`/aruaru-lady`についても同様の手法
+    (専用レンダラーでPHP版の実際のセクション構成を再現)を適用するか
+    検討する。その後、パス単位での段階的な本番カットオーバーを
+    再検討する。
+
 - **2026-07-19 本番カットオーバー前検証: aruaru.tokyoが依存する`/aruaru/`・
   `/aruaru-lady/`・`/rakuten-mobile/`パスの404を発見・修正、ただし
   ページ内容自体の乖離が大きく本カットオーバーは見送り**: ユーザーから
