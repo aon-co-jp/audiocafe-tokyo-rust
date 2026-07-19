@@ -1288,6 +1288,27 @@ static TOP_LANGUAGES: Lazy<Vec<LangCard>> = Lazy::new(|| {
         .expect("assets/top_languages.json must be valid JSON matching LangCard (147 entries)")
 });
 
+/// PHP版`SEARCH_SERIES`(`index.php` 2566行目)をNode.jsの
+/// `new Function('return ('+src+')')`でJSとして直接評価しlosslessに抽出した
+/// もの(`assets/search_series.json`)。PHP版コメントは「84件」と記載していたが
+/// (前回HANDOFF参照、未検証の見積もり)、実際にlosslessな評価で数えたところ
+/// **77件**だった(2026-07-19、YouTube再生リストのシリーズ機能復活時に判明・
+/// 訂正)。各シリーズは`btn`(検索クエリ/ボタンラベル)・`label`(短縮表示用、
+/// 空文字のこともある)・`urls`(1件以上のYouTube URL、`watch`/`shorts`/
+/// `youtu.be`/`results?search_query`のいずれか)を持つ。
+#[derive(Debug, Clone, Deserialize)]
+struct SearchSeries {
+    btn: String,
+    #[serde(default)]
+    label: String,
+    urls: Vec<String>,
+}
+
+static SEARCH_SERIES: Lazy<Vec<SearchSeries>> = Lazy::new(|| {
+    serde_json::from_str::<Vec<SearchSeries>>(include_str!("../assets/search_series.json"))
+        .expect("assets/search_series.json must be valid JSON matching SearchSeries")
+});
+
 /// PHP版トップページの実際のCSS(`<style>`ブロック冒頭、`:root`変数・
 /// `.header`/`.card`系クラス)を`.top-page`配下にスコープして移植。
 /// 元CSSはbody直下の裸セレクタだったため、既存の他ページ(`ARUARU_STYLE`等)と
@@ -1326,7 +1347,15 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:.7rem}
 .top-page .pill{padding:.3rem .8rem;border-radius:999px;border:1px solid var(--border);font-size:.78rem;background:rgba(255,255,255,.04)}
 .top-page .pill.is-active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
-.top-page .yt-bg-player{max-width:640px;margin:1rem auto;border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.top-page .yt-bg-player{max-width:640px;margin:1rem auto;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:rgba(15,23,42,.85);padding-bottom:.5rem;position:relative}
+.top-page .yt-panel-close{position:sticky;top:0;z-index:2;width:100%;border:none;background:rgba(15,23,42,.95);color:#22d3ee;font-weight:800;padding:.4rem;cursor:pointer;letter-spacing:.06em}
+.top-page .yt-panel-open{position:fixed;top:1rem;right:1rem;z-index:999;font-weight:800;padding:.5rem 1rem;border-radius:14px;border:2px solid rgba(34,211,238,.8);background:rgba(15,23,42,.95);color:#22d3ee;cursor:pointer;letter-spacing:.06em}
+.top-page .yt-now-playing{padding:.4rem .8rem;font-size:.8rem;color:var(--text-dim)}
+.top-page .yt-series-controls{padding:0 .8rem .4rem}
+.top-page .yt-next-btn{border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.12);color:#22d3ee;padding:.3rem .8rem;font-size:.75rem;cursor:pointer}
+.top-page .yt-series-list{max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:.3rem;padding:.4rem .8rem}
+.top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.2rem .6rem;font-size:.68rem;cursor:pointer}
+.top-page .yt-series-btn.is-active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
 .top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
 .top-page .yt-wp-head{display:block;font-weight:800;color:#fde68a}
 .top-page .yt-wp-hint{display:block;font-size:.75rem;color:var(--text-muted);margin:.2rem 0 .6rem}
@@ -1623,6 +1652,52 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
         })
         .collect();
 
+    // YouTube再生リストのシリーズ機能(PHP版`SEARCH_SERIES`、77件)の復活。
+    // 各シリーズの`urls`から再生可能な動画ID(`scraper::extract_yt_id`、
+    // `/discover`のサムネイル抽出と同じロジックを再利用)を抽出し、1件も
+    // 再生可能な動画が無いシリーズ(`/results?search_query=...`のみ等)は、
+    // PHP版の既存方針(`audiocafe.tokyo/CLAUDE.md`——YouTube検索結果の
+    // スクレイプ推測再生はしない)を踏襲し、実際のYouTube検索結果ページへの
+    // 直接遷移(新規タブ)にフォールバックする。
+    let series_payload: Vec<serde_json::Value> = SEARCH_SERIES
+        .iter()
+        .map(|s| {
+            let ids: Vec<String> = s.urls.iter().filter_map(|u| scraper::extract_yt_id(u)).collect();
+            let label = if s.label.is_empty() { s.btn.clone() } else { s.label.clone() };
+            serde_json::json!({
+                "label": label,
+                "ids": ids,
+                "searchUrl": format!("https://www.youtube.com/results?search_query={}", percent_encode(&s.btn)),
+            })
+        })
+        .collect();
+    let series_json = serde_json::to_string(&series_payload).unwrap_or_else(|_| "[]".to_string());
+    let series_buttons: String = SEARCH_SERIES
+        .iter()
+        .enumerate()
+        .map(|(i, s)| {
+            let label = if s.label.is_empty() { &s.btn } else { &s.label };
+            format!(
+                r#"<button type="button" class="yt-series-btn{}" data-idx="{i}" onclick="acPlaySeries({i})">{}</button>"#,
+                if i == 0 { " is-active" } else { "" },
+                html_escape(label),
+            )
+        })
+        .collect();
+    // PHP版コメント(`index.php` 195〜197行目・4625〜4633行目)の通り、
+    // 起動時はSEARCH_SERIES[0]の先頭URLを再生する(`TOP_DEFAULT_BG_VIDEO_ID`は
+    // PHP側でも「再生候補が全て失敗した場合のみ使用」するフォールバック専用
+    // 定数であり、実際の初期表示動画ではなかった——2026-07-19訂正)。
+    let default_series_label = SEARCH_SERIES
+        .first()
+        .map(|s| if s.label.is_empty() { s.btn.clone() } else { s.label.clone() })
+        .unwrap_or_default();
+    let default_id = SEARCH_SERIES
+        .first()
+        .and_then(|s| s.urls.iter().find_map(|u| scraper::extract_yt_id(u)))
+        .unwrap_or_else(|| TOP_DEFAULT_BG_VIDEO_ID.to_string());
+    let default_series_label_esc = html_escape(&default_series_label);
+
     let list: String = RANKINGS
         .iter()
         .map(|(slug, _, label)| format!(r#"<li><a href="/ranking/{slug}">{}</a></li>"#, html_escape(label)))
@@ -1640,7 +1715,52 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="subtitle">Please select your native language.</p>
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
-<div class="yt-bg-player"><iframe width="100%" height="220" src="https://www.youtube.com/embed/{TOP_DEFAULT_BG_VIDEO_ID}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>
+<div class="yt-bg-player" id="ytBgPlayer">
+<button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
+<iframe id="ytBgIframe" width="100%" height="220" src="https://www.youtube.com/embed/{default_id}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+<div class="yt-now-playing" id="ytNowPlaying">▶ {default_series_label_esc}</div>
+<div class="yt-series-controls"><button type="button" class="yt-next-btn" onclick="acNextVideo()">⏭ NEXT</button></div>
+<div class="yt-series-list">{series_buttons}</div>
+</div>
+<button type="button" class="yt-panel-open" id="ytPanelOpen" style="display:none" onclick="acToggleYtPanel(true)">▶ OPEN</button>
+<script type="application/json" id="ytSeriesData">{series_json}</script>
+<script>
+(function(){{
+  var data = JSON.parse(document.getElementById('ytSeriesData').textContent);
+  var cur = 0, idx = 0;
+  var iframe = document.getElementById('ytBgIframe');
+  var nowPlaying = document.getElementById('ytNowPlaying');
+  function embedUrl(id) {{ return 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&rel=0'; }}
+  function updateActive() {{
+    var btns = document.querySelectorAll('.yt-series-btn');
+    for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'yt-series-btn' + (i === cur ? ' is-active' : ''); }}
+  }}
+  window.acPlaySeries = function(i) {{
+    var s = data[i];
+    if (!s) return;
+    cur = i; idx = 0;
+    if (s.ids.length > 0) {{
+      iframe.src = embedUrl(s.ids[0]);
+      nowPlaying.textContent = '▶ ' + s.label;
+    }} else {{
+      window.open(s.searchUrl, '_blank', 'noopener');
+      nowPlaying.textContent = '🔍 ' + s.label + '（YouTube検索結果へ）';
+    }}
+    updateActive();
+  }};
+  window.acNextVideo = function() {{
+    var s = data[cur];
+    if (!s) return;
+    if (s.ids.length === 0) {{ window.open(s.searchUrl, '_blank', 'noopener'); return; }}
+    idx = (idx + 1) % s.ids.length;
+    iframe.src = embedUrl(s.ids[idx]);
+  }};
+  window.acToggleYtPanel = function(open) {{
+    document.getElementById('ytBgPlayer').style.display = open ? '' : 'none';
+    document.getElementById('ytPanelOpen').style.display = open ? 'none' : 'block';
+  }};
+}})();
+</script>
 <div class="yt-wp-corner">
 <span class="yt-wp-head">🎁 無料 スマホ壁紙コーナー</span>
 <span class="yt-wp-hint">画像をタップで原寸表示 →「⬇ 保存」または画像長押しで端末に保存できます。</span>
