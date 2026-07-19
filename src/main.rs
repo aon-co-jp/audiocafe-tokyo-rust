@@ -246,6 +246,162 @@ const COMPOSITE_PAGES: &[CompositePage] = &[
     },
 ];
 
+/// JSON文字列フィールドを取得し、無ければ`default`を返す(PHP側の
+/// `$_rm_rk['price'] ?? '最大3,278円（税込）'`等のnull合体演算子と同じ挙動)。
+fn get_str(v: &Value, key: &str, default: &str) -> String {
+    v.get(key).and_then(|x| x.as_str()).unwrap_or(default).to_string()
+}
+
+fn get_bool(v: &Value, key: &str) -> bool {
+    v.get(key).and_then(|x| x.as_bool()).unwrap_or(false)
+}
+
+/// PHPの`rawurlencode()`相当(Google検索リンク生成用)。UTF-8バイト単位で
+/// 非予約文字を`%XX`に置き換える単純な実装。
+fn percent_encode(s: &str) -> String {
+    let mut out = String::new();
+    for b in s.as_bytes() {
+        match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => out.push(*b as char),
+            _ => out.push_str(&format!("%{:02X}", b)),
+        }
+    }
+    out
+}
+
+fn google_search_url(query: &str) -> String {
+    format!("https://www.google.com/search?q={}", percent_encode(query))
+}
+
+/// PHP側の`rakuten-mobile/index.php`(917行、`rm_render_fragment()`)が
+/// 実際に表示している専用ページの内容をそのまま移植する。汎用JSONダンプ
+/// (`render_value_generic`)ではPHP版と全く別のページになってしまうため
+/// (2026-07-19監査で判明)、この関数はPHP版のセクション構成・見出し・
+/// 静的マーケティング文言を1対1で再現しつつ、データ部分(料金・国際通話・
+/// プラチナバンド/衛星)は既存の`fetch_cache`アーキテクチャ経由で取得した
+/// 3キャッシュJSONから埋め込む。
+async fn render_rakuten_mobile_body() -> String {
+    let rk = fetch_cache("rakuten-mobile-cache.json").await;
+    let intl = fetch_cache("rakuten-intl-call-cache.json").await;
+    let plat = fetch_cache("rakuten-platinum-cache.json").await;
+
+    let empty = Value::Null;
+    let rk = rk.as_ref().unwrap_or(&empty);
+    let intl = intl.as_ref().unwrap_or(&empty);
+    let plat = plat.as_ref().unwrap_or(&empty);
+
+    let price = get_str(rk, "price", "最大3,278円（税込）");
+    let updated_at = get_str(rk, "updated_at", "");
+    let official_url = "https://network.mobile.rakuten.co.jp/fee/saikyo-plan/";
+
+    let intl_price = get_str(intl, "intl_plan_price_ja", "月980円（税込）");
+    let intl_name = get_str(intl, "intl_plan_name_ja", "国際通話かけ放題");
+    let intl_count = get_str(intl, "intl_countries_count", "66");
+    let intl_crawled = get_str(intl, "crawled_at", "");
+    let intl_ok = get_bool(intl, "crawl_success");
+    let intl_free_url = "https://network.mobile.rakuten.co.jp/service/international-call-free/";
+
+    let plat_status = get_str(plat, "platinum_status_ja", "700MHz帯プラチナバンドを整備中。地下・屋内・山間部でのつながりやすさを改善。");
+    let plat_detail = get_str(plat, "platinum_detail_ja", "700MHz帯（プラチナバンド）は電波が建物内や地下街まで届きやすい低周波数帯。屋内での通話・データ通信の安定性が向上。");
+    let plat_coverage = get_str(plat, "platinum_coverage_ja", "全国整備進行中（順次拡大中）");
+    let sat_status = get_str(plat, "satellite_status_ja", "AST SpaceMobile との提携により、衛星ブロードバンド通話サービスを準備中。");
+    let sat_detail = get_str(plat, "satellite_detail_ja", "低軌道衛星（LEO）を利用し、山間部・離島・海上でも通常のスマートフォンで通話・データ通信が可能になる見込み。");
+    let sat_launch = get_str(plat, "satellite_launch_ja", "商用サービス開始時期は未定（2025〜2026年を目標と報道あり）");
+    let plat_crawled = get_str(plat, "crawled_at", "");
+    let plat_ok = get_bool(plat, "crawl_success");
+
+    let area_url = "https://network.mobile.rakuten.co.jp/area/";
+    let area_faq_url = "https://network.mobile.rakuten.co.jp/faq/detail/00001549/";
+
+    let we2plus_url = google_search_url("楽天モバイル お勧め 1円 高性能CPU 富士通製 スマホ we2 plus");
+    let packet_url = google_search_url("楽天モバイル パケット放題 プラン");
+    let phone_url = google_search_url("楽天モバイル 電話放題 楽天リンク");
+    let link_android_url = google_search_url("楽天モバイル スマホアプリの名前は 楽天リンク Android版");
+    let link_iphone_url = google_search_url("楽天モバイル スマホアプリの名前は 楽天リンク iPhone版");
+    let campaign_url = google_search_url("楽天モバイル 乗り換え キャンペーン");
+    let price_search_url = google_search_url("楽天モバイル Rakuten最強プラン 料金");
+
+    format!(
+        r#"<h1>📶 楽天モバイル 最新情報</h1>
+<p>自社の楽天回線エリアとau回線（パートナー回線）エリアを合わせてデータ使い放題（パケット放題）となります。</p>
+<p>月間無制限に使っても <strong>{price}</strong>（税込）</p>
+<p><a href="{official_url}" target="_blank" rel="noopener noreferrer">公式サイトで確認 →</a></p>
+<p class="disclaimer">📅 {updated_at}</p>
+
+<h2>📡 楽天回線エリア</h2>
+<p>人口カバー率<strong>99.9%</strong>を達成。自社基地局エリア内ではデータ高速<strong>無制限</strong>で利用できます。</p>
+
+<h2>🔄 パートナー回線（au）エリア</h2>
+<p>楽天電波が届きにくい屋内や一部エリアでは<strong>auローミング</strong>を利用。月間<strong>5GBまで</strong>高速、超過後は最大1Mbps。</p>
+
+<h2>⚠️ 注意点</h2>
+<p>地下・高層ビル・奥まった屋内では繋がりにくい場合あり。プラチナバンド（700MHz帯）を拡大中。</p>
+
+<h2>🗺️ エリア確認ツール</h2>
+<ul>
+<li><a href="{area_url}" target="_blank" rel="noopener noreferrer">📍 楽天モバイル 通信・エリアマップ</a></li>
+<li><a href="{area_faq_url}" target="_blank" rel="noopener noreferrer">❓ データ高速無制限エリアとは</a></li>
+</ul>
+
+<h2>🔍 関連検索</h2>
+<ul>
+<li><a href="{price_search_url}" target="_blank" rel="noopener noreferrer">🔍 最新料金を Google で検索</a></li>
+<li><a href="{campaign_url}" target="_blank" rel="noopener noreferrer">🔍 乗り換えキャンペーン</a></li>
+<li><a href="{we2plus_url}" target="_blank" rel="noopener noreferrer">📱 1円スマホ（we2 plus）</a></li>
+</ul>
+
+<h2>📞 楽天モバイル 国際通話プラン詳細</h2>
+<p class="disclaimer">📅 {intl_crawled}{intl_ok_note}</p>
+<p>
+🇯🇵 日本 → 海外 プラン料金：{intl_price} / {intl_name}<br>
+🌍 かけ放題対象国：{intl_count} カ国<br>
+✈️ 海外 → 日本：Rakuten Link 利用時 無料（対象国・条件あり）
+</p>
+<p><strong>🌏 海外からも日本へ電話放題？</strong><br>
+✅ はい、かなり本当です。主に Rakuten Link アプリ利用時（条件あり）。</p>
+<p>
+🇯🇵 日本→日本：Rakuten Link で無料<br>
+🇯🇵 日本→海外：「{intl_name}（{intl_price}）」で{intl_count}カ国かけ放題<br>
+✈️ 海外→日本：Rakuten Link で無料（対象国から）
+</p>
+<p><a href="{intl_free_url}" target="_blank" rel="noopener noreferrer">📎 国際通話かけ放題 公式ページ</a></p>
+
+<h2>🚀 衛星ブロードバンド通話（AST SpaceMobile 提携）</h2>
+<p class="disclaimer">📅 {plat_crawled}{plat_ok_note}</p>
+<p>{sat_status}<br>{sat_detail}<br><span class="disclaimer">🛰️ {sat_launch}</span></p>
+
+<h2>📡 プラチナ回線（700MHz帯 プラチナバンド）</h2>
+<p class="disclaimer">📅 {plat_crawled}{plat_ok_note}</p>
+<p>{plat_status}<br>{plat_detail}<br><span class="disclaimer">📶 カバレッジ：{plat_coverage}</span></p>
+
+<h2>📶 楽天モバイル（1円スマホ・パケット放題・電話放題）</h2>
+<p>スマホなら楽天モバイルへの乗り換えを検討できます。eSIM 対応端末やキャンペーンの一例として、富士通製「we2 plus」など高性能 CPU 端末を<strong>1円</strong>で入手できる案内が出る場合があります（時期・在庫・契約条件は要確認）。日本全国で<strong>楽天リンク</strong>アプリが使えます。</p>
+<ul>
+<li><a href="{we2plus_url}" target="_blank" rel="noopener noreferrer">1円スマホの例：富士通製 we2 plus など（要確認）</a></li>
+<li><a href="{packet_url}" target="_blank" rel="noopener noreferrer">パケット放題・データ使い放題プラン</a></li>
+<li><a href="{phone_url}" target="_blank" rel="noopener noreferrer">電話放題・楽天リンク経由の通話</a></li>
+<li><a href="{link_android_url}" target="_blank" rel="noopener noreferrer">楽天リンク Android版</a></li>
+<li><a href="{link_iphone_url}" target="_blank" rel="noopener noreferrer">楽天リンク iPhone版</a></li>
+<li><a href="{campaign_url}" target="_blank" rel="noopener noreferrer">楽天モバイル 乗り換え・キャンペーン全般</a></li>
+</ul>
+<p class="disclaimer">楽天モバイルのアンテナ・基地局が届くエリアでは、オンライン配信や TV チャットでも<strong>パケットを気にしにくいプラン</strong>を検討できます。病院などの FREE Wi-Fi が使える場合、在宅・入院中の環境づくりにも役立つことがあります（プラン内容・エリアは必ず公式で確認してください）。</p>
+
+<h2>⏱ 自動更新について</h2>
+<p class="disclaimer">このページの元データ(楽天モバイル料金・国際通話・プラチナバンド)はPHP版サイトが毎朝05:00AMに自動クロール・キャッシュ更新しています。キャッシュ先: rakuten-mobile-cache.json 他2ファイル。</p>
+
+<p style="margin-top:2rem;">
+<a href="/">← audiocafe.tokyo トップ</a> ・
+<a href="/aruaru">📊 aruaru（IT技術情報）</a> ・
+<a href="/aruaru-lady">💃 aruaru-lady（女性向け情報）</a> ・
+<a href="{ARUARU_TOKYO_URL}" target="_blank" rel="noopener noreferrer">🎲 aruaru.tokyo</a>
+</p>
+<p class="disclaimer">楽天モバイル情報は毎朝05:00AMに自動クロール更新。内容は必ず<a href="{official_url}" target="_blank" rel="noopener noreferrer">公式サイト</a>でご確認ください。</p>
+"#,
+        intl_ok_note = if intl_ok { " ✓ クロール成功" } else { "" },
+        plat_ok_note = if plat_ok { " ✓ クロール成功" } else { "" },
+    )
+}
+
 async fn render_composite_body(page: &CompositePage) -> String {
     let mut out = format!("<h1>{}</h1>", html_escape(page.title));
     for (heading, path) in page.sections {
@@ -307,6 +463,18 @@ async fn ranking_page(params: Params) -> hyper_compat::Response {
 }
 
 async fn composite_page_by_slug(slug: &str) -> hyper_compat::Response {
+    // `/rakuten-mobile`はPHP版の専用ページ(917行、独自の見出し・マーケティング
+    // 文言・カード構成を持つ)であり、他の複合ページと違い汎用JSONダンプ
+    // (`render_value_generic`)では全く別のページになってしまうことが
+    // 2026-07-19の監査で判明した。そのためこのslugだけは専用の
+    // `render_rakuten_mobile_body`でPHP版の実際の内容を再現する
+    // (データ取得自体は既存の`fetch_cache`アーキテクチャのまま)。
+    if slug == "rakuten-mobile" {
+        return hyper_compat::html_response(
+            StatusCode::OK,
+            page_shell("📶 楽天モバイル情報 — audiocafe.tokyo", &render_rakuten_mobile_body().await),
+        );
+    }
     let Some(page) = COMPOSITE_PAGES.iter().find(|p| p.slug == slug) else {
         return hyper_compat::html_response(
             StatusCode::NOT_FOUND,
