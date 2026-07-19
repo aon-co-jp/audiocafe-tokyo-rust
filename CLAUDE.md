@@ -147,6 +147,29 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(最新) 本番カットオーバー実施: トップページ + 3ページがaudiocafe.tokyo本番ドメインでRust版稼働開始**:
+  ユーザー指示によりVPS本番の`nginx`設定を変更・reload実施。
+  `/etc/nginx/conf.d/audiocafe.tokyo.conf`に`location = /`
+  (完全一致、`location /aruaru/`等のprefix matchより優先される
+  nginxの通常規則を利用)を追加し、`127.0.0.1:4400`(Rustバイナリ)へ
+  proxy_pass。既存の`location /aruaru/`・`/aruaru-lady/`・
+  `/rakuten-mobile/`(前回HANDOFF参照)と合わせ、4パス全てが本番で
+  Rust版稼働。`location /`(prefix match、他の全静的ファイル・
+  `/top/`・`/cancer/`・`/Python/`・`/video/`等)は無変更のまま
+  PHP側が処理を継続——`location =`は完全一致のみを奪うため、これらの
+  既存コンテンツへの影響はない。
+  - **検証**: 設定変更前に`audiocafe.tokyo.conf.bak-<timestamp>`として
+    バックアップ取得。`nginx -t`構文チェック成功後reload。実際に
+    `https://audiocafe.tokyo/`が147枚のカード全てを含むRust版で200
+    応答することを確認、同時に`/top/`・`/cancer/`・
+    `/video/ninja_ishizuka.mp4`・既存3ページ(`/aruaru/`・
+    `/rakuten-mobile/`)が引き続き200で正常動作することも確認
+    (影響範囲を限定した設計が実際に機能していることを実証)。
+  - **残作業**: `/world/`は「不要」と判断されユーザー側での削除待ち
+    (本ファイルとは別に案内済み)。`/cancer/`・`/world/`(削除予定)・
+    `/Python/`(配布ツール、ページではない)は依然PHP側のまま——
+    今後これらも移植するかは別途判断。
+
 - **2026-07-19(続きの続きの続きの続きの続きの続き) トップページ(`/`)を147/147カード完全版へ拡張完了(ユーザー指示による前回スコープ縮小の解消)**:
   直前のHANDOFF(次項)で「147件のうち40件のみ抜粋、各カードの長文
   バイオグラフィーエッセイ・`cardLinks`は政治・宗教的な主張を含むため
