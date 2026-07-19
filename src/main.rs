@@ -1330,9 +1330,10 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .card-code{display:block;font-size:.95rem;font-weight:800;letter-spacing:.08em;color:var(--cyan)}
 .top-page .card-native{display:block;font-size:.95rem;font-weight:600;color:rgba(255,255,255,.9)}
 .top-page .card-country{display:block;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.75)}
-.top-page .card-essay{text-align:left;font-size:.78rem;color:var(--text-dim);max-height:9.5rem;overflow-y:auto;margin-top:.3rem;line-height:1.55}
+.top-page .card-essay{text-align:left;font-size:1.15rem;color:var(--text-dim);max-height:9.5rem;overflow-y:auto;margin-top:.3rem;line-height:1.55}
 .top-page .card-essay p{margin:0 0 .5rem}
-.top-page .card-essay-d{border-top:1px dashed var(--border);margin-top:.4rem;padding-top:.4rem}
+.top-page .card-essay-label{display:block;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#7dd3fc;text-transform:uppercase;margin-bottom:.15rem}
+.top-page .card-essay-d{border-top:1px dashed var(--border);margin-top:.5rem;padding-top:.5rem;font-size:1.15rem}
 .top-page .card-links{list-style:none;padding:0;margin:.4rem 0 0;text-align:left;font-size:.72rem;line-height:1.6}
 .top-page .card-links li{margin-bottom:.15rem}
 .top-page .card-actions{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:.5rem}
@@ -1345,7 +1346,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .search-wrap input{flex:1;padding:.5rem .8rem;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text)}
 .top-page .search-wrap button{padding:.5rem 1rem;border-radius:999px;border:1px solid var(--cyan);background:rgba(34,211,238,.12);color:var(--cyan);font-weight:700}
 .top-page .pills{display:flex;flex-wrap:wrap;justify-content:center;gap:.4rem;margin-top:.7rem}
-.top-page .pill{padding:.3rem .8rem;border-radius:999px;border:1px solid var(--border);font-size:.78rem;background:rgba(255,255,255,.04)}
+.top-page .pill{padding:.3rem .8rem;border-radius:999px;border:1px solid var(--border);font-size:1.15rem;background:rgba(255,255,255,.04)}
 .top-page .pill.is-active{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
 .top-page .yt-bg-player{max-width:640px;margin:1rem auto;border-radius:12px;overflow:hidden;border:1px solid var(--border);background:rgba(15,23,42,.85);padding-bottom:.5rem;position:relative}
 .top-page .yt-panel-close{position:sticky;top:0;z-index:2;width:100%;border:none;background:rgba(15,23,42,.95);color:#22d3ee;font-weight:800;padding:.4rem;cursor:pointer;letter-spacing:.06em}
@@ -1354,7 +1355,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-series-controls{padding:0 .8rem .4rem}
 .top-page .yt-next-btn{border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.12);color:#22d3ee;padding:.3rem .8rem;font-size:.75rem;cursor:pointer}
 .top-page .yt-series-list{max-height:180px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:.3rem;padding:.4rem .8rem}
-.top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.2rem .6rem;font-size:.68rem;cursor:pointer}
+.top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.25rem .7rem;font-size:1.05rem;cursor:pointer}
 .top-page .yt-series-btn.is-active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
 .top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
 .top-page .yt-wp-head{display:block;font-weight:800;color:#fde68a}
@@ -1449,6 +1450,18 @@ fn google_translate_site_url(gc: &str, page_url: &str) -> String {
 /// プレーンテキストのまま`textContent`風に描画していたが、Rust版はSSRのため
 /// 空行(`\n\n`)を`<p>`区切り、単独改行(`\n`)を`<br>`に変換して読みやすくする
 /// (内容自体は無加工、HTMLエスケープのみ実施)。
+/// エッセイ本文(`c`/`d`)中に埋め込まれた素のURL(`https://...`)を抽出する。
+/// PHP版`extractHttpUrlsFromString()`(`mergeCardOutboundLinks`が使用、
+/// `index.php` 1935行目)相当——`cardLinks`フィールドに載っていない
+/// リンクも本文中に直接書かれていることがあるため、`/summary`画面の
+/// リンク一覧を漏れなく揃えるために移植した。
+fn extract_urls_from_text(text: &str) -> Vec<String> {
+    static RE: Lazy<regex::Regex> = Lazy::new(|| regex::Regex::new(r#"https?://[^\s"'<>]+"#).unwrap());
+    RE.find_iter(text)
+        .map(|m| m.as_str().trim_end_matches(|c: char| ".,)]}\u{3002}\u{3001}".contains(c)).to_string())
+        .collect()
+}
+
 fn essay_to_html(text: &str) -> String {
     text.split("\n\n")
         .map(|para| format!("<p>{}</p>", html_escape(para).replace('\n', "<br>")))
@@ -1460,9 +1473,19 @@ fn essay_to_html(text: &str) -> String {
 /// `cardLinks`・モーダル相当の遷移先リンク一式)をここで復元する
 /// (2026-07-19、40件抜粋+短いフィールドのみ、という前回のスコープ縮小を解消)。
 fn render_lang_card(card: &LangCard) -> String {
-    let mut essay = format!(r#"<div class="card-essay">{}"#, essay_to_html(&card.c));
+    // 英語(`c`)と日本語(`d`)の長文エッセイを見出しラベル付きで明確に分離する
+    // (2026-07-19、ユーザー指示によりフォントサイズも二回り拡大——
+    // `.card-essay`/`.card-essay-d`のCSS参照)。`d`が存在するカードは147件中
+    // 10件のみ。
+    let mut essay = format!(
+        r#"<div class="card-essay"><span class="card-essay-label">English</span>{}"#,
+        essay_to_html(&card.c)
+    );
     if let Some(d) = &card.d {
-        essay.push_str(&format!(r#"<div class="card-essay-d">{}</div>"#, essay_to_html(d)));
+        essay.push_str(&format!(
+            r#"<div class="card-essay-d"><span class="card-essay-label">日本語</span>{}</div>"#,
+            essay_to_html(d)
+        ));
     }
     essay.push_str("</div>");
 
@@ -1494,6 +1517,12 @@ fn render_lang_card(card: &LangCard) -> String {
     let aruaru_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/aruaru", gc));
     let aruaru_lady_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/aruaru-lady", gc));
     let rakuten_mobile_url = html_escape(&google_translate_proxy_url("https://audiocafe.tokyo/rakuten-mobile", gc));
+    // PHP版「📋 言語カード＆/top 要約LIST」ボタン(`acNavBtnMixlist`、
+    // `?mixlist=1`遷移、`index.php` 1590行目)の相当機能。全カードの
+    // YouTube/Blog等のリンクをタイトル付きで整列表示する`/summary`画面へ、
+    // このカードの言語での選択箇所(`#{gc}`)にアンカーして遷移する
+    // (2026-07-19、ユーザー要望により新設)。
+    let summary_url = html_escape(&google_translate_proxy_url(&format!("https://audiocafe.tokyo/summary#{gc}"), gc));
     let actions = format!(
         r#"<div class="card-actions">
 <a href="{ac_url}" target="_blank" rel="noopener noreferrer">audiocafe.tokyo</a>
@@ -1501,6 +1530,7 @@ fn render_lang_card(card: &LangCard) -> String {
 <a href="{aruaru_lady_url}" target="_blank" rel="noopener noreferrer">/aruaru-lady</a>
 <a href="{rakuten_mobile_url}" target="_blank" rel="noopener noreferrer">/rakuten-mobile</a>
 <a href="{aruaru_tokyo}" target="_blank" rel="noopener noreferrer">aruaru.tokyo</a>
+<a href="{summary_url}" target="_blank" rel="noopener noreferrer">📋 言語カード要約</a>
 <a href="{gt}" target="_blank" rel="noopener noreferrer">🌐 Google Translate</a>
 </div>"#,
         aruaru_tokyo = html_escape(ARUARU_TOKYO_URL),
@@ -1554,6 +1584,68 @@ fn render_lang_card(card: &LangCard) -> String {
 /// 等、数千行のクライアントJS)は移植せず、初期表示の実際の動画のみ埋め込み。
 /// (3) 壁紙コーナーの「タップで原寸表示」インタラクションはブラウザ標準の
 /// 画像リンク遷移で代替(画像自体・ダウンロードリンクは実物)。
+const SUMMARY_STYLE: &str = r#"<style>
+.summary-page{max-width:52rem;margin:0 auto;padding:1.5rem 1rem 3rem}
+.summary-page h1{font-size:1.6rem;margin-bottom:.3rem}
+.summary-page .summary-note{color:var(--text-dim);font-size:.85rem;margin-bottom:1.5rem}
+.summary-page .summary-card{border:1px solid var(--border);border-radius:.75rem;padding:1rem 1.2rem;margin-bottom:1rem;background:var(--surface);scroll-margin-top:1rem}
+.summary-page .summary-card h2{font-size:1.1rem;margin:0 0 .5rem;color:var(--cyan)}
+.summary-page .card-links{list-style:none;padding:0;margin:0;font-size:.9rem;line-height:1.7}
+.summary-page .card-links li{margin-bottom:.2rem}
+</style>"#;
+
+/// PHP版「📋 言語カード＆/top 要約LIST」(`mixlist=1`、`index.php` 1590行目)の
+/// 相当機能。全147言語カードそれぞれの`cardLinks`+本文中に埋め込まれたURLを
+/// マージし(`extract_urls_from_text`、PHP版`mergeCardOutboundLinks`相当)、
+/// カードごとにタイトル付きで整列表示する(2026-07-19新設)。PHP版はさらに
+/// Google翻訳ウィジェットで選択言語に画面全体を翻訳する仕組みだったが、
+/// このRust版では各カードの`.card-actions`からこの画面へGoogle翻訳
+/// プロキシ経由でアンカー付き遷移することで同じ体験を実現している
+/// (このページ自体は日本語+各リンクの原文表示のみ、スコープ縮小として
+/// 正直に開示)。
+fn render_summary_body() -> String {
+    use std::collections::HashSet;
+    let mut sections = String::new();
+    for card in TOP_LANGUAGES.iter() {
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut links: Vec<(String, String)> = Vec::new();
+        if let Some(card_links) = &card.card_links {
+            for l in card_links {
+                if seen.insert(l.href.clone()) {
+                    links.push((l.href.clone(), l.label.clone()));
+                }
+            }
+        }
+        for url in extract_urls_from_text(&card.c).into_iter().chain(extract_urls_from_text(card.d.as_deref().unwrap_or(""))) {
+            if seen.insert(url.clone()) {
+                links.push((url.clone(), url.clone()));
+            }
+        }
+        if links.is_empty() {
+            continue;
+        }
+        let items: String = links
+            .iter()
+            .map(|(href, label)| format!(r#"<li><a href="{}" target="_blank" rel="noopener noreferrer">{}</a></li>"#, html_escape(href), html_escape(label)))
+            .collect();
+        sections.push_str(&format!(
+            r#"<section class="summary-card" id="{gc}"><h2>{flag} {name}（{native}）</h2><ul class="card-links">{items}</ul></section>"#,
+            gc = html_escape(&card.g),
+            flag = format!(r#"<img src="https://flagcdn.com/24x16/{}.png" alt="" width="24" height="16" style="vertical-align:middle;border-radius:2px">"#, html_escape(&card.fc)),
+            name = html_escape(&card.n),
+            native = html_escape(&card.t),
+        ));
+    }
+    format!(
+        r##"{SUMMARY_STYLE}
+<div class="summary-page">
+<h1>📋 言語カード要約 — Link Summary</h1>
+<p class="summary-note">147言語カードそれぞれが持つYouTube・ブログ等へのリンクをタイトル付きで一覧表示しています。各カードの「📋 言語カード要約」リンクから、その言語のセクションへ直接ジャンプできます。<a href="/#lang-grid">← 言語カード一覧へ戻る</a></p>
+{sections}
+</div>"##
+    )
+}
+
 fn render_top_body(query: &std::collections::HashMap<String, String>) -> String {
     // PHP版`REGIONS`配列(`index.php` 1762行目)と同じ並び順・
     // `REGION_LABELS`(1763〜1770行目)と同じ英語見出しを踏襲、日本語は
@@ -1999,7 +2091,11 @@ async fn main() -> Result<(), std::io::Error> {
         // 追加した(2026-07-19)。内容は`/page/aruaru`等と同一。
         .route(Method::GET, "/aruaru", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("aruaru").await })))
         .route(Method::GET, "/aruaru-lady", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("aruaru-lady").await })))
-        .route(Method::GET, "/rakuten-mobile", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("rakuten-mobile").await })));
+        .route(Method::GET, "/rakuten-mobile", Arc::new(|_req, _params| Box::pin(async move { composite_page_by_slug("rakuten-mobile").await })))
+        // PHP版の「言語カード＆/top 要約LIST」(`mixlist=1`、`index.php`
+        // 1590行目)相当。全カードの主要リンク(YouTube/Blog等)をタイトル付きで
+        // 整列表示する専用画面(2026-07-19、ユーザー要望により新設)。
+        .route(Method::GET, "/summary", Arc::new(|_req, _params| Box::pin(async move { hyper_compat::html_response(StatusCode::OK, page_shell("AUDIOCAFE | 言語カード要約 — Link Summary", &render_summary_body())) })));
 
     tracing::info!("audiocafe-tokyo-server listening on 127.0.0.1:4400");
     let (_, handle) = hyper_compat::serve(router, "127.0.0.1:4400".parse().unwrap()).await?;
