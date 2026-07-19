@@ -68,13 +68,18 @@ a {{ color: #222; }}
 a:visited {{ color: #222; }}
 nav a {{ margin-right: 1rem; }}
 .nav-php-link {{ font-size: 1.4em; font-weight: 800; }}
-.ac-credit {{ font-size: 0.85rem; }}
+.site-header-band {{ background: #000; color: #fff; width: 100vw; margin: -2rem calc(-50vw + 50%) 0; padding: 1rem 1rem 0.8rem; box-sizing: border-box; }}
+.site-header-band nav a {{ color: #7dd3fc; }}
+.site-header-band .nav-php-link {{ color: #fbbf24 !important; }}
+.site-header-band .ac-credit {{ color: #fff; background: #000; font-size: 0.85rem; margin-top: 0.5rem; }}
+.site-header-band .ac-credit a {{ color: #7dd3fc; }}
 </style>
 </head>
 <body>
-<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
-<br>
+<div class="site-header-band">
+<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="https://karu.tokyo/" target="_blank" rel="noopener noreferrer">karu.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
 <p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem（<a href="https://github.com/aon-co-jp/audiocafe-tokyo-rust" target="_blank" rel="noopener noreferrer">GitHub</a>）へ日本語で命令して、移植が成功致しました。</p>
+</div>
 {body}
 </body>
 </html>"#
@@ -1355,11 +1360,6 @@ static SEARCH_SERIES: Lazy<Vec<SearchSeries>> = Lazy::new(|| {
 /// 拡張に伴い、エッセイ本文・カードリンク・言語別導線リンク・検索フォーム・
 /// 地域ピル・YouTube背景プレイヤー・壁紙コーナー用のクラスを追加した。
 const TOP_STYLE: &str = r#"<style>
-nav{color:#fff}
-nav a{color:#7dd3fc}
-.nav-php-link{color:#fbbf24 !important}
-.ac-credit{color:#fff}
-.ac-credit a{color:#7dd3fc}
 .top-page{--bg:#000;--surface:rgba(15,23,42,.52);--border:rgba(255,255,255,.06);--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--cyan:#22d3ee;--cyan-glow:rgba(34,211,238,.15);margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
 .top-page a{color:#7dd3fc}
 .top-page .header{position:relative;overflow:hidden;text-align:center;padding:2rem 1rem 2rem}
@@ -2416,8 +2416,11 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
 <button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
+<div class="yt-now-playing">
+<a id="ytNowPlaying" href="{default_now_url}" target="_blank" rel="noopener noreferrer" title="タップ → 本物のYouTubeで最初から再生">▶ <span id="ytNowTitle">{default_series_label_esc}</span></a>
+<a id="ytNowUrl" href="{default_now_url}" target="_blank" rel="noopener noreferrer" title="タップ → 本物のYouTubeで最初から再生">{default_now_url}</a>
+</div>
 <iframe id="ytBgIframe" width="100%" height="220" src="https://www.youtube.com/embed/{default_id}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
-<a class="yt-now-playing" id="ytNowPlaying" href="{default_now_url}" target="_blank" rel="noopener noreferrer" title="タップ → 本物のYouTubeへ移動">▶ <span id="ytNowTitle">{default_series_label_esc}</span></a>
 <div class="yt-series-controls"><button type="button" class="yt-next-btn" onclick="acNextVideo()">⏭ NEXT</button></div>
 <div class="yt-series-list">{series_buttons}</div>
 </div>
@@ -2430,29 +2433,32 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
   var iframe = document.getElementById('ytBgIframe');
   var nowPlaying = document.getElementById('ytNowPlaying');
   var nowTitle = document.getElementById('ytNowTitle');
+  var nowUrl = document.getElementById('ytNowUrl');
   function embedUrl(id) {{ return 'https://www.youtube.com/embed/' + id + '?autoplay=1&mute=1&rel=0'; }}
   function watchUrl(id) {{ return 'https://www.youtube.com/watch?v=' + id; }}
   function updateActive() {{
     var btns = document.querySelectorAll('.yt-series-btn');
     for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'yt-series-btn' + (i === cur ? ' is-active' : ''); }}
   }}
-  // PHP版`#ytNowPlaying`(タップ→動画/ページを開く)相当。再生中の
-  // シリーズ名を表示しつつ、リンク先(`href`)を実際に再生している
-  // 動画の本物のYouTube視聴ページ、または再生可能な動画が無い
-  // シリーズの場合はYouTube検索結果ページへ切り替える
-  // (2026-07-19、ユーザー指摘により復活)。
+  // 動画の上のタイトル+URL表示(PHP版`#ytNowPlaying`「タップ→動画/
+  // ページを開く」相当)。タイトル・URLのどちらをタップしても、実際の
+  // YouTube視聴ページ(タイムスタンプ無し=常に最初から再生)へ新規タブで
+  // 遷移する(2026-07-19、ユーザー指摘により動画の上に移動+URL表示も
+  // クリック可能化)。
+  function setNowPlaying(url, label) {{
+    nowPlaying.href = url; nowUrl.href = url;
+    nowTitle.textContent = label; nowUrl.textContent = url;
+  }}
   window.acPlaySeries = function(i) {{
     var s = data[i];
     if (!s) return;
     cur = i; idx = 0;
     if (s.ids.length > 0) {{
       iframe.src = embedUrl(s.ids[0]);
-      nowTitle.textContent = s.label;
-      nowPlaying.href = watchUrl(s.ids[0]);
+      setNowPlaying(watchUrl(s.ids[0]), s.label);
     }} else {{
       window.open(s.searchUrl, '_blank', 'noopener');
-      nowTitle.textContent = s.label + '（YouTube検索結果へ）';
-      nowPlaying.href = s.searchUrl;
+      setNowPlaying(s.searchUrl, s.label + '（YouTube検索結果へ）');
     }}
     updateActive();
   }};
@@ -2462,7 +2468,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     if (s.ids.length === 0) {{ window.open(s.searchUrl, '_blank', 'noopener'); return; }}
     idx = (idx + 1) % s.ids.length;
     iframe.src = embedUrl(s.ids[idx]);
-    nowPlaying.href = watchUrl(s.ids[idx]);
+    setNowPlaying(watchUrl(s.ids[idx]), s.label);
   }};
   window.acToggleYtPanel = function(open) {{
     document.getElementById('ytBgPlayer').style.display = open ? '' : 'none';
