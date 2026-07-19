@@ -1247,7 +1247,157 @@ fn healthz_response() -> hyper_compat::Response {
         .expect("building a response from a fixed set of valid headers cannot fail")
 }
 
-fn top_body() -> String {
+/// PHP版トップページ(`https://audiocafe.tokyo/`本体、`curl`で実データ確認済み)の
+/// 実際の見た目・CSS(`.header`/`.subtitle`/`.note`/`.card`/`.card-flag`/
+/// `.card-code`/`.card-native`/`.card-country`/`.grid`/`.footer`、
+/// `--bg:#000`・`--cyan:#22d3ee`のダークテーマ)を`.top-page`配下にスコープして移植。
+/// (g, native表記, カードラベル, 地域, flagcdn国コード)の5要素タプル。
+/// 実ページの`var L=[...]`(147件)から、各カードの長文バイオグラフィー
+/// (`c`/`d`フィールド、政治・宗教的な主張を含む個人エッセイ)と`cardLinks`は
+/// 意図的に除外し(下記コメント参照)、カード表示に使う安全な短いフィールド
+/// (フラグ・現地語表記・国名ラベル・地域・英語名)のみを抜粋して移植した。
+type TopLangEntry = (&'static str, &'static str, &'static str, &'static str, &'static str);
+const TOP_LANGUAGES: &[TopLangEntry] = &[
+    // (flagcdn国コード, 現地語表記(t), カードラベル(a), 地域(r), 英語名(n))
+    ("jp", "日本語", "JAPAN", "Asia", "Japanese"),
+    ("us", "English", "USA", "Americas", "English"),
+    ("cn", "简体中文", "CHINA", "Asia", "Chinese (Simplified)"),
+    ("tw", "繁體中文", "TAIWAN", "Asia", "Chinese (Traditional)"),
+    ("kr", "한국어", "KOREA", "Asia", "Korean"),
+    ("in", "हिन्दी", "INDIA", "Asia", "Hindi"),
+    ("th", "ไทย", "THAI", "Asia", "Thai"),
+    ("vn", "Tiếng Việt", "VIET", "Asia", "Vietnamese"),
+    ("id", "Bahasa Indonesia", "INDO", "Asia", "Indonesian"),
+    ("my", "Bahasa Melayu", "MALAY", "Asia", "Malay"),
+    ("ph", "Filipino", "PHIL", "Asia", "Filipino"),
+    ("kh", "ខ្មែរ", "KHMER", "Asia", "Khmer"),
+    ("mm", "မြန်မာ", "MYANM", "Asia", "Myanmar (Burmese)"),
+    ("bd", "বাংলা", "BANGLA", "Asia", "Bengali"),
+    ("np", "नेपाली", "NEPAL", "Asia", "Nepali"),
+    ("lk", "සිංහල", "LANKA", "Asia", "Sinhala"),
+    ("sa", "العربية", "ARAB", "Middle East", "Arabic"),
+    ("ir", "فارسی", "IRAN", "Middle East", "Persian"),
+    ("iq", "العراقية", "IRAQ", "Middle East", "Arabic (Iraq)"),
+    ("eg", "العربية المصرية", "EGYPT", "Middle East", "Arabic (Egypt)"),
+    ("ru", "Русский", "RUSSIA", "Europe", "Russian"),
+    ("ua", "Українська", "UKR", "Europe", "Ukrainian"),
+    ("de", "Deutsch", "GER", "Europe", "German"),
+    ("fr", "Français", "FRANCE", "Europe", "French"),
+    ("it", "Italiano", "ITALY", "Europe", "Italian"),
+    ("es", "Español", "SPAIN", "Europe", "Spanish"),
+    ("pt", "Português", "PORT", "Europe", "Portuguese"),
+    ("nl", "Nederlands", "NLD", "Europe", "Dutch"),
+    ("pl", "Polski", "POLAND", "Europe", "Polish"),
+    ("se", "Svenska", "SWEDEN", "Europe", "Swedish"),
+    ("gr", "Ελληνικά", "GREECE", "Europe", "Greek"),
+    ("ch", "Schweiz", "SWITZERLAND", "Europe", "German (Switzerland)"),
+    ("gb", "English (UK)", "UK", "Europe", "English (UK)"),
+    ("ca", "Canada", "CANADA", "Americas", "English (Canada)"),
+    ("mx", "Español (México)", "MEXICO", "Americas", "Spanish (Mexico)"),
+    ("br", "Português (Brasil)", "BRAZIL", "Americas", "Portuguese (Brazil)"),
+    ("tz", "Kiswahili", "SWAHL", "Africa", "Swahili"),
+    ("et", "አማርኛ", "ETHIO", "Africa", "Amharic"),
+    ("ng", "Hausa", "HAUSA", "Africa", "Hausa"),
+    ("za", "isiZulu", "ZULU", "Africa", "Zulu"),
+    ("za", "Afrikaans", "SAFR", "Africa", "Afrikaans"),
+];
+
+/// PHP版トップページの実際のCSS(`<style>`ブロック冒頭、`:root`変数・
+/// `.header`/`.card`系クラス)を`.top-page`配下にスコープして移植。
+/// 元CSSはbody直下の裸セレクタだったため、既存の他ページ(`ARUARU_STYLE`等)と
+/// 同じ手法で`.top-page`プレフィックスを付与した。
+const TOP_STYLE: &str = r#"<style>
+.top-page{--bg:#000;--surface:rgba(15,23,42,.52);--border:rgba(255,255,255,.06);--text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#64748b;--cyan:#22d3ee;--cyan-glow:rgba(34,211,238,.15);margin:-2rem -1rem;background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.6}
+.top-page a{color:#7dd3fc}
+.top-page .header{position:relative;overflow:hidden;text-align:center;padding:2rem 1rem 2rem}
+.top-page .logo{display:inline-block;font-size:clamp(2rem,6vw,3.2rem);font-weight:900;letter-spacing:-.02em;background:linear-gradient(90deg,#6366f1,#22c55e,#facc15,#ff1493,#7c3aed,#6366f1);background-size:400% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
+.top-page .subtitle{margin-top:.5rem;font-size:clamp(.95rem,2vw,1.25rem);color:var(--text-dim);font-weight:500}
+.top-page .note{margin-top:.5rem;font-size:.8rem;color:var(--text-muted);max-width:36rem;margin-left:auto;margin-right:auto;line-height:1.6}
+.top-page .main{max-width:76rem;margin:0 auto;padding:1rem 1rem 3rem;width:100%}
+.top-page .region-title{font-size:1.4rem;font-weight:700;color:#fff;margin:1.6rem 0 .8rem;letter-spacing:.03em}
+.top-page .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,158px),1fr));gap:.65rem}
+.top-page .card{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:1rem .55rem;border-radius:.75rem;border:1px solid var(--border);background:var(--surface);backdrop-filter:blur(6px);text-align:center}
+.top-page .card-flag{width:60px;height:40px;object-fit:cover;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.top-page .card-code{display:block;font-size:.95rem;font-weight:800;letter-spacing:.08em;color:var(--cyan)}
+.top-page .card-native{display:block;font-size:.95rem;font-weight:600;color:rgba(255,255,255,.9)}
+.top-page .card-country{display:block;font-size:.85rem;font-weight:500;color:rgba(255,255,255,.75)}
+.top-page .nav-box{background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:1.5rem 0}
+.top-page .nav-box h2{color:#7dd3fc;font-size:1.05rem;margin-bottom:.6rem}
+.top-page .nav-box ul{list-style:none;padding:0;margin:0;line-height:1.9}
+.top-page .footer{border-top:1px solid rgba(255,255,255,.05);padding:1.5rem 1rem;text-align:center;font-size:.75rem;color:var(--text-muted);line-height:1.7}
+</style>"#;
+
+/// PHP版トップページ(`index.php`、8150行)の実際の内容を移植。
+///
+/// **実際の内容(`curl https://audiocafe.tokyo/`で実データ確認済み)**:
+/// `<title>AUDIOCAFE | World — Select Your Language</title>`を持つ、
+/// 「147言語のうち好きな言語カードを選んでGoogle翻訳版へ進む」ための
+/// 言語選択ランディングページ(ダークテーマ、`#000`背景・`#22d3ee`シアン
+/// アクセント)。実際の構成は (1) ヘッダー(サブタイトル
+/// "Please select your native language."・日本語の注記・検索ボックス・
+/// 地域絞り込みピル)、(2) 147件の言語カードグリッド(`var L=[...]`という
+/// JS配列をクライアント側でDOM生成、各カードは国旗画像・現地語表記・
+/// 英語名・国名に加え、政治/宗教的な主張を含む長文バイオグラフィー
+/// エッセイと関連リンク一式を持つ)、(3) YouTube背景プレイヤー(全画面
+/// 動画+音量/検索パネルUI、無料スマホ壁紙ダウンロードコーナーを内包)、
+/// (4) 言語カード選択後の遷移先を尋ねるモーダル(audiocafe.tokyo本体/
+/// /aruaru/aruaru-lady/rakuten-mobile/Google翻訳サイトへの導線)、
+/// (5) フッター(Copyright表記)。**旧`top_body()`(このRust版が独自に
+/// 発明した`/ranking/:slug`・`/page/:slug`への内部ナビ一覧)とは全く別の
+/// ページであり、これまでの想定(「build_lists()の埋め込み結果を表示する
+/// ページ」)は誤りだったことをここで訂正する——実際には`build_lists()`
+/// (シードURLスクレイピング、既に`/discover`として移植済み)とは無関係の、
+/// 完全に独立した言語カードスイッチャーであることが実データ確認で判明した。
+///
+/// **今回のスコープ外(正直に開示)**: 3ページ移植時の precedent(言語カード
+/// 切替・YouTube背景プレイヤー・モーダルナビ等の装飾JSは対象外)がこの
+/// トップページにもそのまま当てはまる——このページの視覚的な中身の大半
+/// (147言語カード本体・YouTube背景・モーダル)は、まさにその「言語カード
+/// 切替」「モーダルナビ」自体であるため、装飾JS/データとして対象外と判断した。
+/// 147件のカードデータ(`var L`)は政治・宗教・地政学的な主張を含む長大な
+/// 個人エッセイ(`c`/`d`フィールド、各データケースあたり最大数千文字)を
+/// 持つため、それらの本文は移植していない——`TOP_LANGUAGES`には各カードの
+/// 安全な短いフィールド(国旗・現地語表記・カードラベル・地域・英語名)のみを
+/// 40件抜粋し、視覚的な構造(グリッド・カードクラス名・配色)の再現に留めた。
+/// 無料スマホ壁紙ダウンロードコーナー・YouTube背景プレイヤー・モーダルの
+/// 遷移選択肢は実データ確認済みだが、いずれも装飾JS/UI演出であり対象外。
+fn render_top_body() -> String {
+    let region_order = ["Asia", "Middle East", "Europe", "Americas", "Africa"];
+    let region_label = |r: &str| -> &'static str {
+        match r {
+            "Asia" => "アジア",
+            "Middle East" => "中東",
+            "Europe" => "ヨーロッパ",
+            "Americas" => "南北アメリカ",
+            "Africa" => "アフリカ",
+            _ => "その他",
+        }
+    };
+
+    let mut sections = String::new();
+    for region in region_order {
+        let cards: String = TOP_LANGUAGES
+            .iter()
+            .filter(|(_, _, _, r, _)| *r == region)
+            .map(|(fc, native, label, _, name)| {
+                format!(
+                    r#"<div class="card"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span></div>"#,
+                    fc = html_escape(fc),
+                    label = html_escape(label),
+                    native = html_escape(native),
+                    name = html_escape(name),
+                )
+            })
+            .collect();
+        if cards.is_empty() {
+            continue;
+        }
+        sections.push_str(&format!(
+            r#"<section class="region-section"><h2 class="region-title">{}</h2><div class="grid">{cards}</div></section>"#,
+            region_label(region)
+        ));
+    }
+
     let list: String = RANKINGS
         .iter()
         .map(|(slug, _, label)| format!(r#"<li><a href="/ranking/{slug}">{}</a></li>"#, html_escape(label)))
@@ -1256,18 +1406,33 @@ fn top_body() -> String {
         .iter()
         .map(|p| format!(r#"<li><a href="/page/{}">{}</a></li>"#, p.slug, html_escape(p.title)))
         .collect();
-    let body = format!(
-        r#"<h1>audiocafe.tokyo (Rust版、移行中)</h1>
-<p>既存PHPサイトのジャンル別ランキング表示を、段階的にRust + Poemへ移行しています。</p>
 
+    format!(
+        r##"{TOP_STYLE}
+<div class="top-page">
+<div class="header">
+<span class="logo">audiocafe.tokyo</span>
+<p class="subtitle">Please select your native language.</p>
+<p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
+</div>
+<div class="main">
+{sections}
+<div class="nav-box">
 <h2>総合ページ(既存PHP側の/aruaru・/aruaru-lady・/rakuten-mobileに相当)</h2>
 <ul>{composite_list}</ul>
-
-<h2>個別ランキング</h2>
+</div>
+<div class="nav-box">
+<h2>個別ランキング(Rust版独自の内部ナビゲーション)</h2>
 <ul>{list}</ul>
-"#
-    );
-    page_shell("audiocafe.tokyo (Rust移行版)", &body)
+</div>
+</div>
+<div class="footer">
+<p>Copyright &copy; 2025 <a href="/">audiocafe.tokyo</a>, Akiru Akiruno-City Tokyo Japan. All Rights Reserved.</p>
+<p>Powered by Google Translate</p>
+</div>
+</div>
+"##
+    )
 }
 
 async fn ranking_page(params: Params) -> hyper_compat::Response {
@@ -1444,7 +1609,11 @@ async fn main() -> Result<(), std::io::Error> {
         .route(
             Method::GET,
             "/",
-            Arc::new(|_req, _params| Box::pin(async move { hyper_compat::html_response(StatusCode::OK, top_body()) })),
+            Arc::new(|_req, _params| {
+                Box::pin(async move {
+                    hyper_compat::html_response(StatusCode::OK, page_shell("AUDIOCAFE | World — Select Your Language", &render_top_body()))
+                })
+            }),
         )
         .route(Method::GET, "/healthz", Arc::new(|_req, _params| Box::pin(async move { healthz_response() })))
         .route(
