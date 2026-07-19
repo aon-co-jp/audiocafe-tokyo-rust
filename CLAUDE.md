@@ -145,6 +145,25 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
      バグ」とは別物であり、混同しない(`localhost`確認で代替可)。
 
 
+## 運用ルール追記(2026-07-19、正本はopen-raid-zのCLAUDE.md参照) — 検証済みの修正はVPS本番反映まで確認不要
+
+- **`cargo build`/`cargo test`+実データでの動作確認まで済んだ修正は、
+  「VPS本番(audiocafe.tokyo)へ反映しますか?」のような確認を挟まず、
+  そのまま自動的に本番デプロイまで実施すること**(ユーザー指示、
+  2026-07-19: 「反映する の質問や確認は 今後は一切不要です」)。
+  1. ローカルで`cargo build`/`cargo test`成功、実バイナリでの動作確認
+     (curl等で期待する文字列・構造が実際に出力されていることの確認)
+     まで済ませてから、コミット・pushする。
+  2. 続けてVPS(`ssh conoha`)で`cd /root/audiocafe-tokyo-rust && git pull
+     && cargo build --release && sudo systemctl restart
+     audiocafe-tokyo-rust.service`を実行し、`systemctl is-active`で起動
+     確認、`curl https://audiocafe.tokyo/`等で本番URLから実際に変更が
+     反映されていることを確認する。
+  3. これらは「続けてよろしいですか」と同種の確認不要ルール
+     ([[feedback_dont_stop_for_confirmation]]参照、この項目の追加も
+     そのメモリへ追記済み)の一部であり、破壊的操作(DB削除・強制push等)
+     とは異なるため、ユーザーへの事前確認は不要。
+
 ## HANDOFF
 
 - **2026-07-19 国旗クリックのバグ修正 + 次セッションへの新規要望の引き継ぎ
