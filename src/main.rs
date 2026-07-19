@@ -78,7 +78,15 @@ nav a {{ margin-right: 1rem; }}
 <body>
 <div class="site-header-band">
 <nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="https://karu.tokyo/" target="_blank" rel="noopener noreferrer">karu.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
-<p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem（<a href="https://github.com/aon-co-jp/audiocafe-tokyo-rust" target="_blank" rel="noopener noreferrer">GitHub</a>）へ日本語で命令して、移植が成功致しました。</p>
+<p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem
+（audiocafe.tokyoのRustへの移植プロジェクト:
+<a href="https://github.com/aon-co-jp/audiocafe-tokyo-rust" target="_blank" rel="noopener noreferrer">audiocafe-tokyo-rust</a>）
+へ日本語で命令して、移植が成功致しました。関連プロジェクト:
+<a href="https://github.com/aon-co-jp/RTypeScript" target="_blank" rel="noopener noreferrer">RTypeScript</a>・
+<a href="https://github.com/aon-co-jp/RPoem" target="_blank" rel="noopener noreferrer">RPoem</a>・
+<a href="https://github.com/aon-co-jp/open-web-server" target="_blank" rel="noopener noreferrer">open-web-server</a>・
+<a href="https://github.com/aon-co-jp/RFrontEnd" target="_blank" rel="noopener noreferrer">RFrontEnd</a>・
+<a href="https://github.com/aon-co-jp/RReact" target="_blank" rel="noopener noreferrer">RReact</a></p>
 </div>
 {body}
 </body>
