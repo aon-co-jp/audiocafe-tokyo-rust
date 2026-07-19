@@ -95,6 +95,21 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 本カットオーバー(`location /`自体をRust版に切り替える)は別途
 計画・確認してから行う。
 
+**新しいRustルートを追加した場合の注意(2026-07-19、`/summary`追加時に判明)**:
+`cargo build --release`してsystemdを再起動するだけでは本番ドメインから
+到達できない——nginxの`location`ブロックが`= /`・`/aruaru/`・
+`/aruaru-lady/`・`/rakuten-mobile/`の4つに限定されているため、新規パス
+(例: `/summary`)は`location /`のprefix match(PHP側の`try_files ...
+/index.php`)に吸収され、PHP版のトップページが誤って返る(ステータスは
+200だがRust版の内容が出ない、という気づきにくい失敗モード)。新しい
+Rustルートを追加した際は、既存の`location /aruaru/`等と同じ
+パターン(`proxy_pass http://127.0.0.1:4400/<path>;`一式)を
+`/etc/nginx/conf.d/audiocafe.tokyo.conf`へ追記し、`nginx -t`→
+`systemctl reload nginx`まで行い、`curl`で実際に本番の`<title>`が
+Rust版のものになっているかを必ず確認すること(ステータスコード200
+だけでは不十分)。設定変更前は必ずタイムスタンプ付きで`.bak-<timestamp>`
+のバックアップを取ること。
+
 ## 関連プロジェクト
 
 - [audiocafe-tokyo](https://github.com/aon-co-jp/audiocafe-tokyo) — 既存PHP実装(移行元)
