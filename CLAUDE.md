@@ -147,7 +147,65 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
-- **2026-07-19(最新) 本番カットオーバー実施: トップページ + 3ページがaudiocafe.tokyo本番ドメインでRust版稼働開始**:
+- **2026-07-19 国旗クリックのバグ修正 + 次セッションへの新規要望の引き継ぎ
+  (コンテキストウインドウ制限直前のチェックポイント)**:
+  **完了した修正**: `render_lang_card`の`.card-actions`(遷移先リンク:
+  audiocafe.tokyo本体/aruaru/aruaru-lady/rakuten-mobile/aruaru.tokyo/
+  Google Translate)が、各カードの長文エッセイ本文の**後**に配置されて
+  いたため、日本語カードのような長文カードではスクロールしないと
+  到達できず「国旗をクリックしても何も起きない」ように見える実バグ
+  だった。エッセイ本文より前(国旗・ラベル直後)に移動して解消
+  (commit `8c0a4b9`、本番`https://audiocafe.tokyo/`で確認済み)。
+  - **未着手のまま引き継ぐユーザーの新規要望(2026-07-19、次回セッション
+    が最初に着手すべき項目)**:
+    1. **国旗画像自体をクリック可能にする**: 現状`<img class="card-flag">`
+       自体には`href`/クリックハンドラが無く、直後の`.card-actions`
+       リンク列だけがクリック可能。国旗画像自体をクリックしても
+       aruaru/aruaru-lady/rakuten-mobile/Google Translate等へ画面遷移
+       するようにしてほしいとの要望(国旗を`<a>`でラップする、または
+       `.card-actions`の最初のリンク——`audiocafe.tokyo`本体の
+       Google翻訳版——へのリンクにする、等の実装が考えられる)。
+    2. **ページ最上部(YouTube再生リストのシリーズより上)に、英語+
+       日本語で「母国語を選択してください」という案内文+リンクを設置**。
+       このリンクは、Google翻訳の世界中の言語から選ぶような体験
+       (=既存の147言語カードグリッドへの導線、アンカーリンク`#`での
+       スクロール誘導等)を想定。その言語を選択すると、選択した言語で
+       aruaru/aruaru-lady/rakuten-mobile/Google Translateが表示される
+       ようにする、という要望(現状、各カードの`.card-actions`は
+       `/aruaru`等へ**多言語化されていない直リンク**を貼っているだけ
+       ——選択言語をaruaru/aruaru-lady/rakuten-mobileの表示に伝播させる
+       仕組みは未実装)。
+    3. **YouTube再生リストのシリーズ機能を元のPHP同様に復活させる**:
+       調査済み——`F:\open-runo\audiocafe.tokyo\index.php`の
+       `var SEARCH_SERIES = [...]`(2566行目、`btn:`フィールドで
+       **84件**のシリーズが定義されている、例:
+       「JBL Summit K2」「JBL DD67000」「QUAD JBL」等、各シリーズが
+       1件以上のYouTube URLを持つ)という、クライアント側JSによる
+       再生リスト切替・キュー管理機能が本来存在する。現状のRust版
+       トップページ(`render_top_body`)は、これを簡略化して単一の
+       デフォルト動画ID(`mSDVnO5gFYk`)を埋め込むだけの実装に留めている
+       (前回HANDOFF参照)。ユーザーはこの84件のシリーズ機能自体の
+       復活を明示的に要望している。
+       - **設計上の論点(次回セッションが判断すべきこと)**: このRust
+         サイトは「クライアント側JSを持たない」という一貫した
+         アーキテクチャ方針を採ってきた(`/aruaru`の対話式検索フォームも
+         サーバーサイドのクエリパラメータ絞り込みで代替済み)。84件の
+         シリーズ機能も、(a) 全84件をボタン一覧として並べ、クリックで
+         対応するYouTube動画ページ/埋め込みへ遷移する形(サーバー
+         レンダリングのみ、キュー自動送り機能は失われる)、または
+         (b) この機能に限り小さなインラインJSを許容する(自動再生・
+         キュー送りの再現)、のどちらを取るか、着手前に方針を決めること。
+         `SEARCH_SERIES`配列を`F:\open-runo\audiocafe.tokyo\index.php`
+         から全件損失なく抽出する際は、過去の`top_languages.json`
+         抽出(Node.jsの`new Function()`評価+`JSON.stringify`、
+         手作業転記による誤りを避ける手法)と同じアプローチを踏襲する
+         と安全。
+  - 次にすべきこと: 上記1〜3を順に(または並行して)実装し、都度
+    `cargo build`/`cargo test`+実バイナリでのcurl確認+本番デプロイまで
+    行うこと(このファイルの「白画面バグ等を見逃さない検証徹底」
+    運用ルールに従う)。
+
+- **2026-07-19(前回) 本番カットオーバー実施: トップページ + 3ページがaudiocafe.tokyo本番ドメインでRust版稼働開始**:
   ユーザー指示によりVPS本番の`nginx`設定を変更・reload実施。
   `/etc/nginx/conf.d/audiocafe.tokyo.conf`に`location = /`
   (完全一致、`location /aruaru/`等のprefix matchより優先される

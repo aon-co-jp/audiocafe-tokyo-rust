@@ -1,23 +1,33 @@
 # PORTING.md — audiocafe-tokyo-rust お引越しファイル
 
 > このファイル1枚で、他プロジェクトへ `audiocafe-tokyo-rust` を導入・移設できます。
-> 対象バージョン: 0.1.0(2026-07-17、`audiocafe.tokyo` PHPモノリスからの移行 第一段)。
+> 対象バージョン: 0.2.0(2026-07-19、本番カットオーバー実施済み——
+> トップページ+3ページが`audiocafe.tokyo`本番ドメインでRust版稼働中)。
 
 ## 0. このリポジトリのスコープ
 
 `audiocafe-tokyo-rust`(旧フォルダ名 `audiocafe-tokyo-server`)は、
 既存PHPモノリス [`audiocafe-tokyo`](https://github.com/aon-co-jp/audiocafe-tokyo)
-(`index.php`単体445KB・189関数・8146行)をRust + Poemへ段階的に
-移行するための新規リポジトリ。既存PHP実装は上書きせず、独立した
-移行先として運用している。
+(`index.php`単体445KB・189関数・8146行)をRust + **RPoem**
+(`open-runo-router::hyper_compat`、外部`poem`クレートへの直接依存を
+断つエコシステム方針、2026-07-19に移行完了)へ段階的に移行する
+リポジトリ。既存PHP実装は上書きせず、独立した移行先として運用している。
 
-**移植方針(正直な開示)**: PHP側の8000行超の大半は装飾目的の
-クライアント側JavaScript(言語カード切替・YouTube背景プレイヤー・
-モーダルナビゲーション等)であり、"アルゴリズム"と呼べる実質的な
-処理は少数の関数(`*-cache.json`のジャンル別ランキング表示、
-`/discover`ページの動画・記事・写真収集ロジック計184行)に
-限られていた。これらの実アルゴリズムのみを簡略化しつつ移植し、
-装飾目的のUIコードは対象外とした。
+**2026-07-19時点の到達度(旧「装飾JSは対象外」という前提から前進)**:
+トップページ(`/`)・`/aruaru`・`/aruaru-lady`・`/rakuten-mobile`の
+**4ページ**は、PHP版と**内容+見た目(CSS/クラス構造)の両方が一致**
+するレベルまで移植済みで、**本番`audiocafe.tokyo`ドメインで実際に
+Rust版が稼働中**(nginx `location = /`および`location /aruaru/`等の
+個別パスでプロキシ)。トップページは147/147言語カード全件・各カードの
+全文エッセイ(政治・宗教等の主張を含め実際に公開済みの内容をそのまま
+複製)・`cardLinks`・YouTube背景プレイヤー・無料壁紙コーナーまで含む。
+ただし**クリック時に遷移先を尋ねるPHP版の元のモーダル**や、
+**YouTube再生リストのシリーズ切替機能(`SEARCH_SERIES`、84件)**は、
+このRustサイトが「クライアント側JSを持たない」という一貫方針を
+採ってきたため、まだ完全には再現できていない(前者は静的直リンクで
+代替、後者は単一デフォルト動画埋め込みに簡略化——詳細は
+`CLAUDE.md`のHANDOFFログ2026-07-19エントリ参照、次回セッションへの
+明示的な引き継ぎ事項)。
 
 ## 1. 持っていくもの(ファイル一覧)
 
@@ -64,31 +74,52 @@ cargo build --release
 移設先で別のキャッシュJSON形状が増えても、既存の`render_value_generic`
 がそのまま通用するかをまず確認し、専用コードの追加は最終手段とすること。
 
-## 5. まだ移植していないもの(ごまかさず明記)
+## 5. まだ移植していないもの(ごまかさず明記、2026-07-19更新)
 
-- 元のPHPページのHTML構造・デザイン・レイアウト(装飾・画像配置等)
-- 多言語版(`index-en.php`・`index-fr.php`等、`/aruaru/`だけで12言語)— 日本語版相当のみ
-- **cronによるキャッシュ自動更新ロジック自体**(2026-07-18調査済み、未実装) —
-  Rust側は既存キャッシュを読むだけで、更新は引き続きPHP側のcronに依存。
-  実体は`audiocafe.tokyo/aruaru/index.php`(7514〜7649行目)の`--cron-all`
-  統合ブロックで、8処理(技術ランキング同期・学習価格・AI学習コメント・
-  英会話ランキング・楽天モバイル基本料金/国際通話/プラチナバンド・doda求人)
-  を毎日実行し、各々が外部サイトへの実クロールまたはOpenAI API呼び出しを
-  伴う。調査結果と移植方針(`src/cron.rs`新設案、楽天3種+dodaから着手し
-  OpenAI依存の技術ランキングは後回し)は`CLAUDE.md`のHANDOFFログ
-  (2026-07-18)に記録済み。スコープが大きいため実装は次回以降。
-- クライアント側JavaScriptの演出(言語カード切替・YouTube背景プレイヤー・モーダルナビゲーション)
-- 本番カットオーバー(`location /`自体をRust版に切り替える)— `aruaru.tokyo`が内部プロキシで`/aruaru/`等のパスに依存しているため未実施
+- **国旗画像自体のクリック導線**: 現状`.card-actions`の直リンク列は
+  クリック可能だが、国旗画像(`<img class="card-flag">`)自体には
+  `href`が無い(次回セッションへの引き継ぎ事項、`CLAUDE.md`参照)。
+- **ページ最上部の多言語選択導線**: 英語+日本語での「母国語を選択して
+  ください」という案内+リンクをYouTube再生リストより上に設置し、
+  選択した言語でaruaru/aruaru-lady/rakuten-mobileが表示されるようにする
+  機能は未実装(次回セッションへの引き継ぎ事項)。
+- **YouTube再生リストのシリーズ機能(`SEARCH_SERIES`、84件)**: PHP側
+  `index.php`(2566行目)にクライアント側JSによる84件のシリーズ切替・
+  自動キュー送り機能があるが、Rust版は単一デフォルト動画の埋め込みに
+  簡略化したまま(次回セッションへの引き継ぎ事項、サーバーレンダリング
+  のみで代替するか、この機能に限りインラインJSを許容するか要判断)。
+- 多言語版(`index-en.php`・`index-fr.php`等、`/aruaru/`だけで12言語)— 日本語版相当のみ。トップページのGoogle Translateリンク経由での閲覧は可能。
+- **`/cancer`・`/Python`・`/video`・`/world`(削除予定)ディレクトリ**:
+  静的コンテンツ・配布ツールファイルで、Rust側では未移植のままnginxの
+  静的配信(PHP版と同じドキュメントルート)に依存している。
+- クライアント側JavaScriptの演出のうち、上記2点(国旗クリック・
+  YouTube再生リストシリーズ)以外の細部(検索駆動の動画切替アニメーション等)。
 
-## 6. デプロイ(現状)
+## 6. 本番デプロイ(2026-07-19、カットオーバー実施済み)
 
 VPS上 `/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 `cargo build --release`、systemdサービス化
-(`audiocafe-tokyo-rust.service`、`127.0.0.1:4400`)。既存PHP本番
-(`https://audiocafe.tokyo/`)は一切変更せず、`audiocafe.tokyo.conf`の
-443番serverブロックに `location /rust-preview/` のみ追加してプロキシする
-形で並行公開している。他環境へ移設する場合も、本番の`location /`は
-最後まで変更しないこと。
+(`audiocafe-tokyo-rust.service`、`127.0.0.1:4400`)。
+
+`/etc/nginx/conf.d/audiocafe.tokyo.conf`に以下を追加し、**本番
+`https://audiocafe.tokyo/`で実際にRust版が稼働中**:
+- `location = /`(完全一致のみ、prefix matchより優先)→ `127.0.0.1:4400/`
+- `location /aruaru/`・`/aruaru-lady/`・`/rakuten-mobile/`
+  (各prefix match)→ `127.0.0.1:4400/aruaru`等
+
+これら以外の全パス(`location /`のprefix match、`/top/`・`/cancer/`・
+`/Python/`・`/video/`・静的キャッシュJSON等)は**無変更のままPHP側が
+処理を継続**——`location =`は完全一致のみを奪うnginxの通常規則を
+利用しているため、既存コンテンツへの影響は無い。設定変更前は必ず
+`cp audiocafe.tokyo.conf audiocafe.tokyo.conf.bak-<timestamp>`で
+バックアップを取ってから編集すること。
+
+他環境へ移設する場合は、まず対象ドメインの実際のドキュメントルート
+構成(このドメイン固有の`/top/`等の個人情報・配布物ディレクトリの
+有無)を調査してから、同じ「完全一致のみを奪う」パターンで安全に
+段階的カットオーバーすること——`location /`を丸ごと置き換えると、
+Rust側に実装のないパスが軒並み404になる実害があることを確認済み
+(`CLAUDE.md`のHANDOFFログ2026-07-19参照)。
 
 ## 7. 命名規約
 
