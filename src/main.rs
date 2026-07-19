@@ -1526,17 +1526,20 @@ fn render_lang_card(card: &LangCard) -> String {
 /// (3) 壁紙コーナーの「タップで原寸表示」インタラクションはブラウザ標準の
 /// 画像リンク遷移で代替(画像自体・ダウンロードリンクは実物)。
 fn render_top_body(query: &std::collections::HashMap<String, String>) -> String {
-    // Pacific地域を含む6地域(前回は太平洋諸国を含む未検証の5地域のみだった)。
-    let region_order = ["Asia", "Middle East", "Europe", "Americas", "Africa", "Pacific"];
+    // PHP版`REGIONS`配列(`index.php` 1762行目)と同じ並び順・
+    // `REGION_LABELS`(1763〜1770行目)と同じ英語見出しを踏襲、日本語は
+    // 括弧書きで併記する(2026-07-19、ユーザー指示によりデフォルトを
+    // 英語+(日本語)表記に変更)。
+    let region_order = ["Asia", "Europe", "Americas", "Middle East", "Africa", "Pacific"];
     let region_label = |r: &str| -> &'static str {
         match r {
-            "Asia" => "アジア",
-            "Middle East" => "中東",
-            "Europe" => "ヨーロッパ",
-            "Americas" => "南北アメリカ",
-            "Africa" => "アフリカ",
-            "Pacific" => "太平洋",
-            _ => "その他",
+            "Asia" => "Asia (アジア)",
+            "Europe" => "Europe (ヨーロッパ)",
+            "Americas" => "Americas (南北アメリカ)",
+            "Middle East" => "Middle East & Central Asia (中東・中央アジア)",
+            "Africa" => "Africa (アフリカ)",
+            "Pacific" => "Pacific (太平洋)",
+            _ => "Other (その他)",
         }
     };
 
@@ -1636,6 +1639,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <span class="logo">audiocafe.tokyo</span>
 <p class="subtitle">Please select your native language.</p>
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
+<p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
 <div class="yt-bg-player"><iframe width="100%" height="220" src="https://www.youtube.com/embed/{TOP_DEFAULT_BG_VIDEO_ID}?autoplay=1&mute=1&rel=0" title="AUDIOCAFE background video" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe></div>
 <div class="yt-wp-corner">
 <span class="yt-wp-head">🎁 無料 スマホ壁紙コーナー</span>
@@ -1649,7 +1653,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 </form>
 <div class="pills">{pills}</div>
 </div>
-<div class="main">
+<div class="main" id="lang-grid">
 {sections}
 <div class="nav-box">
 <h2>総合ページ(既存PHP側の/aruaru・/aruaru-lady・/rakuten-mobileに相当)</h2>
