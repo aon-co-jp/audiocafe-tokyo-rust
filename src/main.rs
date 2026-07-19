@@ -1358,6 +1358,36 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-series-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.25rem .7rem;font-size:1.05rem;cursor:pointer}
 .top-page .yt-series-btn.is-active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
 .top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
+.top-page #logoWrap{max-width:640px;margin:1rem auto 0;padding:1.2rem 1rem;text-align:center;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.top-page .logo-letter{display:inline-block;font-size:2rem;font-weight:900;color:#22d3ee;letter-spacing:.02em}
+.top-page #logoModeBar,.top-page #danceFixedBar{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem;margin-top:.8rem}
+.top-page #danceFixedBar{display:none;margin-top:.5rem}
+.top-page #danceFixedBar.is-visible{display:flex}
+.top-page .df-label{font-size:.75rem;color:var(--text-dim);align-self:center;margin-right:.2rem}
+.top-page .logo-mode-btn,.top-page .dance-fixed-btn{border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--text-dim);padding:.3rem .8rem;font-size:.8rem;cursor:pointer}
+.top-page .logo-mode-btn.active,.top-page .dance-fixed-btn.active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
+@keyframes ac-logo-scroll{0%{background-position:0 0}100%{background-position:200% 0}}
+.top-page #logoWrap.mode-scroll .logo-letter{background:linear-gradient(90deg,#22d3ee,#a78bfa,#fbbf24,#22d3ee);background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:ac-logo-scroll 3s linear infinite}
+@keyframes ac-logo-dance{0%,100%{transform:translateY(0)}50%{transform:translateY(-.6rem)}}
+.top-page #logoWrap.mode-dance .logo-letter,.top-page #logoWrap.mode-danceFixed .logo-letter{animation:ac-logo-dance .7s ease-in-out infinite}
+.top-page #logoWrap.mode-danceFixed[data-genre="kabuki"] .logo-letter{color:#ef4444}
+.top-page #logoWrap.mode-danceFixed[data-genre="egypt"] .logo-letter{color:#fbbf24}
+.top-page #logoWrap.mode-danceFixed[data-genre="india"] .logo-letter{color:#fb923c}
+.top-page #logoWrap.mode-danceFixed[data-genre="hiphop"] .logo-letter{color:#a3e635}
+.top-page #logoWrap.mode-danceFixed[data-genre="kpop"] .logo-letter{color:#f472b6}
+.top-page #logoWrap.mode-danceFixed[data-genre="latin"] .logo-letter{color:#fb7185}
+.top-page #logoWrap.mode-danceFixed[data-genre="orchestra"] .logo-letter{color:#c4b5fd}
+.top-page #logoWrap.mode-danceFixed[data-genre="jazz"] .logo-letter{color:#38bdf8}
+.top-page #logoWrap.mode-danceFixed[data-genre="ethnic"] .logo-letter{color:#4ade80}
+.top-page #logoWrap.mode-danceFixed[data-genre="freestyle"] .logo-letter{color:#22d3ee}
+@keyframes ac-logo-pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.25);opacity:.75}}
+.top-page #logoWrap.mode-danceAI .logo-letter{animation:ac-logo-pulse .9s ease-in-out infinite;color:#a78bfa}
+@keyframes ac-logo-wave{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-.9rem) rotate(-8deg)}}
+.top-page #logoWrap.mode-wave .logo-letter{animation:ac-logo-wave 1.1s ease-in-out infinite}
+@keyframes ac-logo-explode{0%{transform:translate(0,0) rotate(0);opacity:1}50%{transform:translate(var(--ex,1.5rem),var(--ey,-1.5rem)) rotate(180deg);opacity:.4}100%{transform:translate(0,0) rotate(360deg);opacity:1}}
+.top-page #logoWrap.mode-explode .logo-letter{animation:ac-logo-explode 1.6s ease-in-out infinite}
+@keyframes ac-logo-orbit{0%{transform:rotate(0deg) translateX(.5rem) rotate(0deg)}100%{transform:rotate(360deg) translateX(.5rem) rotate(-360deg)}}
+.top-page #logoWrap.mode-orbit .logo-letter{display:inline-block;animation:ac-logo-orbit 2.4s linear infinite}
 .top-page .yt-wp-head{display:block;font-weight:800;color:#fde68a}
 .top-page .yt-wp-hint{display:block;font-size:.75rem;color:var(--text-muted);margin:.2rem 0 .6rem}
 .top-page .yt-wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:.6rem}
@@ -1789,6 +1819,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
         .and_then(|s| s.urls.iter().find_map(|u| scraper::extract_yt_id(u)))
         .unwrap_or_else(|| TOP_DEFAULT_BG_VIDEO_ID.to_string());
     let default_series_label_esc = html_escape(&default_series_label);
+    let logo_letters: String = "audiocafe.tokyo".chars().map(|c| format!(r#"<span class="logo-letter">{}</span>"#, html_escape(&c.to_string()))).collect();
 
     let list: String = RANKINGS
         .iter()
@@ -1850,6 +1881,51 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
   window.acToggleYtPanel = function(open) {{
     document.getElementById('ytBgPlayer').style.display = open ? '' : 'none';
     document.getElementById('ytPanelOpen').style.display = open ? 'none' : 'block';
+  }};
+}})();
+</script>
+<!-- PHP版のcanvasパーティクルロゴ+YouTube音楽連動(`index.php` 5854行目以降、
+     1000行超)の簡略復刻。モード切替ボタン7種+Dance Fixedのジャンル10種は
+     PHP版と同一構成だが、実際のアニメーションはcanvasパーティクル物理演算・
+     音声ビート検出ではなく、文字ごとのCSS `@keyframes`(バウンス・パルス・
+     波打ち・回転等)に簡略化している(2026-07-19、スコープ縮小として正直に
+     開示)。 -->
+<div id="logoWrap" class="mode-scroll" data-genre="kabuki">{logo_letters}</div>
+<div id="logoModeBar">
+<button type="button" class="logo-mode-btn active" data-mode="scroll" onclick="acSetLogoMode('scroll')">🌈 スクロール</button>
+<button type="button" class="logo-mode-btn" data-mode="dance" onclick="acSetLogoMode('dance')">💃 Dance</button>
+<button type="button" class="logo-mode-btn" data-mode="danceFixed" onclick="acSetLogoMode('danceFixed')">🎯 Dance Fixed</button>
+<button type="button" class="logo-mode-btn" data-mode="danceAI" onclick="acSetLogoMode('danceAI')">🤖 Dance AI</button>
+<button type="button" class="logo-mode-btn" data-mode="wave" onclick="acSetLogoMode('wave')">🌊 波</button>
+<button type="button" class="logo-mode-btn" data-mode="explode" onclick="acSetLogoMode('explode')">💥 爆発</button>
+<button type="button" class="logo-mode-btn" data-mode="orbit" onclick="acSetLogoMode('orbit')">🌀 オービット</button>
+</div>
+<div id="danceFixedBar">
+<span class="df-label">Genre →</span>
+<button type="button" class="dance-fixed-btn active" data-genre="kabuki" onclick="acSetLogoGenre('kabuki')">🎭 歌舞伎</button>
+<button type="button" class="dance-fixed-btn" data-genre="egypt" onclick="acSetLogoGenre('egypt')">🏛 エジプト</button>
+<button type="button" class="dance-fixed-btn" data-genre="india" onclick="acSetLogoGenre('india')">🕉 インド</button>
+<button type="button" class="dance-fixed-btn" data-genre="hiphop" onclick="acSetLogoGenre('hiphop')">🎤 HIPHOP</button>
+<button type="button" class="dance-fixed-btn" data-genre="kpop" onclick="acSetLogoGenre('kpop')">💖 K-POP</button>
+<button type="button" class="dance-fixed-btn" data-genre="latin" onclick="acSetLogoGenre('latin')">💃 ラテン</button>
+<button type="button" class="dance-fixed-btn" data-genre="orchestra" onclick="acSetLogoGenre('orchestra')">🎻 オーケストラ</button>
+<button type="button" class="dance-fixed-btn" data-genre="jazz" onclick="acSetLogoGenre('jazz')">🎷 JAZZ</button>
+<button type="button" class="dance-fixed-btn" data-genre="ethnic" onclick="acSetLogoGenre('ethnic')">🪘 民族</button>
+<button type="button" class="dance-fixed-btn" data-genre="freestyle" onclick="acSetLogoGenre('freestyle')">✨ フリースタイル</button>
+</div>
+<script>
+(function(){{
+  var wrap = document.getElementById('logoWrap');
+  window.acSetLogoMode = function(mode) {{
+    wrap.className = 'mode-' + mode;
+    var btns = document.querySelectorAll('.logo-mode-btn');
+    for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'logo-mode-btn' + (btns[i].dataset.mode === mode ? ' active' : ''); }}
+    document.getElementById('danceFixedBar').className = mode === 'danceFixed' ? 'is-visible' : '';
+  }};
+  window.acSetLogoGenre = function(genre) {{
+    wrap.setAttribute('data-genre', genre);
+    var btns = document.querySelectorAll('.dance-fixed-btn');
+    for (var i = 0; i < btns.length; i++) {{ btns[i].className = 'dance-fixed-btn' + (btns[i].dataset.genre === genre ? ' active' : ''); }}
   }};
 }})();
 </script>
