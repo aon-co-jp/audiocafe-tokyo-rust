@@ -181,6 +181,35 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-19(またさらに続きの続きの続き) nav行にPHPリンク追加、
+  YouTube再生中タイトルのクリック可能化**: ユーザーから3件の要望。
+  1. **「PHP」リンク**: `page_shell`の共有nav(全ページ表示)に
+     `/index.php`へのリンクを追加(1.4emの大きめフォント)。nginxの
+     `location = /`は完全一致のみを奪う設定のため、`/index.php`への
+     直接アクセスは引き続きPHP側の`try_files`ルートへ落ち、本物の
+     PHP版トップページ(実データで確認: `id="logoCanvas"`・
+     `SEARCH_SERIES`が実際に含まれる、Rust版とは別物)がそのまま
+     表示されることを確認済み——新規のnginx設定変更は不要だった。
+  2. **nav行の可読性**: トップページ(ダークテーマ)でnavが見えにくい
+     問題に対応するため、`TOP_STYLE`(`/`ページのみ読み込まれる)に
+     `nav`・`nav a`・`.nav-php-link`の色指定を追加(他ページの
+     ライトテーマnavには影響しない)。
+  3. **YouTube再生中タイトルのクリック可能化**: PHP版`#ytNowPlaying`
+     (`index.php` 1459〜1463行目、「タップ→動画/ページを開く」)相当。
+     旧実装は非クリック可能なただの`<div>`だったのを`<a>`に変更し、
+     `acPlaySeries`/`acNextVideo`実行時に`href`を実際の
+     `youtube.com/watch?v=<id>`(再生可能な動画が無いシリーズの場合は
+     検索結果ページ)へ都度更新するようにした。
+  - **検証**: `cargo build`(新規警告なし)・`cargo test`(14件全green)。
+    実バイナリでのcurl確認(nav内`PHP`リンク、`/help`等他ページにも
+    同じnavが表示されること、`ytNowPlaying`の初期href)、ブラウザでの
+    `javascript_tool`実行で`acPlaySeries(2)`→`acNextVideo()`後に
+    `ytNowPlaying.href`が実際に対応するYouTube動画IDへ切り替わることを
+    確認(コンソールエラー無し)。本番`https://audiocafe.tokyo/`でも
+    nav・`ytNowPlaying`の反映、および`https://audiocafe.tokyo/index.php`が
+    200で実際のPHP版を返すことを確認済み(コミット`01af0c1`)。
+  - 次にすべきこと: 現時点で明示的な未着手要望は無し。
+
 - **2026-07-19(またさらに続きの続き) 波モードに帆船アニメーション
   (drawSailingShip)を移植、canvas高さを拡大**: 前項でcanvas実描画の
   ロゴエンジンに置き換えた際、波モード専用の帆船装飾(`drawSailingShip`)を
