@@ -147,6 +147,105 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(続きの続きの続きの続きの続きの続き) トップページ(`/`)を147/147カード完全版へ拡張完了(ユーザー指示による前回スコープ縮小の解消)**:
+  直前のHANDOFF(次項)で「147件のうち40件のみ抜粋、各カードの長文
+  バイオグラフィーエッセイ・`cardLinks`は政治・宗教的な主張を含むため
+  未移植」と明記していたスコープ縮小について、ユーザーから明示的に
+  「完成させて」という指示があり、これを完了させた
+  (「同じページだと分かればよい」という前回の判断を上書きする、今回の
+  ユーザー指示が優先)。
+  - **データ抽出**: `F:\open-runo\audiocafe.tokyo\index.php`の実際の
+    `var L=[...]`(1609〜1757行目、147件)を、手動転記ではなく
+    Node.jsの`new Function('return ('+src+')')`でJSとして直接評価し
+    `JSON.stringify`することで、エスケープ相違等の写し間違いを排除して
+    losslessに抽出。`assets/top_languages.json`として147件全件・全
+    フィールド(`g`/`n`/`t`/`a`/`r`/`c`/`d`/`p`/`cardLinks`/`bioScroll`/`fc`)を
+    保存し、`src/main.rs`に`include_str!`で埋め込み、`once_cell::Lazy`で
+    起動時に一度だけ`serde_json`デシリアライズする方式に変更(前回の
+    `TOP_LANGUAGES`という手書きタプル40件のconstから置き換え)。
+  - **実データの内訳(前回把握できていなかった詳細)**: 147件全件が`c`
+    (英語エッセイ、短い1行〜数千字の長文まで様々)を持つが、`d`(日本語版
+    エッセイ)は10件のみ、`cardLinks`(関連記事/動画リンク集)も8件のみ、
+    `p`(正式国名)は1件のみに存在。地域は前回把握していた5地域
+    (Asia/Middle East/Europe/Americas/Africa)に加え**Pacific(太平洋、
+    Samoa/Fiji等3件)が実在し前回は見落としていた**——今回`region_order`に
+    追加、6地域全て正しく描画されることを確認。
+  - **変更点(`src/main.rs`)**: `LangCard`/`CardLink`(`serde::Deserialize`)
+    構造体を新設。`render_lang_card()`で各カードの国旗・現地語表記・
+    カードラベル・国名に加え、`c`/`d`の**全文エッセイ**(政治・宗教・
+    地政学的な主張を含め、実際に公開済みのPHP版コンテンツをそのまま
+    無編集で複製、`\n\n`区切りで`<p>`段落化のみ実施)、`cardLinks`の
+    実`<a href>`リスト、そして「言語カード選択後の遷移先を尋ねる
+    モーダル」(`#acNavChoiceModal`)が提示する実際の行き先
+    (audiocafe.tokyo本体・/aruaru・/aruaru-lady・/rakuten-mobile・
+    aruaru.tokyo・Google翻訳サイト)を`.card-actions`の直リンク行として
+    復元した——このリポジトリに他ページも含め一切クライアントJSの
+    前例が無いことを確認した上で、(b)のプレーンHTML化を選択(PHP版の
+    `makeAcNavAudiocafeRoot()`/`makeAcNavGoogleTransUrl()`と同じURL
+    組み立て式=`google_translate_proxy_url()`/`google_translate_site_url()`
+    をそのまま移植、ダミーURLではなく実際に機能するGoogle翻訳プロキシ
+    URL・翻訳サイトURル)。YouTube背景プレイヤーはPHP側が実際に初期
+    フォールバックとして使う動画ID`mSDVnO5gFYk`(`index.php` 3272行目
+    `DEFAULT_BG_VIDEO_ID`)を実`<iframe>`(`youtube.com/embed/...`)として
+    埋め込み(検索駆動の動画切り替えという数千行のクライアントJSロジック
+    自体は対象外、初期表示の実際の動画のみ)。無料スマホ壁紙コーナーは
+    実画像4件(`stat.ameba.jp`ホスティング、`index.php` 1492〜1524行目)・
+    実ダウンロードリンクをそのまま`TOP_WALLPAPERS`定数として移植。
+    検索/地域絞り込みピルはクライアントJSが無いこのアーキテクチャに
+    合わせ、`?q=`/`?region=`のクエリパラメータによるサーバーサイド
+    フィルタ(`hyper_compat::query_params`)として実装(`/aruaru`側にも
+    対話式検索フォームのJS/GETパラメータ駆動の前例調査を行ったが、
+    当該機能自体が「JS演出として対象外」のまま未実装だったため、
+    今回はゼロから設計、単純な部分一致+地域完全一致)。
+  - **検証(実施済み、報告のみでなく実際に確認)**: `cargo build`成功
+    (新規警告なし、既存の`open-runo-router`側3警告のみ)。`cargo test`で
+    **14件全green**(既存と同数)。実バイナリを起動し
+    `curl http://127.0.0.1:4400/`を取得、**カード数を機械的に
+    カウント**(`grep -o 'class="card"' | wc -l` → **147件**)、`curl
+    https://audiocafe.tokyo/`(本番PHP、実データ)の`{g:"` 出現数と
+    突き合わせ**147件で完全一致**を確認。エッセイ本文・壁紙リンクの
+    **サンプル9件をbyte-identicalで比較**(`grep -o -F`で出現数照合):
+    「The hills of Iran (Persia)」(英語Persianカードの長文エッセイ冒頭、
+    live 1/rust 1)、「666は、ヘブライ語」(英語カードの日本語d、live 1/
+    rust 1)、「Switzerland is known for its underground」(live 1/
+    rust 1)、「Estonia e-Government」(データのみの短いcのカード、live 1/
+    rust 1)、「Fijian」「Samoan」(Pacific地域、各live 1/rust 1)、
+    「Global Cosplay」(cardLinksのラベル文字列、live 2/rust 2)、
+    「NTT IOWN 井上飛鳥さん 黒服」(壁紙alt/name、live 2/rust 2)いずれも
+    完全一致。**cardLinks**は8カード分・**card-actions**は147カード分
+    正しく出力されることをHTML内のクラス出現数(`card-links`10=CSS定義2+
+    8カード分、`card-actions`149=CSS定義2+147カード分)で確認。
+    **地域/検索フィルタ**実動作確認: `/?region=Pacific`→3件のみ表示
+    (Pacific地域の実件数と一致)、`/?q=japanese`→1件のみ表示
+    (Japaneseカードのみマッチ、`is-active`ピルも正しく切り替わることを
+    確認)。`/aruaru`・`/aruaru-lady`・`/rakuten-mobile`・`/discover`も
+    引き続き200・既存の内容文字列(「スキルと希望条件から」「女性向け
+    お仕事情報」「楽天モバイル 最新情報」)を含むことを再確認(回帰無し)。
+    検証後サーバープロセスは停止済み。
+  - **今回のスコープ外(正直に開示、真のブロッカーではなく設計判断)**:
+    (1) PHP版の`#acNavChoiceModal`自体(JSモーダル、開閉アニメーション)は
+    再現せず、直リンク行(`.card-actions`)に置き換えた——**到達できる
+    行き先自体はモーダルの選択肢と完全に同一**(モーダルを経由する
+    かどうかだけの差で、「ユーザーが実際にその行き先へ到達できるか」
+    というタスクの本質的なゴールは満たしている)。(2) YouTube背景
+    プレイヤーの検索ワード駆動での動画切り替え(`fetchAndCollect`/
+    `fetchSearchResultIds`等、`index.php`だけで数千行に及ぶクライアント
+    JSロジック、シリーズボタン・NEXT・ランダムプール等)は移植して
+    いない——初期表示の実際のデフォルト動画のみ埋め込み。これは
+    「クライアント側JSを持たない」というこのRustサイト全体の一貫した
+    アーキテクチャ方針に基づく意図的判断であり、技術的なブロッカーでは
+    ない。(3) 壁紙コーナーの「タップで原寸表示」は標準的な画像リンク
+    遷移で代替(画像自体・ダウンロードリンクは実物のまま)。
+  - **これで本番PHP側の主要4ページ(`/`・`/aruaru`・`/aruaru-lady`・
+    `/rakuten-mobile`)全ての内容(147/147カード・全文エッセイ・
+    cardLinks・YouTube/壁紙含む)+見た目一致が完了**。次にすべきこと:
+    (1) `location /`の本番カットオーバーをユーザーに確認する(nginx側の
+    `aruaru.tokyo`依存パスを崩さない段階的切替方法の検討)、(2)
+    多言語版(`index-en.php`等)は依然未対応、(3) YouTube背景プレイヤーの
+    検索駆動切り替え・言語カードモーダルのJSアニメーションを厳密に
+    再現する必要が生じた場合は、このRustサイトへ初のクライアントJSを
+    導入するかどうかの方針決定が必要になる(現状は不要と判断)。
+
 - **2026-07-19(続きの続きの続きの続きの続き) トップページ(`/`)の内容乖離を解消(旧`top_body()`のRust独自ナビ一覧→PHP版の実際のホームページ内容+見た目を専用レンダラーで再現)、既存の想定を訂正**:
   3ページ(`/aruaru`・`/aruaru-lady`・`/rakuten-mobile`)に続き、最後に残っていた
   トップページ`/`(PHP側`F:\open-runo\audiocafe.tokyo\index.php`、8150行)に
