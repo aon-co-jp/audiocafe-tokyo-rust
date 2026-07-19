@@ -147,6 +147,108 @@ VPS上`/root/audiocafe-tokyo-rust`(GitHubからclone、git管理下)で
 
 ## HANDOFF
 
+- **2026-07-19(続きの続きの続きの続き) `/aruaru`の内容乖離を解消(汎用JSONダンプ→PHP版の実際のページ内容+見た目を専用レンダラーで再現)、3ページ全ての内容+見た目一致が完了**:
+  `/rakuten-mobile`・`/aruaru-lady`(前2項参照)に続き、最大かつ最後の対象
+  ページ`/aruaru`(PHP側`F:\open-runo\audiocafe.tokyo\aruaru\index.php`、
+  8152行)に着手した。`index.php`本体は求人マッチングエンジンの実装
+  (`EXT_SITES`/`ANKEN`定数、`build_wantedly_url`等の検索URL組み立て関数群、
+  `google_search`/`ai_trend_analysis`等)が大半を占めるが、実際に
+  ブラウザへ出力される「HTML 出力」パート(4199行目以降)を精読し、
+  かつ`curl https://audiocafe.tokyo/aruaru/`で実データも確認した。
+  - **PHP版の実際の内容**: `<title>aruaru | ITエンジニア案件・求人マッチング</title>`、
+    `<h1 class="hero-h1">スキルと希望条件からあなたにぴったりの案件が見つかる。</h1>`
+    を持つダークテーマ(`#0b1220`背景)の求人マッチングページ。構成は
+    (1) ヒーロー(掲載案件32件・外部求人サイト19件・リモート対応80%・
+    月額レンジ¥60〜130万の統計)、(2) `rm_render_embed_panel()`で
+    `/rakuten-mobile`の内容をそのまま埋め込む楽天モバイルコーナー、
+    (3) 💼転職求人ピックアップ（doda、未経験可・転勤無しのIT/広告代理店
+    カテゴリ2種+頻出言語・FW一覧）、(4) 職種・言語・FW・月額・勤務地で
+    絞り込む対話式の求人検索フォーム＋結果カード(JS/GETパラメータ駆動)、
+    (5) 🌐外部求人サイト19件(`EXT_SITES`定数、レバテックフリーランス・
+    Wantedly・Green・Findy・Daijob等)、(6) 💡サービス向上・販売提案
+    (無料送迎サービス・朝昼OPEN・ノンアルコールビール・救心/コエンザイム
+    Q10優先販売の4提案)、(7) AIトレンド分析ウィジェット(OpenAI API依存、
+    未設定時はプレースホルダ)、(8) 🚀人気TOP80技術ランキング(言語・
+    フレームワーク・データベース各80件、`ai-tech-ranking-cache.json`)、
+    (9) 📚おすすめ学習サービスTOP50(学習塾・家庭教師紹介・PC教室・
+    プログラミング教室・学習タブレットの5カテゴリ、`aruaru_learning_
+    categories()`のハードコードデータ、日英各50件までパディング)、
+    (10) 🌏英会話アプリTOP50(`aruaru-eikaiwa-ranking-cache.json`)、
+    (11) 未経験からのIT研修/大工/建築士系求人案内3枚、(12)
+    aruaru-lady移転案内・aruaru.tokyoリンク・footer。**重要な発見**:
+    旧Rust版の`COMPOSITE_PAGES`の`aruaru`エントリは「キャバクラ求人
+    時給帯ランキング」「熟女キャバ求人ランキング」等を列挙していたが、
+    実際のPHP版`/aruaru/`はこれらを一切表示していない(コメントアウト
+    された移転バナーの通り、`/aruaru-lady`へ完全移転済み)——タスク
+    冒頭の想定(「COMPOSITE_PAGESが既に対応済みのセクション一覧」)は
+    不正確だったことを確認・訂正した。
+  - **変更**: `src/main.rs`に`render_aruaru_body()`を新設。上記(1)(2)
+    (3)(5)(6)(8)(10)(11)(12)を再現(データ部分は既存の`fetch_cache`
+    アーキテクチャ経由で`aruaru/doda-jobs-cache.json`・
+    `ai-tech-ranking-cache.json`・`aruaru-eikaiwa-ranking-cache.json`
+    から取得)。`ARUARU_EXT_SITES`(19件、`EXT_SITES`定数を1対1移植、
+    「ITあんけん」のみ動的URL生成ロジックが複雑なためGoogle検索窓口に
+    簡略化)、`ARUARU_LEARNING_CATEGORIES`(5カテゴリの代表数件、PHP版の
+    自動生成穴埋め行「〇〇 おすすめ #51」等は省略——正直に開示する
+    スコープ縮小)、`render_data_table`(言語/FW/DB/英会話の4種の表を
+    PHP版と同じ列見出しで描画する汎用ヘルパー、`name`列は`url`
+    フィールドがあれば自動リンク化)を追加。**CSS(見た目)**:
+    `ARUARU_STYLE`定数にPHP版`<style>`ブロック(4222〜4380行目)の
+    ダークテーマ本体(`#0b1220`背景・hero-h1のグラデーションテキスト・
+    `.card`/`.ext-card`/`.toc`等)を`.aruaru-page`配下にスコープして移植、
+    技術ランキング3表の見出し色(`#00ffff`言語・`#ffaa00`FW・`#ff66cc`
+    DB・`#34d399`英会話)もPHP版のインラインスタイルをそのまま踏襲した。
+    `composite_page_by_slug`内で`slug == "aruaru"`の場合だけこの専用
+    関数を呼ぶよう分岐(`/aruaru`・`/page/aruaru`両方が対象)、旧`COMPOSITE_PAGES`
+    の`aruaru`エントリ自体は削除せず残置(到達不能コードだが、
+    他のslugの参照確認用に残した)。
+  - **検証(実施済み)**: `cargo build`成功(新規警告なし)。`cargo test`で
+    **14件全green**(既存と同数)。実バイナリを起動し
+    `curl http://127.0.0.1:4400/aruaru`で実際のレンダリング結果を取得、
+    `curl https://audiocafe.tokyo/aruaru/`(本番PHP、1.3MB)の実データと
+    突き合わせ、以下の**具体的な文字列**が両方に含まれることを`grep -c`
+    で確認(件数はPHP側がJS/検索フォーム分含むため多いが、Rust側にも
+    1件以上ヒット): 「スキルと希望条件から」(live 1/rust 1)、
+    「転職求人ピックアップ」(live 1/rust 1)、「サービス向上・販売提案」
+    (live 1/rust 2)、「人気TOP80 技術ランキング」(live 1/rust 1)、
+    「おすすめ学習サービス」(live 1/rust 1)、「英会話アプリ」(live 2/
+    rust 1)、「キャバクラ・TVチャットレディなど主に女性向けのお仕事情報は
+    移転しました」(live 1/rust 1)、「レバテックフリーランス」(live 4/
+    rust 1)、「geechs job」(live 1/rust 1)、「救心」(live 1/rust 1)、
+    「コエンザイムQ10」(live 1/rust 1)。**CSS/見た目の一致確認**:
+    実PHP版の技術ランキング見出し色`#00ffff`(live 158/rust 2)・
+    `#ffaa00`(live 161/rust 2)・`#ff66cc`(live 162/rust 2)・
+    `#34d399`(live 60/rust 2)が全てRust出力にも実際に存在することを
+    確認。実データについても、言語ランキング表に実際に`JavaScript`、
+    英会話ランキング表に`Duolingo`、DBランキング表に`MySQL`のセルが
+    描画されていることを確認(`fetch_cache`が本番の3キャッシュへ実際に
+    到達している証拠)。`/aruaru-lady`・`/rakuten-mobile`・`/`も引き続き
+    200であることを再確認(既存ページへの影響が無いことの確認)。
+    検証後サーバープロセスは停止済み。
+  - **今回のスコープ外(正直に開示)**: (1) 対話式の求人検索フォーム
+    (職種・言語・FW・月額スライダー・勤務地での絞り込み、GETパラメータ
+    駆動のカード表示)・AIトレンド分析ウィジェット・Google翻訳ウィジェットは
+    再現していない(既存2ページのJS演出除外方針を踏襲)。(2) 学習サービス
+    TOP50は各カテゴリ代表数件のみ(PHP版の自動生成穴埋め行は省略)。
+    (3) 技術ランキング表は「TOP80圏外・要注目」枠(Mojo・WunderGraph・
+    VersionlessAPI・AWS等の追加行)は省略、`AI_TECH_DATA`の80件本体のみ
+    再現。
+  - **3ページ全ての内容+見た目一致が完了(本番カットオーバー再検討の
+    材料)**: これで`aruaru.tokyo`が内部プロキシ経由で依存している
+    `/aruaru/`・`/aruaru-lady/`・`/rakuten-mobile/`の3パス全てが、
+    PHP版との内容+見た目乖離を解消した(前回HANDOFFで発見された
+    「訪問者に全く異なるページが見えてしまう」実害が3パスとも解消)。
+    ただし、上記の「今回のスコープ外」に記載した対話式検索フォーム・
+    AIウィジェット・翻訳ウィジェット等のJS演出は3ページとも未再現の
+    ままであり、これらが本カットオーバー判断に影響するかは別途検討が
+    必要——**本HANDOFFでは本番`location /`カットオーバーの実施はしない**
+    (nginx設定変更を伴う運用判断のため、人間または別タスクでの実施を
+    推奨)。
+  - 次にすべきこと: (1) 3ページの現状(静的コンテンツ+CSSは一致、JS
+    演出は除外)で本番カットオーバーに進むかどうかをユーザーに確認する、
+    (2) 進める場合は`aruaru.tokyo`側nginxの依存パスを崩さない段階的
+    切替方法を検討する、(3) 多言語版(`index-en.php`等)は依然未対応。
+
 - **2026-07-19(続きの続きの続き) `/rakuten-mobile`にも見た目(CSS/クラス構造)を追補**:
   `/aruaru-lady`対応時にユーザーからスコープ拡大の指示(見た目もPHP版と
   一致させる)を受けたが、`/rakuten-mobile`(先に完了していたHANDOFF
