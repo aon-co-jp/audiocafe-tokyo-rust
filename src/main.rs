@@ -273,6 +273,350 @@ fn google_search_url(query: &str) -> String {
     format!("https://www.google.com/search?q={}", percent_encode(query))
 }
 
+/// JSON値を種類を問わず表示用文字列にする(`get_str`は文字列型専用のため、
+/// ランキングキャッシュの`rank`のような数値フィールドは拾えない。
+/// aruaru-ladyのランキング表描画で数値・文字列混在フィールドを
+/// まとめて扱うために追加)。
+fn get_disp(v: &Value, key: &str) -> String {
+    match v.get(key) {
+        Some(Value::String(s)) => s.clone(),
+        Some(Value::Number(n)) => n.to_string(),
+        Some(Value::Bool(b)) => b.to_string(),
+        _ => String::new(),
+    }
+}
+
+/// aruaru-ladyの各種TOP50ランキング(キャバクラ/熟女キャバ/TVチャットレディ
+/// グループ・通常)を、PHP版と同じ列構成(順位+指定カラム+検索リンク)の
+/// 表としてレンダリングする。`cols`は(JSONキー, 表示ラベル)のペア。
+fn render_rank_table(rows: &[Value], head_color: &str, cols: &[(&str, &str)]) -> String {
+    if rows.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from(r#"<div class="ox"><table><thead><tr>"#);
+    out.push_str(&format!(r#"<th style="width:48px;color:{head_color};">順位</th>"#));
+    for (_, label) in cols {
+        out.push_str(&format!(r#"<th style="color:{head_color};">{}</th>"#, html_escape(label)));
+    }
+    out.push_str(&format!(r#"<th style="color:{head_color};width:110px;">検索</th></tr></thead><tbody>"#));
+    for row in rows {
+        out.push_str(r#"<tr style="border-bottom:1px solid #4c1d45;">"#);
+        out.push_str(&format!(
+            r#"<td style="padding:6px 8px;text-align:center;font-weight:bold;color:{head_color};">{}</td>"#,
+            html_escape(&get_disp(row, "rank"))
+        ));
+        for (key, _) in cols {
+            out.push_str(&format!(r#"<td style="padding:6px 8px;">{}</td>"#, html_escape(&get_disp(row, key))));
+        }
+        let url = get_disp(row, "url");
+        out.push_str(&format!(
+            r#"<td style="padding:6px 8px;"><a href="{}" target="_blank" rel="noopener noreferrer" style="color:{head_color};font-weight:bold;">Google で検索</a></td>"#,
+            html_escape(&url)
+        ));
+        out.push_str("</tr>");
+    }
+    out.push_str("</tbody></table></div>");
+    out
+}
+
+/// PHP版`aruaru-lady/index.php`(2916行)の`<style>`ブロック
+/// (1424〜1449行目、および1450〜1469行目の一部)から、レイアウトの
+/// 核となるダークテーマCSSを移植したもの。Google翻訳ウィジェット/
+/// OPEN・CLOSEパネルのJS演出用CSS(1470行目以降)は対象外
+/// (今回のスコープは見た目の一致であり、翻訳ウィジェット自体は
+/// 別機能のため)。`page_shell`のヘッダー内`<style>`より後(body内)に
+/// 出力することで、同名セレクタ(`body`・`a`・`table`等)を上書きする。
+const ARUARU_LADY_STYLE: &str = r#"<style>
+.aruaru-lady-page{margin:-2rem -1rem;background:#0a0f1e;color:#e2e8f0;font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN',sans-serif;line-height:1.7}
+.aruaru-lady-page a{color:#fda4af;text-decoration:none}
+.aruaru-lady-page a:hover{text-decoration:underline}
+.aruaru-lady-page .wrap{max-width:1200px;margin:0 auto;padding:16px}
+.aruaru-lady-page .hero{background:linear-gradient(135deg,#1a0a14 0%,#2d0a1e 50%,#1a0a14 100%);padding:40px 20px;text-align:center;border-bottom:2px solid #be185d}
+.aruaru-lady-page .hero h1{font-size:clamp(22px,5vw,36px);color:#fda4af;font-weight:900;line-height:1.3;margin-bottom:12px}
+.aruaru-lady-page .hero p{color:#fcd7e0;font-size:15px;opacity:.9;max-width:700px;margin:0 auto}
+.aruaru-lady-page .notice{background:rgba(30,58,138,.25);border:1.5px solid #3b82f6;border-radius:12px;padding:12px 16px;margin:20px 0;font-size:15px;color:#bfdbfe;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.aruaru-lady-page .notice a{color:#93c5fd;font-weight:700;text-decoration:underline}
+.aruaru-lady-page .card{background:#110818;border:1px solid #4c1d45;border-radius:16px;padding:24px;margin:28px 0}
+.aruaru-lady-page h2{font-size:clamp(18px,4vw,24px);color:#fda4af;margin-bottom:12px;line-height:1.35}
+.aruaru-lady-page h3{font-size:clamp(15px,3.5vw,19px);color:#f472b6;margin:24px 0 10px}
+.aruaru-lady-page table{width:100%;border-collapse:collapse;font-size:15px}
+.aruaru-lady-page thead tr{background:#2d0a1e;text-align:left}
+.aruaru-lady-page th{padding:8px 6px;color:#fda4af;white-space:nowrap}
+.aruaru-lady-page .ox{overflow-x:auto}
+.aruaru-lady-page .toc{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+.aruaru-lady-page .toc a{display:inline-block;padding:6px 14px;border-radius:20px;background:rgba(190,24,93,.18);border:1px solid #be185d;color:#fda4af;font-size:15px;font-weight:700}
+.aruaru-lady-page .toc a:hover{background:rgba(190,24,93,.35)}
+.aruaru-lady-page .cron-box{background:#0c1228;border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-top:32px;font-size:15px}
+.aruaru-lady-page .cron-box code{background:#0a1628;padding:2px 8px;border-radius:4px;color:#a5f3fc;font-size:15px}
+.aruaru-lady-page footer{text-align:center;padding:32px 16px;color:#64748b;font-size:15px;border-top:1px solid #1e293b;margin-top:48px}
+@media(max-width:640px){.aruaru-lady-page .hero{padding:28px 14px}.aruaru-lady-page .card{padding:16px}}
+</style>"#;
+
+/// PHP側`aruaru-lady/index.php`(2916行)が実際に表示している内容を移植する。
+/// 汎用JSONダンプ(`render_value_generic`)ではPHP版と全く別のページに
+/// なってしまうため(2026-07-19監査、`/rakuten-mobile`と同じ問題)、この
+/// 関数はPHP版のセクション構成・見出し・静的マーケティング文言(体験入店の
+/// エリア一覧、政策提案カード等)を1対1に近い形で再現しつつ、データ部分
+/// (キャバクラ/熟女キャバ/TVチャットレディ グループ・通常の各TOP50表)は
+/// 既存の`fetch_cache`アーキテクチャ(HTTP経由で`aruaru-lady/*-cache.json`
+/// 取得)をそのまま使う。CSSも実PHP版の`<style>`ブロックから移植済み
+/// (`ARUARU_LADY_STYLE`、ユーザー指示によりスコープ拡大: 2026-07-19)。
+async fn render_aruaru_lady_body() -> String {
+    let caba = fetch_cache("aruaru-lady/aruaru-caba-ranking-cache.json").await;
+    let jukujo = fetch_cache("aruaru-lady/aruaru-jukujo-caba-ranking-cache.json").await;
+    let tv_group = fetch_cache("aruaru-lady/aruaru-tvchat-group-ranking-cache.json").await;
+    let tv_normal = fetch_cache("aruaru-lady/aruaru-tvchat-normal-ranking-cache.json").await;
+
+    let empty = Value::Null;
+    let caba = caba.as_ref().unwrap_or(&empty);
+    let jukujo = jukujo.as_ref().unwrap_or(&empty);
+    let tv_group = tv_group.as_ref().unwrap_or(&empty);
+    let tv_normal = tv_normal.as_ref().unwrap_or(&empty);
+
+    let empty_rows: Vec<Value> = Vec::new();
+    let caba_tokyo23: &[Value] = caba.get("tokyo_23").and_then(|v| v.get("rows")).and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let caba_tama: &[Value] = caba.get("tokyo_tama").and_then(|v| v.get("rows")).and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let caba_national: &[Value] = caba.get("national").and_then(|v| v.get("rows")).and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let caba_disclaimer = get_disp(caba, "disclaimer");
+    let caba_updated = get_disp(caba, "updated_at");
+
+    let jukujo_rows: &[Value] = jukujo.get("rows").and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let jukujo_disclaimer = get_disp(jukujo, "disclaimer");
+    let jukujo_updated = get_disp(jukujo, "updated_at");
+
+    let tvg_rows: &[Value] = tv_group.get("rows").and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let tvg_disclaimer = get_disp(tv_group, "disclaimer");
+    let tvg_updated = get_disp(tv_group, "updated_at");
+
+    let tvn_rows: &[Value] = tv_normal.get("rows").and_then(|v| v.as_array()).unwrap_or(&empty_rows);
+    let tvn_disclaimer = get_disp(tv_normal, "disclaimer");
+    let tvn_updated = get_disp(tv_normal, "updated_at");
+
+    let caba_cols: &[(&str, &str)] = &[("area", "エリア"), ("title", "エリア名称・特徴"), ("band", "時給目安帯"), ("pickup", "補足")];
+    let jukujo_cols: &[(&str, &str)] = &[("area", "エリア"), ("title", "エリア名称・特徴"), ("lux_band", "高級帯目安"), ("pickup", "補足")];
+    let tv_cols: &[(&str, &str)] = &[("plat", "プラットフォーム"), ("title", "サイト/エリア・特徴"), ("band", "時給目安帯"), ("pickup", "補足")];
+
+    let caba_tokyo23_table = render_rank_table(caba_tokyo23, "#fda4af", caba_cols);
+    let caba_tama_table = render_rank_table(caba_tama, "#fda4af", caba_cols);
+    let caba_national_table = render_rank_table(caba_national, "#fda4af", caba_cols);
+    let jukujo_table = render_rank_table(jukujo_rows, "#fb7185", jukujo_cols);
+    let tvg_table = render_rank_table(tvg_rows, "#fbbf24", tv_cols);
+    let tvn_table = render_rank_table(tvn_rows, "#34d399", tv_cols);
+
+    let tv_chat_nonadult_url = google_search_url("TVチャットレディ　ノンアダルト");
+    let we2plus_url = google_search_url("楽天モバイル お勧め 1円 高性能CPU 富士通製 スマホ we2 plus");
+    let link_android_url = google_search_url("楽天モバイル スマホアプリの名前は 楽天リンク Android版");
+    let link_iphone_url = google_search_url("楽天モバイル スマホアプリの名前は 楽天リンク iPhone版");
+    let jobs_ja_url = google_search_url("女性向け 求人情報");
+    let jobs_en_url = google_search_url("Job postings for women in Japan");
+
+    // 体験入店ゾーン一覧(PHP版`aruaru_taiken_zone_definitions()`、
+    // 990〜980行目付近の13ゾーンをタイトル・紹介文のみ移植した簡略版。
+    // PHP版は各ゾーン内をさらに市区町村単位のカードへ展開するが、今回は
+    // コンテンツの一致(ゾーン名・紹介文・検索導線)を優先し、市区町村
+    // カードの完全複製は省略した)。
+    let taiken_zones: &[(&str, &str)] = &[
+        ("東京都・23区内", "港区・新宿・渋谷・銀座ほか、区ごとの体験入店・体験勤務の募集例を検索する窓口です。"),
+        ("東京都・23区外（多摩地域ほか）", "立川・八王子・町田・吉祥寺など、都心外の多摩・西東京エリアです。"),
+        ("首都圏（神奈川・千葉・埼玉）主要都市", "横浜・川崎・千葉・さいたま・川口など、東京23区外の首都圏中核都市です。"),
+        ("北海道", "札幌すすきのを中心に、旭川・函館など道内主要・区外エリアです。"),
+        ("東北", "仙台・盛岡・青森など東北各県の主要歓楽街・駅前エリアです。"),
+        ("関東（茨城・栃木・群馬・山梨）", "北関東・山梨の県都・歓楽街エリアです。"),
+        ("甲信越・北陸（長野・新潟ほか）", "長野・新潟・金沢・富山など、中部山地と日本海側の主要エリアです。"),
+        ("東海（愛知・静岡・岐阜・三重）", "名古屋・浜松・静岡・岐阜・四日市など東海地方の主要・区外都市です。"),
+        ("関西（大阪・京都・神戸・奈良ほか）", "ミナミ・梅田・祇園・三宮など関西の中核と、堺・枚方など府県内区外です。"),
+        ("中国地方", "広島・岡山・山口など中国地方の主要都市です。"),
+        ("四国", "高松・松山・高知・徳島など四国4県の主要エリアです。"),
+        ("九州（福岡・熊本・鹿児島ほか）", "中洲・熊本・天文館など九州各県の主要歓楽街・駅前です。"),
+        ("沖縄", "那覇を中心に、沖縄本島の主要エリアです（離島・条例は各店で要確認）。"),
+    ];
+    let taiken_list: String = taiken_zones
+        .iter()
+        .map(|(title, intro)| {
+            let url = google_search_url(&format!("{title} キャバクラ 熟女キャバ TVチャットレディ 体験入店"));
+            format!(
+                r#"<li style="margin:0 0 10px;"><a href="{url}" target="_blank" rel="noopener noreferrer" style="color:#bae6fd;font-weight:bold;">📍 {t}</a><br><span style="opacity:.8;font-size:14px;color:#cbd5e1;">{i}</span></li>"#,
+                t = html_escape(title),
+                i = html_escape(intro)
+            )
+        })
+        .collect();
+
+    format!(
+        r##"{ARUARU_LADY_STYLE}
+<div class="aruaru-lady-page">
+<div class="hero">
+  <h1>💃 女性向けお仕事情報</h1>
+  <p>キャバレー・キャバクラ・熟女キャバ・TVチャットレディの求人・体験入店・時給目安など。各リンクは Google 検索窓口です。必ず各店の公式サイト・求人票・法令をご確認ください。</p>
+</div>
+<div class="wrap">
+
+<div class="notice">
+  <span>🔗</span>
+  <span>IT技術・プログラミング・英会話など女性向け以外の情報は</span>
+  <a href="/aruaru">audiocafe.tokyo/aruaru</a>
+  <span>をご覧ください。</span>
+</div>
+
+<div class="toc">
+  <a href="#lady-rakuten-mobile-corner">📶 楽天モバイル</a>
+  <a href="#lady-jobs-corner">💼 女性向け求人</a>
+  <a href="#tv-corner">📱 TVチャットレディ</a>
+  <a href="#taiken-corner">🗺️ 体験入店</a>
+  <a href="#caba-corner">🚗 キャバクラ時給TOP50</a>
+  <a href="#jukujo-corner">✨ 熟女キャバTOP50</a>
+</div>
+
+<div class="card" id="lady-rakuten-mobile-corner">
+<h2>📶 楽天モバイル</h2>
+<p>スマホの乗り換えなら楽天モバイル。プラン・国際通話・プラチナバンドの最新情報は <a href="/rakuten-mobile">/rakuten-mobile</a> をご覧ください。</p>
+</div>
+
+<div class="card" id="lady-jobs-corner">
+<h2>💼 女性向け・外資系 求人情報</h2>
+<p style="color:#cbd5e1;font-size:14px;opacity:.92;">各リンクは Google 検索または転職サイトへの入口です。応募前に必ず各社の公式求人票・条件をご確認ください。</p>
+<ul style="font-size:15px;line-height:2.1;padding-left:1.2rem;">
+<li><a href="{jobs_ja_url}" target="_blank" rel="noopener noreferrer">🔍 女性向け 求人情報（Google検索）</a></li>
+<li><a href="{jobs_en_url}" target="_blank" rel="noopener noreferrer">🔍 Job postings for women in Japan（Google Search）</a></li>
+<li><a href="https://www.daijob.com/" target="_blank" rel="noopener noreferrer">🌐 Daijob.com　日本語</a></li>
+<li><a href="https://www.daijob.com/en/" target="_blank" rel="noopener noreferrer">🌐 Daijob.com　ENGLISH</a></li>
+</ul>
+</div>
+
+<div class="card" id="tv-corner">
+<h2>📱 TVチャットレディ（ノンアダルト・在宅／駅前体験）</h2>
+<p style="opacity:.9;font-size:15px;color:#e0f2fe;">日本全国の駅前には体験できるお店がある場合もあります。事前に検索し、各店の公式サイト（HP）で募集要項・年齢制限・機材・契約内容をご確認ください。自宅や病院で入院中でも、畳一畳分のスペースとスマートフォンがあれば始められる例もあります。</p>
+<ul style="font-size:15px;line-height:2.1;padding-left:1.2rem;color:#cbd5e1;">
+<li><a href="{tv_chat_nonadult_url}" target="_blank" rel="noopener noreferrer" style="color:#38bdf8;font-weight:bold;">🔍 Google検索：TVチャットレディ　ノンアダルト</a></li>
+<li><a href="https://atgroup.jp/" target="_blank" rel="noopener noreferrer" style="color:#7dd3fc;font-weight:bold;">📱 ノンアダルト チャットレディ — atgroup.jp</a></li>
+<li><a href="{we2plus_url}" target="_blank" rel="noopener noreferrer">🔍 楽天モバイル お勧め 富士通製 We2 Plus（1円・高性能CPU）</a></li>
+<li><a href="{link_android_url}" target="_blank" rel="noopener noreferrer">🔍 楽天リンク Android版</a></li>
+<li><a href="{link_iphone_url}" target="_blank" rel="noopener noreferrer">🔍 楽天リンク iPhone版</a></li>
+</ul>
+<p style="opacity:.88;font-size:15px;color:#cbd5e1;">楽天リンクアプリ経由の通話で電話放題プランなどを利用できる場合があります。<strong style="color:#fef08a;">TVチャットレディ</strong>は、まず<strong>スマートフォン</strong>から始めやすく、できれば<strong>WEBカメラ付きのオンラインPC環境</strong>もあると画質・安定性の面でお勧めです（各求人・各店の指定機材を必ずご確認ください）。</p>
+</div>
+
+<div class="card" id="taiken-corner">
+<h2>🗺️ 体験入店・体験可能店（全国エリア別）</h2>
+<p style="opacity:.88;font-size:15px;color:#c7d2fe;">体験入店・体験勤務の可否・年齢・契約・風俗営業適正化法等は店舗・自治体・求人媒体ごとに異なります。下記は各エリア名での Google 検索窓口のみで、特定店の推奨・保証ではありません。応募前に公式HP・求人票で必ずご確認ください。</p>
+<div style="margin-bottom:14px;">
+  <span style="color:#7dd3fc;font-weight:bold;margin-right:12px;">TVチャットレディ</span>
+  <span style="color:#fb7185;font-weight:bold;margin-right:12px;">熟女キャバ</span>
+  <span style="color:#fda4af;font-weight:bold;">キャバレー・キャバクラ</span>
+</div>
+<ul style="list-style:none;padding:0;">{taiken_list}</ul>
+</div>
+
+<div class="card" id="tvchat-group-corner">
+<h2>📱 TVチャットレディ【グループチャット（パーティーチャット）版】 全国・高額時給目安ランキング TOP50</h2>
+<div style="display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,#7c1d4e 0%,#3b0764 100%);border:2px solid #fbbf24;border-radius:12px;padding:14px 18px;margin-bottom:14px;">
+  <div style="flex-shrink:0;background:#fbbf24;color:#1c0a14;font-weight:900;font-size:18px;border-radius:50%;width:52px;height:52px;display:flex;align-items:center;justify-content:center;">No.1</div>
+  <div>
+    <div style="color:#fbbf24;font-weight:bold;">🏆 高額時給 No.1 — グループチャット（パーティーチャット）</div>
+    <div style="color:#fef3c7;font-size:15px;">複数人同時参加で収入が大幅アップ。人数が多い場合、<strong style="color:#fbbf24;">時給 36,000円〜177,000円</strong> の例もあります。</div>
+    <div style="margin-top:8px;"><a href="https://atgroup.jp/money" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#fbbf24;color:#1c0a14;font-weight:bold;padding:7px 20px;border-radius:8px;">💰 ATグループ 高額報酬ページを見る →</a></div>
+  </div>
+</div>
+<p style="opacity:.88;font-size:15px;color:#fde68a;">{tvg_disclaimer}</p>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新（キャッシュ・毎日自動）: {tvg_updated} — 「高額時給順」は報酬率・同時接続効率の目安インデックスによる並びで、特定サイト/店舗の格付けではありません。</p>
+{tvg_table}
+</div>
+
+<div class="card" id="tvchat-normal-corner">
+<h2>📲 TVチャットレディ【通常版／1対1】 全国・高額時給目安ランキング TOP50</h2>
+<p style="opacity:.88;font-size:15px;color:#fde68a;">{tvn_disclaimer}</p>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新（キャッシュ・毎日自動）: {tvn_updated} — 「高額時給順」は報酬率・稼働効率の目安インデックスによる並びで、特定サイト/店舗の格付けではありません。</p>
+{tvn_table}
+</div>
+
+<div class="card" id="caba-corner">
+<h2>🚗 キャバクラ・キャバレー 高額時給目安ランキング TOP50</h2>
+<div style="margin-bottom:16px;padding:12px 14px;background:rgba(190,24,93,.12);border:1px solid rgba(190,24,93,.35);border-radius:10px;">
+  <p style="font-size:15px;color:#fcd7e0;font-weight:700;">▶ 近年、若い男性受け・おじ様向けにも需要ニーズが増加中のスタイル — YouTube で検索：</p>
+  <a href="https://www.youtube.com/results?search_query=%E3%82%B3%E3%82%B9%E3%83%97%E3%83%AC+%E3%83%9F%E3%83%8B%E3%82%B9%E3%82%AB+%E5%AD%A6%E5%9C%92+%E3%82%AD%E3%83%A3%E3%83%90" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:20px;background:#be185d;color:#fff;font-weight:800;">▶ コスプレ　ミニスカ　学園　キャバ</a>
+</div>
+<p style="opacity:.82;font-size:15px;color:#fecdd3;">いずれも Google 検索窓口へのリンクです。時給は目安であり、各店の求人票を必ずご確認ください。</p>
+<h3 id="aruaru-caba-tokyo23">🚗 高額時給目安ランキング TOP50（東京23区内・キャバレー／キャバクラ・検索窓口）</h3>
+<p style="opacity:.88;font-size:15px;color:#fde68a;">{caba_disclaimer}</p>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新: {caba_updated} — TTL 約7日</p>
+{caba_tokyo23_table}
+<h3 id="aruaru-caba-tokyo-tama">🚗 高額時給目安ランキング TOP50（東京23区外・多摩／八王子・立川ほか・検索窓口）</h3>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新: {caba_updated} — TTL 約7日</p>
+{caba_tama_table}
+<h3 id="aruaru-caba-national">🚗 高額時給目安ランキング TOP50（大阪〜北海道・沖縄・日本全国・検索窓口）</h3>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新: {caba_updated} — TTL 約7日</p>
+{caba_national_table}
+</div>
+
+<div class="card" id="jukujo-corner">
+<h2>✨ 熟女キャバレー・熟女キャバクラ 全国・高級帯目安 TOP50</h2>
+<p style="opacity:.88;font-size:15px;color:#fecdd3;">{jukujo_disclaimer}</p>
+<p style="opacity:.65;font-size:15px;color:#cbd5e1;">📅 リスト更新（キャッシュ）: {jukujo_updated} — 「高級順」はエリアの目安インデックスによる並びで、特定店の格付けではありません。</p>
+{jukujo_table}
+</div>
+
+<div class="cron-box">
+  📡 <strong>★ Cron 自動更新設定（毎日）：</strong> キャバクラ・熟女キャバ・TVチャットレディ（グループ/通常）の各ランキングキャッシュは毎朝自動更新されます。
+</div>
+
+<div class="notice" style="margin-top:32px;">
+  <span>🔗</span>
+  <span>IT技術・プログラミング・英会話など女性向け以外の情報は</span>
+  <a href="/aruaru">audiocafe.tokyo/aruaru</a>
+  <span>をご覧ください。</span>
+</div>
+
+</div>
+
+<div class="card" style="border-color:#4338ca;margin-top:32px;" id="policy-sougeishaxi">
+  <h2 style="color:#a5b4fc;">🚗 関連政策提案：無料送迎車の半公共タクシー化</h2>
+  <h3 style="color:#c7d2fe;">概念：半公共送迎タクシー制度</h3>
+  <p style="font-size:15px;color:#e2e8f0;">キャバクラ等の無料送迎車を、空席があれば一般市民も乗れる<strong style="color:#c7d2fe;">「相乗り型半公共交通」</strong>として機能させる構想です。病院・スーパーへの買い物など日常的な送迎にも活用でき、交通空白地帯の補完手段となり得ます。運転手には店からの給与に加え、<strong style="color:#c7d2fe;">日本全国の市区町村から半公務員手当</strong>が支給される仕組みとすることで、安定した収入と社会的役割を両立できる可能性があります。</p>
+  <h3 style="color:#86efac;font-size:16px;">✅ メリット</h3>
+  <ul style="font-size:15px;line-height:2.1;padding-left:1.4rem;color:#d1fae5;">
+    <li>深夜・郊外など交通空白地帯をカバー</li>
+    <li>運転手の収入が安定（店＋自治体手当の二重収入）</li>
+    <li>病院・買い物難民の高齢者救済</li>
+    <li>車両の遊休時間を社会還元</li>
+  </ul>
+  <h3 style="color:#fca5a5;font-size:16px;">⚠️ 課題と論点</h3>
+  <ul style="font-size:15px;line-height:2.1;padding-left:1.4rem;color:#fecdd3;">
+    <li>道路運送法との整合性（白タク規制）</li>
+    <li>自治体ごとの財源・予算手当</li>
+    <li>乗客の安全管理・身元確認</li>
+    <li>優先度のルール（店の業務客 vs 一般市民）</li>
+  </ul>
+  <h3 style="color:#a5b4fc;font-size:16px;">📋 近い事例</h3>
+  <ul style="font-size:15px;line-height:2.1;padding-left:1.4rem;color:#c7d2fe;">
+    <li><strong>デマンド型乗合タクシー</strong> — 過疎地で既に実施中。予約に応じて乗合運行する公共交通の仕組み。</li>
+    <li><strong>ライドシェア</strong> — 2024年から一部解禁。自家用車を使った有償旅客運送が条件付きで認められ始めた。</li>
+    <li><strong>スクールバスの地域開放</strong> — 登下校時間外に地域住民が利用できるよう開放する取り組み。</li>
+  </ul>
+  <p style="font-size:15px;color:#94a3b8;">実現には道路運送法（白タク規制）の整備・自治体ごとの条例・財源確保・安全管理ルールの策定が必要です。既存のデマンド交通やライドシェア制度との連携・法改正が検討課題となります。</p>
+  <hr style="border:none;border-top:1px solid rgba(148,163,184,.2);margin:20px 0;">
+  <h3 style="color:#fcd34d;font-size:16px;">🍺 お客様送迎・昼飲み需要・販売品目に関する提案</h3>
+  <p style="font-size:15px;color:#e2e8f0;">キャバレー・キャバクラでは従業員向けの自動車での<strong style="color:#fcd34d;">無料送迎サービス</strong>がある所が多い様ですので、<strong style="color:#fcd34d;">お客様向けにも無料の送迎サービス</strong>があった方が親切で良いと思われます。またお店も、朝からや昼からでも楽しく飲んで気分転換したい方の<strong style="color:#fcd34d;">需要やニーズも増加中</strong>の様です。</p>
+  <h3 style="color:#7dd3fc;font-size:15px;">🥤 飲料・販売品目の拡充提案</h3>
+  <p style="font-size:15px;color:#e2e8f0;">キャバレー・キャバクラや、今後は<strong style="color:#7dd3fc;">駅のKIOSK・キヨスクや自動販売機</strong>でも、ウイスキーやビールの他に、<strong style="color:#7dd3fc;">ASAHI の青い缶の無添加のノンアルコールビール</strong>など販売や提供などの需要やニーズが増加中の様です。</p>
+  <h3 style="color:#f9a8d4;font-size:15px;">💊 心臓ケア商品の優先販売提案</h3>
+  <p style="font-size:15px;color:#e2e8f0;">駅のキオスクや自動販売機、キャバレー・キャバクラなどのお店でも、心臓の薬の<strong style="color:#f9a8d4;">「救心」</strong>や、心臓に良いサプリメントとして<strong style="color:#f9a8d4;">「コエンザイムQ10」</strong>などを<strong style="color:#f9a8d4;">優先的に販売</strong>して欲しいです。</p>
+</div>
+
+<div style="margin:12px 0 18px;padding:14px 18px;border-radius:12px;background:linear-gradient(135deg,rgba(255,122,69,.13),rgba(47,111,237,.08));border:1.5px solid #ff7a45;display:flex;align-items:center;flex-wrap:wrap;gap:10px;">
+  <span style="font-size:18px;">🎲</span>
+  <span style="color:#ff7a45;font-weight:700;font-size:15px;">「あるある」まとめ & 開発リポジトリ紹介はこちら →</span>
+  <a href="{ARUARU_TOKYO_URL}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 16px;border-radius:8px;background:linear-gradient(135deg,#ff7a45,#2f6fed);color:#fff;font-weight:800;">📍 aruaru.tokyo</a>
+</div>
+
+<footer>
+  <p>© audiocafe.tokyo / aruaru-lady — 掲載情報はGoogle検索窓口へのリンクです。各店・各媒体の公式情報を必ずご確認ください。</p>
+  <p style="margin-top:6px;">年齢制限・法令・各都道府県の条例に必ず従ってください。</p>
+</footer>
+</div>
+"##
+    )
+}
+
 /// PHP側の`rakuten-mobile/index.php`(917行、`rm_render_fragment()`)が
 /// 実際に表示している専用ページの内容をそのまま移植する。汎用JSONダンプ
 /// (`render_value_generic`)ではPHP版と全く別のページになってしまうため
@@ -473,6 +817,16 @@ async fn composite_page_by_slug(slug: &str) -> hyper_compat::Response {
         return hyper_compat::html_response(
             StatusCode::OK,
             page_shell("📶 楽天モバイル情報 — audiocafe.tokyo", &render_rakuten_mobile_body().await),
+        );
+    }
+    // `/aruaru-lady`もPHP版が独自の見出し・マーケティング文言・CSS装飾
+    // (ダークテーマ、`.hero`/`.card`/`.toc`等)を持つ専用ページであり、
+    // 汎用JSONダンプでは全く別のページになってしまう(2026-07-19監査、
+    // `/rakuten-mobile`と同種の問題)。専用レンダラーで再現する。
+    if slug == "aruaru-lady" {
+        return hyper_compat::html_response(
+            StatusCode::OK,
+            page_shell("💃 女性向けお仕事情報｜キャバレー・キャバクラ・TVチャットレディ | audiocafe.tokyo", &render_aruaru_lady_body().await),
         );
     }
     let Some(page) = COMPOSITE_PAGES.iter().find(|p| p.slug == slug) else {
