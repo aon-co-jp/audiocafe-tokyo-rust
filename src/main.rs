@@ -1396,7 +1396,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .yt-series-btn.is-active{background:rgba(34,211,238,.2);border-color:#22d3ee;color:#22d3ee}
 .top-page .yt-wp-corner{max-width:640px;margin:1rem auto 0;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:1rem}
 .top-page #logoWrap{max-width:640px;margin:1rem auto 0;padding:.6rem;text-align:center;background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;overflow:hidden}
-.top-page #acLogoCanvas{width:100%;height:90px;display:block}
+.top-page #acLogoCanvas{width:100%;height:200px;display:block}
 .top-page #logoModeBar,.top-page #danceFixedBar{display:flex;flex-wrap:wrap;justify-content:center;gap:.35rem;margin-top:.8rem}
 .top-page #danceFixedBar{display:none;margin-top:.5rem}
 .top-page #danceFixedBar.is-visible{display:flex}
@@ -1429,6 +1429,133 @@ const LOGO_CANVAS_SCRIPT: &str = r#"<script>
   var CW = 1, CH = 1;
 
   function calcFontSize(w, h){ return Math.min(w * 0.93 / TEXT.length * 1.62, h * 0.70); }
+
+  // PHP版`drawSailingShip()`(`index.php` 5973〜6146行目)をそのまま移植。
+  // 波モードで、ロゴ本体の波の進行方向に合わせて帆船がヨー角を
+  // ゆっくり切り替えながら3D風に揺れる装飾(2026-07-19、ユーザー指摘
+  // 「PHP版で波は上に船が動いていたのを再現して」により追加、前回の
+  // 「帆船装飾は省略」というスコープ縮小を撤回)。
+  var shipYawDeg = 75;
+  function drawSailingShip(ctx, now, W, H, amp, yawDeg){
+    var leftPad = 8;
+    var fs = calcFontSize(W, H);
+    ctx.save();
+    ctx.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
+    var widthBeforeDot = ctx.measureText('audiocafe').width;
+    ctx.restore();
+    var shipCX = leftPad + widthBeforeDot / 2;
+    var shipScale = Math.min(W, H) * 0.18;
+    var cy = H * 0.28;
+
+    var bobY = Math.sin(now * 1.1) * 6 * amp + Math.sin(now * 2.3) * 2 * amp;
+    var bobX = Math.cos(now * 0.9) * 8 * amp + Math.cos(now * 1.8) * 3 * amp;
+    var roll = (Math.sin(now * 1.1) * 0.12 + Math.sin(now * 2.3) * 0.04) * amp;
+
+    var yaw = yawDeg * Math.PI / 180;
+    var cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+    var hullW = 55;
+    var hullWScaled = hullW * Math.abs(cosY);
+    var sailDepth = sinY;
+
+    ctx.save();
+    ctx.translate(shipCX + bobX, cy + bobY);
+    ctx.rotate(roll);
+    ctx.scale(shipScale / 100, shipScale / 100);
+    var sv = ctx.shadowBlur;
+
+    ctx.beginPath();
+    ctx.moveTo(-hullWScaled, 0);
+    ctx.bezierCurveTo(-hullWScaled - 5 * Math.abs(cosY), 8, -hullWScaled * 0.7, 22, 0, 24);
+    ctx.bezierCurveTo(hullWScaled * 0.7, 22, hullWScaled + 5 * Math.abs(cosY), 8, hullWScaled, 0);
+    ctx.closePath();
+    var hullLight = cosY > 0 ? '#9a5c22' : '#5c3010';
+    ctx.fillStyle = hullLight;
+    ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.strokeStyle = '#3a1a05'; ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    if (Math.abs(cosY) > 0.15) {
+      ctx.beginPath();
+      ctx.moveTo(-hullWScaled, 0); ctx.lineTo(hullWScaled, 0);
+      ctx.strokeStyle = cosY > 0 ? '#c8803a' : '#7a4020';
+      ctx.lineWidth = 2.5; ctx.shadowBlur = 0;
+      ctx.stroke();
+    }
+
+    var bowDir = cosY >= 0 ? -1 : 1;
+    ctx.beginPath();
+    ctx.moveTo(bowDir * hullWScaled, -2);
+    ctx.lineTo(bowDir * (hullWScaled + 18), -12);
+    ctx.strokeStyle = '#8b5e2a'; ctx.lineWidth = 2.5; ctx.shadowBlur = 0;
+    ctx.stroke();
+
+    var mastX = sinY * 6;
+    ctx.beginPath();
+    ctx.moveTo(mastX, 2); ctx.lineTo(mastX, -80);
+    ctx.strokeStyle = '#8b5e2a'; ctx.lineWidth = 3.5; ctx.shadowBlur = 0;
+    ctx.stroke();
+
+    var yardW = 36 * Math.abs(cosY) + 8;
+    ctx.beginPath();
+    ctx.moveTo(mastX - yardW, -40); ctx.lineTo(mastX + yardW, -40);
+    ctx.strokeStyle = '#7a5020'; ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    var sailBow = Math.sin(now * 1.4) * 7 * amp * Math.abs(cosY);
+    var sailW = yardW * 0.95;
+    var sailCurve = sailDepth * 18 + sailBow;
+    ctx.beginPath();
+    ctx.moveTo(mastX - sailW, -38);
+    ctx.bezierCurveTo(mastX - sailW * 0.5 + sailCurve, -22, mastX - sailW * 0.3 + sailCurve, -10, mastX - sailW * 0.2, 2);
+    ctx.lineTo(mastX + sailW * 0.2, 2);
+    ctx.bezierCurveTo(mastX + sailW * 0.3 + sailCurve, -10, mastX + sailW * 0.5 + sailCurve, -22, mastX + sailW, -38);
+    ctx.closePath();
+    var sailBrightness = 0.6 + 0.4 * Math.abs(cosY);
+    var sg = ctx.createLinearGradient(mastX - sailW, -38, mastX + sailW, 2);
+    sg.addColorStop(0, 'rgba(' + Math.round(255*sailBrightness) + ',' + Math.round(250*sailBrightness) + ',' + Math.round(230*sailBrightness) + ',0.95)');
+    sg.addColorStop(1, 'rgba(' + Math.round(220*sailBrightness) + ',' + Math.round(205*sailBrightness) + ',' + Math.round(175*sailBrightness) + ',0.90)');
+    ctx.fillStyle = sg;
+    ctx.shadowColor = 'rgba(100,150,255,0.25)'; ctx.shadowBlur = 5;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(160,140,100,0.7)'; ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    var tsW = 18 * Math.abs(cosY) + 4;
+    var tsBow = Math.sin(now * 1.8 + 0.5) * 5 * amp * Math.abs(cosY);
+    var tsCurve = sailDepth * 10 + tsBow;
+    ctx.beginPath();
+    ctx.moveTo(mastX - tsW, -42);
+    ctx.bezierCurveTo(mastX - tsW * 0.5 + tsCurve, -58, mastX + tsCurve * 0.5, -68, mastX, -78);
+    ctx.bezierCurveTo(mastX + tsCurve * 0.5, -68, mastX + tsW * 0.5 + tsCurve, -58, mastX + tsW, -42);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(' + Math.round(245*sailBrightness) + ',' + Math.round(240*sailBrightness) + ',' + Math.round(220*sailBrightness) + ',0.88)';
+    ctx.shadowBlur = 3;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(160,140,100,0.6)'; ctx.lineWidth = 1.0;
+    ctx.stroke();
+
+    var flagDir = cosY >= 0 ? 1 : -1;
+    var flagWave = Math.sin(now * 3.5) * 5 * amp;
+    ctx.beginPath();
+    ctx.moveTo(mastX, -80);
+    ctx.lineTo(mastX + flagDir * (16 + flagWave), -72);
+    ctx.lineTo(mastX + flagDir * (14 + flagWave * 0.5), -66);
+    ctx.lineTo(mastX, -72);
+    ctx.closePath();
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowColor = 'rgba(239,68,68,0.7)'; ctx.shadowBlur = 6;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(mastX - sailW, -38); ctx.lineTo(-hullWScaled, 2);
+    ctx.moveTo(mastX + sailW, -38); ctx.lineTo(hullWScaled, 2);
+    ctx.strokeStyle = 'rgba(140,100,50,0.55)'; ctx.lineWidth = 1.0; ctx.shadowBlur = 0;
+    ctx.stroke();
+
+    ctx.shadowBlur = sv;
+    ctx.restore();
+  }
 
   function resize(){
     var dpr = Math.min(window.devicePixelRatio || 1, 4);
@@ -1731,7 +1858,7 @@ const LOGO_CANVAS_SCRIPT: &str = r#"<script>
       ctx.font = '900 ' + fs + "px 'Segoe UI',system-ui,sans-serif";
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       var textW = ctx.measureText(TEXT).width;
-      var leftPad = 8, baseY = CH * 0.5;
+      var leftPad = 8, baseY = CH * 0.68;
       var gradShift = (now * GRAD_SPEED / 360 * textW * 1.5) % textW;
       var grad = ctx.createLinearGradient(leftPad - gradShift, 0, leftPad - gradShift + textW * 1.5, 0);
       GRAD_STOPS.forEach(function(s){ grad.addColorStop(s[0], s[1]); });
@@ -1748,6 +1875,14 @@ const LOGO_CANVAS_SCRIPT: &str = r#"<script>
         ctx.restore();
         curX += chW;
       });
+
+      var ratio05 = 0.5;
+      var v1 = -2.8 * Math.cos(ratio05 * Math.PI * 2.5 - now * 2.8) * waveAmpX * 0.7;
+      var v2 = 1.9 * Math.cos(ratio05 * Math.PI * 4.5 + now * 1.9) * waveAmpX * 0.3;
+      var netV = v1 + v2;
+      var targetYaw = netV < 0 ? 75 : -75;
+      shipYawDeg += (targetYaw - shipYawDeg) * 0.001;
+      drawSailingShip(ctx, now, CW, CH, 1, shipYawDeg);
       return;
     }
 
