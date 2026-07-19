@@ -181,6 +181,60 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-19(さらに続き) 言語カード要約画面・エッセイJP/EN分離・
+  フォント拡大・ダンシングロゴを追加、nginx新規ルート追加時の注意を発見**:
+  同日内の追加ユーザー要望3件に対応した(コミット`88e6113`・`42d5079`・
+  `e8f2e56`)。
+  1. **`/summary`(言語カード要約)画面**: PHP版「📋 言語カード＆/top
+     要約LIST」(`mixlist=1`、`index.php` 1590行目)相当。全147カードの
+     `cardLinks`+本文埋め込みURL(新設`extract_urls_from_text`、PHP版
+     `mergeCardOutboundLinks`のURL抽出部分を移植)をマージし、カード
+     ごとにタイトル付き整列表示。各カードの`.card-actions`に
+     「📋 言語カード要約」リンクを追加、選択言語のGoogle翻訳プロキシ経由で
+     `#<言語コード>`アンカー付き遷移。実データでは8カード分(cardLinksを
+     持つカード)のセクションが出力されることを確認。
+  2. **エッセイのJP/EN分離+フォント拡大**: `card-essay`/`card-essay-d`に
+     「English」「日本語」の見出しラベルを追加、フォントサイズを
+     `.78rem→1.15rem`に拡大(ユーザーの「二回り大きく」という指示を
+     具体的なCSS値に変換)。同時にYouTubeシリーズボタン
+     (`.68rem→1.05rem`)・地域ピル(`.78rem→1.15rem`)のフォントも拡大。
+  3. **ダンシングロゴ機能**: PHP版のcanvasパーティクルロゴ+YouTube音楽
+     連動(`index.php` 5854行目以降、1000行超)を簡略復刻。実際の
+     アニメーションはcanvasパーティクル物理演算・音声ビート検出ではなく、
+     文字ごとのCSS `@keyframes`(バウンス・パルス・波打ち・散開・
+     オービット・グラデーションスクロール)に置き換えたが、選択UI
+     (7モード: スクロール/Dance/Dance Fixed/Dance AI/波/爆発/オービット、
+     Dance Fixedのジャンル10種)はPHP版と同一のボタン構成・絵文字・
+     ラベルで再現。YouTube再生リストのシリーズ一覧の直下に配置
+     (ユーザー指定の位置)。
+  - **重要な発見(nginx)**: `/summary`ルートをRust側に追加しても、
+    `cargo build --release`+`systemctl restart`だけでは本番から
+    到達できなかった——`/etc/nginx/conf.d/audiocafe.tokyo.conf`の
+    `location`ブロックが`= /`・`/aruaru/`・`/aruaru-lady/`・
+    `/rakuten-mobile/`の4つに限定されており、未登録の新規パスは
+    `location /`のPHP catchall(`try_files ... /index.php`)に吸収され、
+    ステータス200だがPHP版トップページが誤って返るという気づきにくい
+    失敗モードだった。`location /summary { proxy_pass
+    http://127.0.0.1:4400/summary; ... }`を追記(`nginx -t`→
+    `systemctl reload nginx`、変更前に`.bak-<timestamp>`でバックアップ
+    取得)して解消。**今後新しいRustルートを追加する際は、既存の3パスと
+    同じnginx location追加+reload+実際の`<title>`確認までを本番反映の
+    手順に含めること**(本ファイル上部の運用ルールにも追記済み)。
+  - **検証**: 全項目とも`cargo build`(新規警告なし)・`cargo test`
+    (14件全green)・実バイナリでのcurl確認・Claude Browserでの
+    `javascript_tool`直接実行確認(埋め込みYouTube iframeのautoplayが
+    原因で`computer`のスクリーンショットは毎回タイムアウトするため、
+    コンソールエラー無し確認+関数直接呼び出しでの動作検証に統一)まで
+    実施し、本番`https://audiocafe.tokyo/`・`/summary`双方で反映を確認済み。
+  - **今回のスコープ外(正直に開示)**: (1) ダンシングロゴはCSS
+    アニメーションへの簡略化(canvas物理演算・音声ビート同期は無し)。
+    (2) `/summary`はカード本文の全文再掲ではなくリンク一覧のみ(PHP版
+    `mixlist-fulltext-copy`の全文コピー機能は対象外)。
+  - 次にすべきこと: 現時点でユーザーからの明示的な未着手要望は無し。
+    次回セッション開始時は本ファイルの運用ルール通り、まず`git
+    status`/`git log`で未完了作業が無いか確認してから、新規要望が
+    あればそれに着手する。
+
 - **2026-07-19(続き) 前回HANDOFFの3項目(国旗クリック導線・母国語選択導線・
   YouTubeシリーズ機能)を全て実装完了**: 前回セッションが引き継いだ
   未着手3項目に、ユーザーからの追加要望(aruaru等へのリンクも選択言語で
