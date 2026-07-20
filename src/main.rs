@@ -1020,7 +1020,7 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
