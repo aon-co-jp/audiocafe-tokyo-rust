@@ -43,7 +43,11 @@ const RUNO_TOKYO_URL: &str = "https://runo.tokyo/";
 /// 表示しない、2026-07-20追記)。トップページのYouTube紹介タイトルの
 /// 上に配置する(ユーザー指示)。
 const BLOG_POST_URL: &str = "https://ameblo.jp/www-aon/entry-12973252437.html";
-const BLOG_POST_TITLE: &str = "プログラム言語やフレームワークなどの全てをRust(Poemやhyper)版に移植するメリット?";
+const BLOG_POST_TITLE_JA: &str = "プログラム言語やフレームワークなどの全てをRust(Poemやhyper)版に移植するメリット?";
+/// ユーザー指示(2026-07-20)により日英両方で掲載。ブログ本文自体は
+/// 日本語のみだが、リンクのラベルは英語話者にも内容が伝わるよう
+/// 意訳したもの(URLは日英共通、リンク先は変えない)。
+const BLOG_POST_TITLE_EN: &str = "The benefits of migrating everything — programming languages, frameworks, and more — to Rust";
 
 /// このRust側が対応済みのランキング一覧(表示名・キャッシュファイル名)。
 /// 2026-07-17、汎用レンダラーへの書き換えにより全8種類に対応。
@@ -2416,7 +2420,8 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     // (2026-07-19、ユーザー指摘により復活——旧実装は非クリック可能な
     // ただのテキストだった)。
     let default_now_url = html_escape(&format!("https://www.youtube.com/watch?v={default_id}"));
-    let blog_title_esc = html_escape(BLOG_POST_TITLE);
+    let blog_title_ja_esc = html_escape(BLOG_POST_TITLE_JA);
+    let blog_title_en_esc = html_escape(BLOG_POST_TITLE_EN);
 
     let list: String = RANKINGS
         .iter()
@@ -2435,7 +2440,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="subtitle">Please select your native language.</p>
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
-<p class="blog-link"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_esc}</a></p>
+<p class="blog-link"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_ja_esc}</a> / <a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">{blog_title_en_esc}</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
 <button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
 <div class="yt-now-playing">
