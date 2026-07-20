@@ -991,14 +991,14 @@ async fn render_aruaru_body() -> String {
 
 <div class="card" id="aruaru-top80-tech">
 <h2 style="color:#00ffff;">🚀 言語＆フレームワーク比較レポート</h2>
-<p style="opacity:.8;font-size:15px;">機械的な「TOP80」「TOP200」ランキング表示は廃止しました（順位付けだけでは、実際にチームで長期保守する際の使いやすさが伝わらないため）。代わりに、実務でよく選ばれる4つの言語＋フレームワークの組み合わせを、下記5つの観点で比較したレポートを掲載します。</p>
+<p style="opacity:.8;font-size:15px;">機械的な「TOP80」「TOP200」ランキング表示は廃止しました（順位付けだけでは、実際にチームで長期保守する際の使いやすさが伝わらないため）。代わりに、実務でよく選ばれる4つの言語＋フレームワークの組み合わせを、下記5つの観点で比較したレポートを掲載します。PHP＋Laravel・Python＋FastAPI・Rust＋Poemの3つについては、<strong>Claude Code Desktopが様々な観点から評価</strong>した内容をそのまま本文に組み込んでいます。</p>
 
 <div style="padding:14px 18px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);margin:14px 0;">
 <p style="font-size:15px;margin:0;"><strong>⚠️ Perl・Javaについて</strong>: 近年は人気が低下傾向にあるため、新規プロジェクトでの採用はなるべく避けることを推奨します。既存資産の保守が必要な場合を除き、下記4組み合わせのいずれかへの移行を検討する価値があります。</p>
 </div>
 
 <div style="padding:14px 18px;border-radius:12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);margin:14px 0;">
-<p style="font-size:15px;margin:0;"><strong>💡 保守しやすさについての前提</strong>: PHP＋Laravel・Python＋FastAPI・Rust＋Poem・Ruby on Railsのいずれも、最初の開発者以外の第三者が後から引き継ぐと保守メンテナンスが難しくなりがちな言語＋フレームワークです。AIが継続的にメンテナンスする体制を組める場合を除き、採用時はこの点を踏まえてください。</p>
+<p style="font-size:15px;margin:0;"><strong>💡 Ruby on Railsの保守しやすさについて</strong>: Ruby on Railsは、最初の開発者以外の第三者が後から引き継ごうとしても、他の3組み合わせと比べてほとんどの場合で保守メンテナンスが難しいプログラム言語＋フレームワークです。AIが継続的にメンテナンスする体制を組める場合を除き、採用はなるべく避けた方が無難です。</p>
 </div>
 
 <div style="overflow-x:auto;">
@@ -1049,7 +1049,8 @@ async fn render_aruaru_body() -> String {
 </div>
 <p style="font-size:12px;opacity:.65;margin:6px 0 0;">※ 星評価は一般的な技術知見に基づく主観的な目安であり、StackOverflow等のリアルタイム外部指標に基づく実測値ではありません。</p>
 
-<h3 style="color:#00ffaa;margin-top:22px;">🦀 Rust + Poem</h3>
+<p style="font-size:13px;opacity:.7;margin:22px 0 0;">以下3組み合わせの評価は、Claude Code Desktopが速度・セキュリティ・読み書きしやすさ・チーム保守しやすさ・小→大規模拡張耐性という観点から分析した内容です。</p>
+<h3 style="color:#00ffaa;margin-top:8px;">🦀 Rust + Poem</h3>
 <p style="font-size:15px;">
 <strong>メリット</strong>: コンパイル時の所有権チェックによりメモリ安全性・並行処理安全性が保証され、実行速度もC/C++に匹敵する。借用チェッカーが「書き方の揺れ」自体を許さないため、<strong>誰が書いても似た構造のコードになりやすく、チームでの引き継ぎ・保守に強い</strong>。VersionlessAPI（バージョンレスAPI）やWunderGraph CosmoのようなGraphQL Federation思想とも相性が良く、仕様変更が多い大規模開発ほど恩恵が大きい。<br>
 <strong>デメリット</strong>: 学習コストが高く、書き始めの生産性はPython等に劣る。小規模・使い捨てのプロトタイプには過剰投資になりやすい。<br>
