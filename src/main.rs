@@ -1003,61 +1003,61 @@ async fn render_aruaru_body() -> String {
 
 <div style="overflow-x:auto;">
 <table style="width:100%;border-collapse:collapse;font-size:14px;background:#16223d;color:#fff;">
-<thead><tr style="background:#1e2b4d;">
-<th style="padding:8px 10px;text-align:left;color:#fff;">組み合わせ</th>
-<th style="padding:8px 10px;color:#fff;">⚡ ハイスピード</th>
-<th style="padding:8px 10px;color:#fff;">🔒 ハイセキュリティ</th>
-<th style="padding:8px 10px;color:#fff;">💾 省メモリ</th>
-<th style="padding:8px 10px;color:#fff;">🤖 AIライブラリの豊富さ</th>
-<th style="padding:8px 10px;color:#fff;">🔗 OpenAIとの親和性</th>
-<th style="padding:8px 10px;color:#fff;">📖 読み書きしやすさ</th>
-<th style="padding:8px 10px;color:#fff;">👥 チーム保守しやすさ</th>
-<th style="padding:8px 10px;color:#fff;">📈 小→大規模拡張耐性</th>
+<thead><tr>
+<th style="padding:8px 10px;text-align:left;color:#fff;background:#1e2b4d;">組み合わせ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">⚡ ハイスピード</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">🔒 ハイセキュリティ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">💾 省メモリ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">🤖 AIライブラリの豊富さ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">🔗 OpenAIとの親和性</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">📖 読み書きしやすさ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">👥 チーム保守しやすさ</th>
+<th style="padding:8px 10px;color:#fff;background:#1e2b4d;">📈 小→大規模拡張耐性</th>
 </tr></thead>
 <tbody>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;color:#fff;">Rust + Poem</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;background:#16223d;">Rust + Poem</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;color:#fff;">PHP + Laravel</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;background:#16223d;">PHP + Laravel</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★☆</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;color:#fff;">Python + FastAPI</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;background:#16223d;">Python + FastAPI</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;color:#fff;">Ruby on Rails</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★☆☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;background:#16223d;">Ruby on Rails</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★☆☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;background:#16223d;">★★★☆☆</td>
 </tr>
 </tbody>
 </table>
