@@ -34,7 +34,7 @@ use serde::Deserialize;
 
 const CACHE_BASE: &str = "https://audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
-/// 東京都西部の暮らし・テレワーク紹介 + open-runoエコシステムの入口
+/// 東京都西部の暮らし・テレワーク紹介 + open-cosmoエコシステムの入口
 /// (2026-07-20追記、ユーザー指示: 「aruaru.tokyo と runo.tokyo へのリンクを
 /// audiocafe.tokyo内にも貼って」)。
 const RUNO_TOKYO_URL: &str = "https://runo.tokyo/";
