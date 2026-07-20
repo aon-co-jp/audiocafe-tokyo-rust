@@ -1498,7 +1498,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .card-essay p{margin:0 0 .5rem}
 .top-page .card-essay-label{display:block;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#7dd3fc;text-transform:uppercase;margin-bottom:.15rem}
 .top-page .card-essay-d{border-top:1px dashed var(--border);margin-top:.5rem;padding-top:.5rem;font-size:1.15rem}
-.top-page .card-links{list-style:none;padding:0;margin:.4rem 0 0;text-align:left;font-size:.72rem;line-height:1.6}
+.top-page .card-links{list-style:none;padding:0;margin:.4rem 0 0;text-align:left;font-size:1.15rem;line-height:1.6}
 .top-page .card-links li{margin-bottom:.15rem}
 .top-page .card-actions{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:.5rem}
 .top-page .card-actions a{font-size:1.3rem;padding:.15rem .45rem;border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.08)}
