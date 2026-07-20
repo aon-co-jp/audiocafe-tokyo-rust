@@ -2263,11 +2263,21 @@ fn render_lang_card(card: &LangCard) -> String {
     // になっていたため(2026-07-19発見・修正)。PHP版のモーダルは
     // クリック直後に(本文を読まずとも)遷移先を選べる体験だったため、
     // このRust版でも同じ即時性を静的リンクで再現する。
+    // `t`(現地語表記)と`n`(国名)が同一文字列のカード(英語圏など、
+    // 現地語表記=英語国名になるケース)では、両方表示すると
+    // 「JAPAN / JAPAN」のように同じ文字列が二段に重複表示されてしまう
+    // ため、その場合は`card-native`側を出力しない(2026-07-20、
+    // ユーザー報告により修正)。
+    let native_html = if card.t.trim() == card.n.trim() {
+        String::new()
+    } else {
+        format!(r#"<span class="card-native">{}</span>"#, html_escape(&card.t))
+    };
+
     format!(
-        r#"<div class="card"><a href="{ac_url}" target="_blank" rel="noopener noreferrer"><img class="card-flag" src="https://flagcdn.com/64x48/{fc}.png" alt="{label}"></a><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
+        r#"<div class="card"><a href="{ac_url}" target="_blank" rel="noopener noreferrer"><img class="card-flag" src="https://flagcdn.com/64x48/{fc}.png" alt="{label}"></a><span class="card-code">{label}</span>{native_html}<span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
         fc = html_escape(&card.fc),
         label = html_escape(&card.a),
-        native = html_escape(&card.t),
         name = html_escape(&card.n),
     )
 }
