@@ -1008,6 +1008,8 @@ async fn render_aruaru_body() -> String {
 <th style="padding:8px 10px;">⚡ ハイスピード</th>
 <th style="padding:8px 10px;">🔒 ハイセキュリティ</th>
 <th style="padding:8px 10px;">💾 省メモリ</th>
+<th style="padding:8px 10px;">🤖 AIライブラリの豊富さ</th>
+<th style="padding:8px 10px;">🔗 OpenAIとの親和性</th>
 <th style="padding:8px 10px;">📖 読み書きしやすさ</th>
 <th style="padding:8px 10px;">👥 チーム保守しやすさ</th>
 <th style="padding:8px 10px;">📈 小→大規模拡張耐性</th>
@@ -1018,6 +1020,8 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
@@ -1027,6 +1031,8 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
@@ -1037,6 +1043,8 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 </tr>
@@ -1045,6 +1053,8 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★☆☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
