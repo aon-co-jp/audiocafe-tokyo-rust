@@ -998,66 +998,66 @@ async fn render_aruaru_body() -> String {
 </div>
 
 <div style="padding:14px 18px;border-radius:12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);margin:14px 0;">
-<p style="font-size:15px;margin:0;"><strong>💡 Ruby on Railsの保守しやすさについて</strong>: Ruby on Railsは、最初の開発者以外の第三者が後から引き継ごうとしても、他の3組み合わせと比べてほとんどの場合で保守メンテナンスが難しいプログラム言語＋フレームワークです。AIが継続的にメンテナンスする体制を組める場合を除き、採用はなるべく避けた方が無難です。</p>
+<p style="font-size:15px;margin:0;"><strong>💡 Ruby on Railsの保守メンテナンスの難しさについて</strong>: Ruby on Railsは、最初の開発者以外の第三者が後から引き継ごうとしても、他の3組み合わせと比べてほとんどの場合で保守メンテナンスが難しいプログラム言語＋フレームワークです。AIが継続的にメンテナンスする体制を組める場合を除き、採用はなるべく避けた方が無難です。</p>
 </div>
 
 <div style="overflow-x:auto;">
 <table style="width:100%;border-collapse:collapse;font-size:14px;background:#16223d;color:#fff;">
-<thead><tr style="background:rgba(148,163,184,.15);">
-<th style="padding:8px 10px;text-align:left;">組み合わせ</th>
-<th style="padding:8px 10px;">⚡ ハイスピード</th>
-<th style="padding:8px 10px;">🔒 ハイセキュリティ</th>
-<th style="padding:8px 10px;">💾 省メモリ</th>
-<th style="padding:8px 10px;">🤖 AIライブラリの豊富さ</th>
-<th style="padding:8px 10px;">🔗 OpenAIとの親和性</th>
-<th style="padding:8px 10px;">📖 読み書きしやすさ</th>
-<th style="padding:8px 10px;">👥 チーム保守しやすさ</th>
-<th style="padding:8px 10px;">📈 小→大規模拡張耐性</th>
+<thead><tr style="background:#1e2b4d;">
+<th style="padding:8px 10px;text-align:left;color:#fff;">組み合わせ</th>
+<th style="padding:8px 10px;color:#fff;">⚡ ハイスピード</th>
+<th style="padding:8px 10px;color:#fff;">🔒 ハイセキュリティ</th>
+<th style="padding:8px 10px;color:#fff;">💾 省メモリ</th>
+<th style="padding:8px 10px;color:#fff;">🤖 AIライブラリの豊富さ</th>
+<th style="padding:8px 10px;color:#fff;">🔗 OpenAIとの親和性</th>
+<th style="padding:8px 10px;color:#fff;">📖 読み書きしやすさ</th>
+<th style="padding:8px 10px;color:#fff;">👥 チーム保守しやすさ</th>
+<th style="padding:8px 10px;color:#fff;">📈 小→大規模拡張耐性</th>
 </tr></thead>
 <tbody>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;">Rust + Poem</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;">Rust + Poem</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;">PHP + Laravel</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;">PHP + Laravel</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;">Python + FastAPI</td>
-<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★★★</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;">Python + FastAPI</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
-<td style="padding:8px 10px;font-weight:700;">Ruby on Rails</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★☆☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
-<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;font-weight:700;color:#fff;">Ruby on Rails</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★☆☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;color:#fff;">★★★☆☆</td>
 </tr>
 </tbody>
 </table>
