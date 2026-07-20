@@ -1002,7 +1002,7 @@ async fn render_aruaru_body() -> String {
 </div>
 
 <div style="overflow-x:auto;">
-<table style="width:100%;border-collapse:collapse;font-size:14px;">
+<table style="width:100%;border-collapse:collapse;font-size:14px;background:#16223d;color:#fff;">
 <thead><tr style="background:rgba(148,163,184,.15);">
 <th style="padding:8px 10px;text-align:left;">組み合わせ</th>
 <th style="padding:8px 10px;">⚡ ハイスピード</th>
@@ -1047,9 +1047,9 @@ async fn render_aruaru_body() -> String {
 </tbody>
 </table>
 </div>
-<p style="font-size:12px;opacity:.65;margin:6px 0 0;">※ 星評価は一般的な技術知見に基づく主観的な目安であり、StackOverflow等のリアルタイム外部指標に基づく実測値ではありません。</p>
+<p style="font-size:15px;opacity:.65;margin:6px 0 0;">※ 星評価は一般的な技術知見に基づく主観的な目安であり、StackOverflow等のリアルタイム外部指標に基づく実測値ではありません。</p>
 
-<p style="font-size:13px;opacity:.7;margin:22px 0 0;">以下3組み合わせの評価は、Claude Code Desktopが速度・セキュリティ・読み書きしやすさ・チーム保守しやすさ・小→大規模拡張耐性という観点から分析した内容です。</p>
+<p style="font-size:15px;opacity:.7;margin:22px 0 0;">以下3組み合わせの評価は、Claude Code Desktopが速度・セキュリティ・読み書きしやすさ・チーム保守しやすさ・小→大規模拡張耐性という観点から分析した内容です。</p>
 <h3 style="color:#00ffaa;margin-top:8px;">🦀 Rust + Poem</h3>
 <p style="font-size:15px;">
 <strong>メリット</strong>: コンパイル時の所有権チェックによりメモリ安全性・並行処理安全性が保証され、実行速度もC/C++に匹敵する。借用チェッカーが「書き方の揺れ」自体を許さないため、<strong>誰が書いても似た構造のコードになりやすく、チームでの引き継ぎ・保守に強い</strong>。VersionlessAPI（バージョンレスAPI）やWunderGraph CosmoのようなGraphQL Federation思想とも相性が良く、仕様変更が多い大規模開発ほど恩恵が大きい。<br>
