@@ -883,28 +883,16 @@ async fn render_aruaru_body() -> String {
         })
         .collect();
 
-    let lang_rows: &[Value] = tech.get("languages").and_then(|v| v.as_array()).map(|v| v.as_slice()).unwrap_or(&empty_rows);
-    let fw_rows: &[Value] = tech.get("frameworks").and_then(|v| v.as_array()).map(|v| v.as_slice()).unwrap_or(&empty_rows);
-    let db_rows: &[Value] = tech.get("databases").and_then(|v| v.as_array()).map(|v| v.as_slice()).unwrap_or(&empty_rows);
-    let tech_updated = get_disp(tech, "updated_at");
-
-    let lang_cols: &[(&str, &str)] = &[
-        ("rank", "順位"), ("name", "言語"), ("team_dev", "チーム開発"), ("maintenance", "保守性"),
-        ("beginner", "初心者向け"), ("speed", "速度"), ("memory", "必要メモリ容量"), ("dev_scale", "開発規模"),
-        ("traits", "特徴"), ("oss_note", "オープンソース"), ("async_support", "非同期対応"), ("ai_comment", "AI分析コメント"),
-    ];
-    let fw_cols: &[(&str, &str)] = &[
-        ("rank", "順位"), ("name", "Framework"), ("team_dev", "チーム開発"), ("maintenance", "保守性"),
-        ("beginner", "初心者向け"), ("speed", "速度"), ("memory", "必要メモリ容量"), ("large_scale", "大規模開発"),
-        ("ai_comment", "AI分析コメント"),
-    ];
-    let db_cols: &[(&str, &str)] = &[
-        ("rank", "順位"), ("name", "DATABASE"), ("speed", "処理速度"), ("scale", "スケール"),
-        ("distributed", "分散対応"), ("memory", "必要メモリ容量"), ("ai_comment", "AI分析コメント"),
-    ];
-    let lang_table = render_data_table(lang_rows, "#00ffff", lang_cols);
-    let fw_table = render_data_table(fw_rows, "#ffaa00", fw_cols);
-    let db_table = render_data_table(db_rows, "#ff66cc", db_cols);
+    // 2026-07-20、ユーザー指示により、プログラミング言語・フレームワーク・
+    // DATABASEの「TOP80」「TOP200」的な機械的ランキング表示は廃止した。
+    // 代わりに、4つの言語+フレームワーク組み合わせ(PHP+Laravel・
+    // Python+FastAPI・Rust+Poem・Ruby on Rails)を、速度・セキュリティ・
+    // 読み書きしやすさ・チーム開発のしやすさ・小規模→大規模拡張への
+    // 耐性という5軸で比較する、キュレーション済みのレポートに置き換えた
+    // (`TECH_COMPARISON_REPORT`定数、下記参照)。`tech`(旧
+    // `ai-tech-ranking-cache.json`)は現在この関数からは未使用——
+    // cron側の生成自体は他用途のため残置しているが、表示はしない。
+    let _ = &tech;
 
     // 2026-07-19、ユーザー指示により追加: 言語ランキングの下にVersionlessAPI、
     // フレームワークランキングの下にWunderGraph Cosmoへの日本語/英語
@@ -966,7 +954,7 @@ async fn render_aruaru_body() -> String {
   <a href="#doda-jobs">💼 doda求人ピックアップ</a>
   <a href="#ext">🌐 外部求人サイト</a>
   <a href="#policy-service">💡 サービス向上・販売提案</a>
-  <a href="#aruaru-top80-tech">🚀 技術ランキングTOP80</a>
+  <a href="#aruaru-top80-tech">🚀 言語＆フレームワーク比較レポート</a>
   <a href="#aruaru-learning">📚 学習サービスTOP50</a>
   <a href="#aruaru-eikaiwa-top50">🌏 英会話TOP50</a>
 </div>
@@ -1002,24 +990,105 @@ async fn render_aruaru_body() -> String {
 </div>
 
 <div class="card" id="aruaru-top80-tech">
-<h2 style="color:#00ffff;">🚀 人気TOP200 技術ランキング（AI自動分析）</h2>
-<p style="opacity:.7;font-size:15px;">🕐 最終更新: {tech_updated}</p>
-<h3 style="color:#00ffaa;">💻 人気プログラミング言語 TOP200</h3>
-{lang_table}
+<h2 style="color:#00ffff;">🚀 言語＆フレームワーク比較レポート</h2>
+<p style="opacity:.8;font-size:15px;">機械的な「TOP80」「TOP200」ランキング表示は廃止しました（順位付けだけでは、実際にチームで長期保守する際の使いやすさが伝わらないため）。代わりに、実務でよく選ばれる4つの言語＋フレームワークの組み合わせを、下記5つの観点で比較したレポートを掲載します。</p>
+
+<div style="padding:14px 18px;border-radius:12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.4);margin:14px 0;">
+<p style="font-size:15px;margin:0;"><strong>⚠️ Perl・Javaについて</strong>: 近年は人気が低下傾向にあるため、新規プロジェクトでの採用はなるべく避けることを推奨します。既存資産の保守が必要な場合を除き、下記4組み合わせのいずれかへの移行を検討する価値があります。</p>
+</div>
+
+<div style="padding:14px 18px;border-radius:12px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.35);margin:14px 0;">
+<p style="font-size:15px;margin:0;"><strong>💡 保守しやすさについての前提</strong>: PHP＋Laravel・Python＋FastAPI・Rust＋Poem・Ruby on Railsのいずれも、最初の開発者以外の第三者が後から引き継ぐと保守メンテナンスが難しくなりがちな言語＋フレームワークです。AIが継続的にメンテナンスする体制を組める場合を除き、採用時はこの点を踏まえてください。</p>
+</div>
+
+<div style="overflow-x:auto;">
+<table style="width:100%;border-collapse:collapse;font-size:14px;">
+<thead><tr style="background:rgba(148,163,184,.15);">
+<th style="padding:8px 10px;text-align:left;">組み合わせ</th>
+<th style="padding:8px 10px;">⚡ ハイスピード</th>
+<th style="padding:8px 10px;">🔒 ハイセキュリティ</th>
+<th style="padding:8px 10px;">📖 読み書きしやすさ</th>
+<th style="padding:8px 10px;">👥 チーム保守しやすさ</th>
+<th style="padding:8px 10px;">📈 小→大規模拡張耐性</th>
+</tr></thead>
+<tbody>
+<tr style="border-top:1px solid rgba(148,163,184,.25);">
+<td style="padding:8px 10px;font-weight:700;">Rust + Poem</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+</tr>
+<tr style="border-top:1px solid rgba(148,163,184,.25);">
+<td style="padding:8px 10px;font-weight:700;">PHP + Laravel</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
+</tr>
+<tr style="border-top:1px solid rgba(148,163,184,.25);">
+<td style="padding:8px 10px;font-weight:700;">Python + FastAPI</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+</tr>
+<tr style="border-top:1px solid rgba(148,163,184,.25);">
+<td style="padding:8px 10px;font-weight:700;">Ruby on Rails</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p style="font-size:12px;opacity:.65;margin:6px 0 0;">※ 星評価は一般的な技術知見に基づく主観的な目安であり、StackOverflow等のリアルタイム外部指標に基づく実測値ではありません。</p>
+
+<h3 style="color:#00ffaa;margin-top:22px;">🦀 Rust + Poem</h3>
+<p style="font-size:15px;">
+<strong>メリット</strong>: コンパイル時の所有権チェックによりメモリ安全性・並行処理安全性が保証され、実行速度もC/C++に匹敵する。借用チェッカーが「書き方の揺れ」自体を許さないため、<strong>誰が書いても似た構造のコードになりやすく、チームでの引き継ぎ・保守に強い</strong>。VersionlessAPI（バージョンレスAPI）やWunderGraph CosmoのようなGraphQL Federation思想とも相性が良く、仕様変更が多い大規模開発ほど恩恵が大きい。<br>
+<strong>デメリット</strong>: 学習コストが高く、書き始めの生産性はPython等に劣る。小規模・使い捨てのプロトタイプには過剰投資になりやすい。<br>
+<strong>特徴</strong>: 最初から中〜大規模開発・長期保守を見据えたプロジェクトに向く。「小規模から始めて後で大規模化する」場合でも、最初からRustを選んでおくと後年の保守コストを抑えやすい。
+</p>
 <p style="font-size:14px;margin:10px 0 0;">
 <a href="{versionless_api_ja_url}" target="_blank" rel="noopener noreferrer">VersionlessAPI（日本語で検索）</a>
 　|
 <a href="{versionless_api_en_url}" target="_blank" rel="noopener noreferrer">VersionlessAPI (search in English)</a>
-</p>
-<h3 style="color:#ffaa00;">⚡ 人気フレームワーク TOP200</h3>
-{fw_table}
-<p style="font-size:14px;margin:10px 0 0;">WunderGraph Cosmoと言うRestAPI不要などの特徴を持ちます。
+　|　WunderGraph CosmoはRestAPI不要などの特徴を持ちます:
 <a href="{wundergraph_cosmo_ja_url}" target="_blank" rel="noopener noreferrer">WunderGraph Cosmo（日本語で検索）</a>
 　|
 <a href="{wundergraph_cosmo_en_url}" target="_blank" rel="noopener noreferrer">WunderGraph Cosmo (search in English)</a>
 </p>
-<h3 style="color:#ff66cc;">🗄 DATABASE ランキング TOP200</h3>
-{db_table}
+
+<h3 style="color:#ffaa00;margin-top:22px;">🐘 PHP + Laravel</h3>
+<p style="font-size:15px;">
+<strong>メリット</strong>: レンタルサーバーを含め対応環境が広く、求人・学習資料の絶対量が多い。Eloquent ORM等の「お作法」が確立しており、中規模までは比較的スムーズにチーム開発できる。<br>
+<strong>デメリット</strong>: 動的型付け・暗黙の型変換に起因するバグが起きやすく、大規模化すると型安全性の欠如が保守コストとして表面化しやすい。フレームワークの「魔法」（暗黙の規約）に依存した実装は、後任者が全体像を把握するまでに時間がかかる。<br>
+<strong>特徴</strong>: 小〜中規模のWebサービス立ち上げには強いが、「小さく始めて後から大規模化」を見込むなら、早い段階で型安全性・アーキテクチャの明文化に投資する必要がある。
+</p>
+
+<h3 style="color:#00ffff;margin-top:22px;">🐍 Python + FastAPI</h3>
+<p style="font-size:15px;">
+<strong>メリット</strong>: 文法が平易で読み書きしやすく、初学者からAI/データサイエンス分野の専門家まで広い層が書ける。型ヒント＋Pydanticにより一定の型安全性も確保できる。<br>
+<strong>デメリット</strong>: インタプリタ言語のため実行速度は本比較の中で最も遅い部類。GIL（グローバルインタプリタロック）の制約もあり、CPU律速な大規模並行処理には不向き。動的型付け言語共通の「書く人によって書き方がばらつく」問題も残る。<br>
+<strong>特徴</strong>: 機械学習・データ分析基盤との親和性が高く、そうした用途では他の3組み合わせより明確に有利。純粋なWeb API基盤としての大規模拡張には、Rust等との併用（重い処理だけ別言語に切り出す等）を検討する価値がある。
+</p>
+
+<h3 style="color:#ff66cc;margin-top:22px;">💎 Ruby on Rails</h3>
+<p style="font-size:15px;">
+<strong>メリット</strong>: 「設定より規約（Convention over Configuration）」の思想により、小〜中規模であれば非常に高速にプロトタイプ〜本番投入まで持っていける。<br>
+<strong>デメリット</strong>: 規約に依存した「魔法的」な挙動が多く、Railsの暗黙ルールを熟知していない第三者が保守すると、意図しない副作用に気づきにくい。実行速度も遅めで、大規模トラフィックには追加のスケーリング施策が必須になりやすい。<br>
+<strong>特徴</strong>: 「とにかく早く形にしたい」小規模〜MVP開発には最適だが、本比較4組み合わせの中では<strong>チームでの長期保守という観点で最も注意が必要</strong>。将来の大規模化が見込まれる場合は、初期段階からRust等への段階移行も選択肢に入れておくとよい。
+</p>
+
+<div style="padding:14px 18px;border-radius:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.35);margin:18px 0 0;">
+<p style="font-size:14px;margin:0;"><strong>📌 まとめ</strong>: 「初心者向け・小規模向け」という理由だけで言語＋フレームワークを選ぶと、後から機能拡張が重なり気づけば大規模開発になっている、というケースが後を絶ちません。最初から中〜大規模開発・長期保守を見据えて選定しておく方が、結果的にトータルの保守コストを抑えられる傾向があります（本サイト自体もこの考え方に基づき、PHPモノリスからRust＋Poemへの段階移行を進めています）。</p>
+</div>
 </div>
 
 <div class="card" id="aruaru-learning">
