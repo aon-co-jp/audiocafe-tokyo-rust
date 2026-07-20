@@ -2264,7 +2264,7 @@ fn render_lang_card(card: &LangCard) -> String {
     // クリック直後に(本文を読まずとも)遷移先を選べる体験だったため、
     // このRust版でも同じ即時性を静的リンクで再現する。
     format!(
-        r#"<div class="card"><a href="{ac_url}" target="_blank" rel="noopener noreferrer"><img class="card-flag" src="https://flagcdn.com/60x40/{fc}.png" alt="{label}"></a><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
+        r#"<div class="card"><a href="{ac_url}" target="_blank" rel="noopener noreferrer"><img class="card-flag" src="https://flagcdn.com/64x48/{fc}.png" alt="{label}"></a><span class="card-code">{label}</span><span class="card-native">{native}</span><span class="card-country">{name}</span>{actions}{essay}{links}</div>"#,
         fc = html_escape(&card.fc),
         label = html_escape(&card.a),
         native = html_escape(&card.t),
@@ -2350,7 +2350,7 @@ fn render_summary_body() -> String {
         sections.push_str(&format!(
             r#"<section class="summary-card" id="{gc}"><h2>{flag} {name}（{native}）</h2><ul class="card-links">{items}</ul></section>"#,
             gc = html_escape(&card.g),
-            flag = format!(r#"<img src="https://flagcdn.com/24x16/{}.png" alt="" width="24" height="16" style="vertical-align:middle;border-radius:2px">"#, html_escape(&card.fc)),
+            flag = format!(r#"<img src="https://flagcdn.com/32x24/{}.png" alt="" width="24" height="16" style="vertical-align:middle;border-radius:2px">"#, html_escape(&card.fc)),
             name = html_escape(&card.n),
             native = html_escape(&card.t),
         ));
