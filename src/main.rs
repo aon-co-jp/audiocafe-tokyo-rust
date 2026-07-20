@@ -34,6 +34,16 @@ use serde::Deserialize;
 
 const CACHE_BASE: &str = "https://audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
+/// 東京都西部の暮らし・テレワーク紹介 + open-runoエコシステムの入口
+/// (2026-07-20追記、ユーザー指示: 「aruaru.tokyo と runo.tokyo へのリンクを
+/// audiocafe.tokyo内にも貼って」)。
+const RUNO_TOKYO_URL: &str = "https://runo.tokyo/";
+
+/// ユーザー提供のブログ記事(タイトルをリンクテキストにし、URLそのものは
+/// 表示しない、2026-07-20追記)。トップページのYouTube紹介タイトルの
+/// 上に配置する(ユーザー指示)。
+const BLOG_POST_URL: &str = "https://ameblo.jp/www-aon/entry-12973252437.html";
+const BLOG_POST_TITLE: &str = "プログラム言語やフレームワークなどの全てをRust(Poemやhyper)版に移植するメリット?";
 
 /// このRust側が対応済みのランキング一覧(表示名・キャッシュファイル名)。
 /// 2026-07-17、汎用レンダラーへの書き換えにより全8種類に対応。
@@ -77,7 +87,7 @@ nav a {{ margin-right: 1rem; }}
 </head>
 <body>
 <div class="site-header-band">
-<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="https://karu.tokyo/" target="_blank" rel="noopener noreferrer">karu.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
+<nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="{RUNO_TOKYO_URL}">runo.tokyo</a> <a href="https://karu.tokyo/" target="_blank" rel="noopener noreferrer">karu.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
 <p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem
 （audiocafe.tokyoのRustへの移植プロジェクト:
 <a href="https://github.com/aon-co-jp/audiocafe-tokyo-rust" target="_blank" rel="noopener noreferrer">audiocafe-tokyo-rust</a>）
@@ -1375,6 +1385,8 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .subtitle{margin-top:.5rem;font-size:clamp(.95rem,2vw,1.25rem);color:#fff;font-weight:500}
 .top-page .note{margin-top:.5rem;font-size:.8rem;color:#fff;max-width:36rem;margin-left:auto;margin-right:auto;line-height:1.6}
 .top-page .lang-select-link{margin-top:.5rem}
+.top-page .blog-link{margin-top:.4rem;font-size:.85rem}
+.top-page .blog-link a{color:#7dd3fc;text-decoration:none;font-weight:600}
 .top-page .lang-select-link a{color:#fff;font-weight:600}
 .top-page .main{max-width:76rem;margin:0 auto;padding:1rem 1rem 3rem;width:100%}
 .top-page .region-title{font-size:1.4rem;font-weight:700;color:#fff;margin:1.6rem 0 .8rem;letter-spacing:.03em}
@@ -2404,6 +2416,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     // (2026-07-19、ユーザー指摘により復活——旧実装は非クリック可能な
     // ただのテキストだった)。
     let default_now_url = html_escape(&format!("https://www.youtube.com/watch?v={default_id}"));
+    let blog_title_esc = html_escape(BLOG_POST_TITLE);
 
     let list: String = RANKINGS
         .iter()
@@ -2422,6 +2435,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="subtitle">Please select your native language.</p>
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
+<p class="blog-link"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_esc}</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
 <button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
 <div class="yt-now-playing">
