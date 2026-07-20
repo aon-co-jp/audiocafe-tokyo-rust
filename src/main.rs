@@ -1007,6 +1007,7 @@ async fn render_aruaru_body() -> String {
 <th style="padding:8px 10px;text-align:left;">組み合わせ</th>
 <th style="padding:8px 10px;">⚡ ハイスピード</th>
 <th style="padding:8px 10px;">🔒 ハイセキュリティ</th>
+<th style="padding:8px 10px;">💾 省メモリ</th>
 <th style="padding:8px 10px;">📖 読み書きしやすさ</th>
 <th style="padding:8px 10px;">👥 チーム保守しやすさ</th>
 <th style="padding:8px 10px;">📈 小→大規模拡張耐性</th>
@@ -1014,6 +1015,7 @@ async fn render_aruaru_body() -> String {
 <tbody>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
 <td style="padding:8px 10px;font-weight:700;">Rust + Poem</td>
+<td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
@@ -1024,14 +1026,16 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;font-weight:700;">PHP + Laravel</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 </tr>
 <tr style="border-top:1px solid rgba(148,163,184,.25);">
 <td style="padding:8px 10px;font-weight:700;">Python + FastAPI</td>
-<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★★</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
@@ -1040,6 +1044,7 @@ async fn render_aruaru_body() -> String {
 <td style="padding:8px 10px;font-weight:700;">Ruby on Rails</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
+<td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★★☆</td>
 <td style="padding:8px 10px;text-align:center;">★★☆☆☆</td>
 <td style="padding:8px 10px;text-align:center;">★★★☆☆</td>
@@ -1075,8 +1080,8 @@ async fn render_aruaru_body() -> String {
 
 <h3 style="color:#00ffff;margin-top:22px;">🐍 Python + FastAPI</h3>
 <p style="font-size:15px;">
-<strong>メリット</strong>: 文法が平易で読み書きしやすく、初学者からAI/データサイエンス分野の専門家まで広い層が書ける。型ヒント＋Pydanticにより一定の型安全性も確保できる。<br>
-<strong>デメリット</strong>: インタプリタ言語のため実行速度は本比較の中で最も遅い部類。GIL（グローバルインタプリタロック）の制約もあり、CPU律速な大規模並行処理には不向き。動的型付け言語共通の「書く人によって書き方がばらつく」問題も残る。<br>
+<strong>メリット</strong>: 文法が平易で読み書きしやすく、初学者からAI/データサイエンス分野の専門家まで広い層が書ける。型ヒント＋Pydanticにより一定の型安全性も確保できる。FastAPI自体はASGI（非同期）ベースで、I/O待ちの多いAPI用途ではGo言語のGinフレームワーク並みの高速さを発揮できる。<br>
+<strong>デメリット</strong>: CPU律速な重い処理ではPythonインタプリタ自体の速度・GIL（グローバルインタプリタロック）の制約が効いてくるため、そうした用途はRust等に切り出す設計が必要。動的型付け言語共通の「書く人によって書き方がばらつく」問題も残る。<br>
 <strong>特徴</strong>: 機械学習・データ分析基盤との親和性が高く、そうした用途では他の3組み合わせより明確に有利。純粋なWeb API基盤としての大規模拡張には、Rust等との併用（重い処理だけ別言語に切り出す等）を検討する価値がある。
 </p>
 
