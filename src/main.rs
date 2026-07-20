@@ -1105,6 +1105,15 @@ async fn render_aruaru_body() -> String {
 <div style="padding:14px 18px;border-radius:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.35);margin:18px 0 0;">
 <p style="font-size:14px;margin:0;"><strong>📌 まとめ</strong>: 「初心者向け・小規模向け」という理由だけで言語＋フレームワークを選ぶと、後から機能拡張が重なり気づけば大規模開発になっている、というケースが後を絶ちません。最初から中〜大規模開発・長期保守を見据えて選定しておく方が、結果的にトータルの保守コストを抑えられる傾向があります（本サイト自体もこの考え方に基づき、PHPモノリスからRust＋Poemへの段階移行を進めています）。</p>
 </div>
+
+<h3 style="color:#7dd3fc;margin-top:22px;">🗄️ aruaru-db リポジトリの重要ファイル</h3>
+<p style="font-size:15px;">上記4組み合わせのDB層として実際に使われている<a href="https://github.com/aon-co-jp/aruaru-db" target="_blank" rel="noopener noreferrer">aruaru-db</a>（Rust製、Raft強整合×Git-on-SQL）の重要ファイルは、公開リポジトリのためログイン不要でそのままGitHub上から閲覧できます。</p>
+<ul style="list-style:none;margin:0;padding:0;font-size:15px;">
+<li style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.1);">📄 <a href="https://github.com/aon-co-jp/aruaru-db/blob/main/README.md" target="_blank" rel="noopener noreferrer">README.md</a>（概要）</li>
+<li style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.1);">📄 <a href="https://github.com/aon-co-jp/aruaru-db/blob/main/PORTING.md" target="_blank" rel="noopener noreferrer">PORTING.md</a>（お引越し可能ファイル）</li>
+<li style="padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.1);">📄 <a href="https://github.com/aon-co-jp/aruaru-db/blob/main/CLAUDE.md" target="_blank" rel="noopener noreferrer">CLAUDE.md</a>（設計思想＆開発方針＆開発環境ルール）</li>
+<li style="padding:.35rem 0;">📄 <a href="https://github.com/aon-co-jp/aruaru-db/blob/main/ARCHITECTURE.md" target="_blank" rel="noopener noreferrer">ARCHITECTURE.md</a>（アーキテクチャ概要）</li>
+</ul>
 </div>
 
 <div class="card" id="aruaru-learning">
@@ -1492,7 +1501,7 @@ const TOP_STYLE: &str = r#"<style>
 .top-page .card-links{list-style:none;padding:0;margin:.4rem 0 0;text-align:left;font-size:.72rem;line-height:1.6}
 .top-page .card-links li{margin-bottom:.15rem}
 .top-page .card-actions{display:flex;flex-wrap:wrap;gap:.3rem;justify-content:center;margin-top:.5rem}
-.top-page .card-actions a{font-size:.68rem;padding:.15rem .45rem;border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.08)}
+.top-page .card-actions a{font-size:1.3rem;padding:.15rem .45rem;border:1px solid var(--border);border-radius:999px;background:rgba(34,211,238,.08)}
 .top-page .nav-box{background:rgba(15,23,42,.5);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:1.5rem 0}
 .top-page .nav-box h2{color:#7dd3fc;font-size:1.05rem;margin-bottom:.6rem}
 .top-page .nav-box ul{list-style:none;padding:0;margin:0;line-height:1.9}
