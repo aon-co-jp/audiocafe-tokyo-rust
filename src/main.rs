@@ -2476,19 +2476,30 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     // YouTube再生リストのシリーズ機能(PHP版`SEARCH_SERIES`、77件)の復活。
     // 各シリーズの`urls`から再生可能な動画ID(`scraper::extract_yt_id`、
     // `/discover`のサムネイル抽出と同じロジックを再利用)を抽出し、1件も
-    // 再生可能な動画が無いシリーズ(`/results?search_query=...`のみ等)は、
-    // PHP版の既存方針(`audiocafe.tokyo/CLAUDE.md`——YouTube検索結果の
-    // スクレイプ推測再生はしない)を踏襲し、実際のYouTube検索結果ページへの
-    // 直接遷移(新規タブ)にフォールバックする。
+    // 再生可能な動画が無いシリーズは、そのシリーズが実際に持っている
+    // 最初のURL(`/results?search_query=...`・Google検索/画像検索・
+    // 各社公式サイト等、`urls[0]`)へそのまま遷移させる(新規タブ)。
+    //
+    // **2026-07-29修正(実バグ)**: 以前はここで`urls`の中身を一切見ず、
+    // `s.btn`(説明文丸ごとのことすらある)から常に新規のYouTube検索
+    // クエリを合成していたため、Google画像検索・Google検索・各社公式
+    // サイト(SPEC/Pass Labs/Accuphase/LUXMAN等、動画が1本も無い全ての
+    // シリーズ)がことごとく「YouTube検索」に化けてしまう実障害があった
+    // (ユーザー実機での動作確認で発覚)。`urls`が空の場合のみ、従来通り
+    // ラベルからのYouTube検索合成へ後方互換フォールバックする。
     let series_payload: Vec<serde_json::Value> = SEARCH_SERIES
         .iter()
         .map(|s| {
             let ids: Vec<String> = s.urls.iter().filter_map(|u| scraper::extract_yt_id(u)).collect();
             let label = if s.label.is_empty() { s.btn.clone() } else { s.label.clone() };
+            let search_url = match s.urls.first() {
+                Some(url) => url.clone(),
+                None => format!("https://www.youtube.com/results?search_query={}", percent_encode(&s.btn)),
+            };
             serde_json::json!({
                 "label": label,
                 "ids": ids,
-                "searchUrl": format!("https://www.youtube.com/results?search_query={}", percent_encode(&s.btn)),
+                "searchUrl": search_url,
             })
         })
         .collect();
@@ -2589,7 +2600,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
       setNowPlaying(watchUrl(s.ids[0]), s.label);
     }} else {{
       window.open(s.searchUrl, '_blank', 'noopener');
-      setNowPlaying(s.searchUrl, s.label + '（YouTube検索結果へ）');
+      setNowPlaying(s.searchUrl, s.label + '（リンク先へ）');
     }}
     updateActive();
   }};
