@@ -181,6 +181,35 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-29(続き) 「動画が1本も無いシリーズは常にラベル文字列から
+  YouTube検索を合成する」実バグを修正(ユーザー報告——SPECの画像検索
+  リンクがGoogle画像検索ではなくYouTube検索になっていた)**:
+  `src/main.rs`のトップページ組み立てロジック(`series_payload`生成箇所)
+  が、シリーズの`urls`に再生可能なYouTube動画IDが1件も見つからない場合、
+  **`urls`の中身を一切見ずに`s.btn`(説明文丸ごとのことすらある)から
+  常に新規のYouTube検索クエリを合成していた**。これはSPEC画像検索・
+  Pass Labs(USA/Japan)・Accuphase・LUXMAN・YAMAHA・FOSTEX等、動画を
+  1本も含まないシリーズ**全て**に影響する既存の潜在バグで、今回SPEC/
+  Pass Labs関連の新規エントリを追加したことで表面化・報告された。
+  修正: `urls.first()`(=シリーズが実際に持っている最初のURL、Google
+  画像検索・Google検索・各社公式サイト・`aon.tokyo`アンカー等)を
+  `searchUrl`としてそのまま使うよう変更、`urls`が空の場合のみ従来の
+  ラベルからのYouTube検索合成へ後方互換フォールバック。あわせて
+  クリック時の表示文言「（YouTube検索結果へ）」も実態に合わせ
+  「（リンク先へ）」に変更(検索結果とは限らないため)。
+  **検証(実クリックのシミュレーションで確認、静的な文字列確認だけで
+  完了と報告しない)**: `window.open`を差し替えてVPS本番ページ上で
+  実際に`acPlaySeries(54)`(SPEC画像検索)・`acPlaySeries(55)`
+  (Pass Labs USA)を呼び出し、実際に開かれるURLがそれぞれ
+  `https://www.google.com/search?tbm=isch&q=SPEC...`・
+  `https://www.google.com/search?q=Pass%20Labs%20USA`と正しくなる
+  ことを確認した(修正前はどちらもYouTube検索URLに化けていたはず)。
+  PHP版(`audiocafe-tokyo-php`)側は元々`navigateUrl`/`isYtPanelClosed`
+  という別の仕組みで実際のURLへ正しく遷移する設計だったため、この
+  実バグはRust版固有(コード修正はこのリポジトリのみ、PHP版は
+  データ変更のみで対応: SPEC 3個目のYouTube検索エントリを削除、
+  Pass Labs USA/JapanをGoogle検索結果リンクへ変更)。
+
 - **2026-07-29 ナビゲーションの「PHP」リンク(`/index.php`)がVPS本番で
   リンク切れ(404)になっていたのを修正(ユーザー報告)**: 原因は
   `open-web-server`側の2026-07-24 nginx廃止カットオーバー(open-web-server
