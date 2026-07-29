@@ -129,6 +129,22 @@ Rust側に実装のないパスが軒並み404になる実害があることを�
 - クレート名・バイナリ名: `audiocafe-tokyo-server`(実行ファイル名は移行時のまま据え置き)
 - リポジトリ名・フォルダ名: `audiocafe-tokyo-rust`(2026-07-18、ローカルフォルダ名をリモートリポジトリ名に合わせて改名)
 
+## 8-1. `assets/search_series.json`(YouTube再生リストシリーズ)のデータ整備注意点(2026-07-29追記)
+
+- `search_series.json`は`include_str!`でコンパイル時に埋め込まれる
+  ため、**このJSON/対応するPHP版`index.php`内の同名データを編集して
+  もpushしただけでは本番に反映されない**——必ずVPS側で`git pull`→
+  `cargo build --release`→`systemctl restart audiocafe-tokyo-rust`
+  (PHP側は`index.php`を`/var/www/audiocafe.tokyo/`へ直接アップロード)
+  まで行い、実HTTPで反映を確認すること(2026-07-29に実際にこの手順を
+  怠り、ユーザーから「pushしたのに反映されていない」と指摘された
+  実障害あり、詳細はCLAUDE.md HANDOFF参照)。
+- 動画IDを1本も含まないシリーズ(会社公式サイト・Google検索/画像検索
+  リンクのみ等)は、`s.urls`の**最初のURLをそのまま**リンク先として
+  使う設計(2026-07-29修正、旧実装はラベル文字列から常にYouTube検索を
+  勝手に合成する実バグがあった)。新しいシリーズを追加する際、動画を
+  含めないなら`urls`に実際に開いてほしいURLを1件だけ入れること。
+
 ## 8. 移植・拡張時の注意
 
 新しいキャッシュJSONの形状が増えた場合は、まず既存の汎用レンダラー
