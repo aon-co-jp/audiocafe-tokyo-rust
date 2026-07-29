@@ -181,6 +181,61 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-07-29 ナビゲーションの「PHP」リンク(`/index.php`)がVPS本番で
+  リンク切れ(404)になっていたのを修正(ユーザー報告)**: 原因は
+  `open-web-server`側の2026-07-24 nginx廃止カットオーバー(open-web-server
+  自身が80/443を直接受ける構成へ移行、詳細は`open-web-server/CLAUDE.md`
+  参照)で、`audiocafe.tokyo`ドメイン全体が`tenant_router`の
+  host-onlyエントリ(path_prefix未指定、127.0.0.1:4400=このRustサーバー)
+  で丸ごと受けるようになっていたこと——旧nginx設定にあった
+  `location ~ \.php$`(PHP-FPMへの個別振り分け)相当の粒度が失われ、
+  `/index.php`を含むRust未実装の全パスが404になっていた。
+  **修正内容(open-web-server側の設定変更のみ、このリポジトリのコード
+  変更は無し)**: VPS上に`/index.php`(トップページのnavにある「PHP」
+  リンク、旧PHP版を並行して見られるようにする意図的な導線)専用の
+  `php -S 127.0.0.1:4401 -t /var/www/audiocafe.tokyo`
+  を新規systemdサービス(`audiocafe-php-legacy.service`)として常駐させ、
+  `open-web-server`の管理API(`POST /admin/tenants`)で
+  `host="audiocafe.tokyo"`, `path_prefix="/index.php"`,
+  `backend_addr="127.0.0.1:4401"`を追加登録した。`tenant_router`の
+  優先順位(`path_prefix`一致 > `web_vhost` > host-onlyの順、
+  `main.rs::dispatch()`参照)により、`/index.php`だけがこの新しい
+  PHPエンドポイントへ、それ以外の全パス(`/`・`/aruaru/`等)は従来通り
+  このRustサーバーへ届く——スコープを`/index.php`1パスのみに絞ることで
+  既存の稼働中ルーティングには一切影響しない設計にした。
+  **正直な開示・作業中の一時的な事故**: 診断の過程で、一時的に
+  `web_vhost`(host単位でしか絞り込めない、`path_prefix`非対応)へ
+  `audiocafe.tokyo`を登録してしまい、`/`を含む全パスがこの新設定へ
+  奪われ**502(php -S起動待ちの一時的な障害)を数秒間発生させてしまった**
+  ——`web_vhosts`はhost全体を握るため`tenant_router`のprefixマッチより
+  優先度が低いことを見誤った。即座に`DELETE /admin/web-vhosts/
+  audiocafe.tokyo`で削除し復旧を確認済み(実害は数秒間の502のみ、
+  データ損失等は無い)。
+  **検証**: `https://audiocafe.tokyo/index.php`→200(実際に
+  `<title>AUDIOCAFE | World — Select Your Language</title>`を含む
+  本物のPHPページを確認)、`https://audiocafe.tokyo/`→200(Rust版、
+  無変更)、`https://audiocafe.tokyo/aruaru/`→200(Rust版、無変更)を
+  それぞれ実インターネット経由で確認。`domains.toml`への永続化
+  (`tenant_router`は元々`persist_path`機構を持つため、稼働中のバイナリが
+  今回のセッションの永続化修正[`open-web-server`側2026-07-29エントリ
+  参照]より前のビルドでも問題なく反映される)も確認済み——
+  `systemctl restart open-web-server`後も再登録不要。
+  **残る既知の限界**: (1) `/top/`・`/cancer/`・`/Python/`・`/video/`等、
+  旧nginx設定でPHP-FPM経由配信していた他のパスは今回のスコープ外の
+  ままRust未実装=404(今回対応したのは`/index.php`ナビリンクのみ)。
+  同じ`path_prefix`パターンを使えば同様に個別修正できるが、パス数が
+  多いため、まとめて`web_vhost`側に`path_prefix`対応を追加する方が
+  本質的な解決になる(次回検討候補、`open-web-server`側の課題)。
+  (2) 新設した`audiocafe-php-legacy.service`(`php -S`)はセキュリティ・
+  性能とも簡易的な開発用サーバーであり、本番向けのPHP-FPM/FastCGI
+  直結(`open-web-server`側に既に実装済みだが、VPSの現行バイナリは
+  `fastcgi-client` feature無しでビルドされているため使えなかった、
+  `strings`で確認済み)への切り替えが望ましい——次回`fastcgi-client,
+  acme,ddns,sftp,upnp`等の必要featureを揃えてVPSバイナリを再ビルド・
+  再デプロイする際に、`audiocafe-php-legacy.service`をphp-fpm直結の
+  `web_vhost`(ただし`path_prefix`対応が前提、上記(1)参照)へ置き換える
+  ことを推奨する。
+
 - **2026-07-19(さらに続き×6) karu.tokyoリンク追加、再生中タイトル/URLを
   動画上部+両方クリック可能化、ヘッダー帯を黒背景に統一**: ユーザーから
   3件の要望に対応。
