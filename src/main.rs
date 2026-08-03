@@ -49,6 +49,10 @@ const BLOG_POST_TITLE_JA: &str = "プログラム言語やフレームワーク�
 /// 意訳したもの(URLは日英共通、リンク先は変えない)。
 const BLOG_POST_TITLE_EN: &str = "The benefits of migrating everything — programming languages, frameworks, and more — to Rust";
 
+/// 2件目のブログ記事(ユーザー指示、2026-08-04追記)。
+const BLOG_POST2_URL: &str = "https://ameblo.jp/www-aon/entry-12974607800.html";
+const BLOG_POST2_TITLE_JA: &str = "上下水道配管や屋根瓦などのハイテク新素材。パナホームとヤマダホームのコーキングレス外壁";
+
 /// このRust側が対応済みのランキング一覧(表示名・キャッシュファイル名)。
 /// 2026-07-17、汎用レンダラーへの書き換えにより全8種類に対応。
 const RANKINGS: &[(&str, &str, &str)] = &[
@@ -2537,6 +2541,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     let default_now_url = html_escape(&format!("https://www.youtube.com/watch?v={default_id}"));
     let blog_title_ja_esc = html_escape(BLOG_POST_TITLE_JA);
     let blog_title_en_esc = html_escape(BLOG_POST_TITLE_EN);
+    let blog_title2_ja_esc = html_escape(BLOG_POST2_TITLE_JA);
 
     let list: String = RANKINGS
         .iter()
@@ -2556,6 +2561,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
 <p class="blog-link"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_ja_esc}</a> / <a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">{blog_title_en_esc}</a></p>
+<p class="blog-link"><a href="{BLOG_POST2_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title2_ja_esc}</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
 <button type="button" class="yt-panel-close" id="ytPanelClose" onclick="acToggleYtPanel(false)">✕ CLOSE</button>
 <div class="yt-now-playing">
