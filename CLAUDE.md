@@ -181,6 +181,26 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-08-04 実バグ修正: `aruaru`/`aruaru-lady`/`rakuten-mobile`パスがトップページを
+  誤って表示していた問題を`open-web-server`側で修正 + トップページに2件目の
+  ブログリンクを追加**: `aruaru.tokyo`・`audiocafe.tokyo/aruaru`・
+  `/aruaru-lady`・`/rakuten-mobile`へのリンクが、実際には
+  `open-web-server::tenant_router`の`path_prefix`転送が常にプレフィックスを
+  除去(strip)する設計だったため(RS-Blog等向けの既定挙動)、このRust
+  バイナリがリテラルパスでルート登録している`/aruaru`等が除去後の`/`と
+  マッチしてトップページハンドラに誤ってヒットしていた(コード修正自体は
+  `open-web-server`側、詳細は同リポジトリCLAUDE.md参照)。あわせて
+  トップページ(`render_top_body`)に2件目のブログリンク(「上下水道配管や
+  屋根瓦などのハイテク新素材。パナホームとヤマダホームのコーキングレス
+  外壁」)を追加、既存の1件目と同じ`.blog-link`スタイルで表示。
+  - **検証**: `cargo build --release`成功、VPS本番反映(`git pull`→
+    `cargo build --release`→`systemctl restart audiocafe-tokyo-rust`)、
+    `https://audiocafe.tokyo/`・`/aruaru/`・`/aruaru-lady/`・
+    `/rakuten-mobile/`いずれも実インターネット経由で正しい内容(トップ
+    ページではなく各自のコンテンツ)を返すこと、新規ブログリンクの
+    実在を確認済み。
+  - 次にすべきこと: 特に緊急の課題は無し。
+
 - **2026-07-29(セッション末尾、リミット接近のため記録) YouTube再生リスト
   シリーズのデータ整備一式**: ユーザー報告に基づき以下を実施、いずれも
   PHP版(`audiocafe-tokyo-php`)・Rust版(このリポジトリ)双方に反映し、
