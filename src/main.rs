@@ -363,6 +363,51 @@ fn render_rank_table(rows: &[Value], head_color: &str, cols: &[(&str, &str)]) ->
 /// (今回のスコープは見た目の一致であり、翻訳ウィジェット自体は
 /// 別機能のため)。`page_shell`のヘッダー内`<style>`より後(body内)に
 /// 出力することで、同名セレクタ(`body`・`a`・`table`等)を上書きする。
+/// 多言語版(`audiocafe-tokyo-php`側の`index-*.php`、18言語)への
+/// 言語切替ナビ(2026-08-04新設)。このRustサイトの`/aruaru`・
+/// `/aruaru-lady`・`/rakuten-mobile`は日本語版のみを描画しており、
+/// PHP側で先に用意されていた多言語版ページ(英/英(UK)/独/オーストリア/
+/// スイス/伊/仏/西/フィリピン語/露/ウクライナ/アラビア/ペルシャ/
+/// ヘブライ語/韓/中国語簡体字・繁体字)への導線が無かったため
+/// (ユーザー指示「この3つの英語を基本として翻訳したサイトの上に
+/// 世界十数カ国の言語名をナビとして並べてクリックすると読めるように
+/// して」)、日本語ページの先頭にこのナビを追加する。リンク先は
+/// `open-web-server`側`domains.toml`に追加した`/aruaru/index-`等の
+/// 専用prefixルート経由でPHP-FPM(127.0.0.1:4401)へ到達する
+/// (`audiocafe-tokyo-php/CLAUDE.md` 2026-08-04続きエントリ参照)。
+const LANG_NAV_STYLE: &str = r#"<style>
+.lang-nav-bar{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center;margin:0 0 1.2rem;padding:.6rem;background:rgba(255,255,255,.04);border-radius:.6rem}
+.lang-nav-bar a{display:inline-block;padding:.3rem .7rem;border-radius:999px;background:rgba(255,255,255,.08);color:inherit;text-decoration:none;font-size:.82rem;font-weight:600}
+.lang-nav-bar a:hover{background:rgba(255,255,255,.18);text-decoration:none}
+</style>"#;
+
+fn lang_nav_bar(base: &str) -> String {
+    let langs: &[(&str, &str)] = &[
+        ("en", "🇺🇸 English"),
+        ("en-gb", "🇬🇧 English (UK)"),
+        ("de", "🇩🇪 Deutsch"),
+        ("at", "🇦🇹 Deutsch (AT)"),
+        ("ch", "🇨🇭 Deutsch (CH)"),
+        ("it", "🇮🇹 Italiano"),
+        ("fr", "🇫🇷 Français"),
+        ("es", "🇪🇸 Español"),
+        ("tl", "🇵🇭 Filipino"),
+        ("ru", "🇷🇺 Русский"),
+        ("uk", "🇺🇦 Українська"),
+        ("ar", "🇸🇦 العربية"),
+        ("fa", "🇮🇷 فارسی"),
+        ("he", "🇮🇱 עברית"),
+        ("ko", "🇰🇷 한국어"),
+        ("zh-cn", "🇨🇳 简体中文"),
+        ("zh-tw", "🇹🇼 繁體中文"),
+    ];
+    let links: String = langs
+        .iter()
+        .map(|(code, label)| format!(r#"<a href="{base}/index-{code}.php">{label}</a>"#))
+        .collect();
+    format!(r#"{LANG_NAV_STYLE}<div class="lang-nav-bar">{links}</div>"#)
+}
+
 const ARUARU_LADY_STYLE: &str = r#"<style>
 .aruaru-lady-page{margin:-2rem -1rem;background:#0a0f1e;color:#e2e8f0;font-family:'Helvetica Neue',Arial,'Hiragino Kaku Gothic ProN',sans-serif;line-height:1.7}
 .aruaru-lady-page a{color:#fda4af;text-decoration:none}
@@ -399,6 +444,7 @@ const ARUARU_LADY_STYLE: &str = r#"<style>
 /// 取得)をそのまま使う。CSSも実PHP版の`<style>`ブロックから移植済み
 /// (`ARUARU_LADY_STYLE`、ユーザー指示によりスコープ拡大: 2026-07-19)。
 async fn render_aruaru_lady_body() -> String {
+    let lang_nav = lang_nav_bar("/aruaru-lady");
     let caba = fetch_cache("aruaru-lady/aruaru-caba-ranking-cache.json").await;
     let jukujo = fetch_cache("aruaru-lady/aruaru-jukujo-caba-ranking-cache.json").await;
     let tv_group = fetch_cache("aruaru-lady/aruaru-tvchat-group-ranking-cache.json").await;
@@ -482,6 +528,7 @@ async fn render_aruaru_lady_body() -> String {
     format!(
         r##"{ARUARU_LADY_STYLE}
 <div class="aruaru-lady-page">
+{lang_nav}
 <div class="hero">
   <h1>💃 女性向けお仕事情報</h1>
   <p>キャバレー・キャバクラ・熟女キャバ・TVチャットレディの求人・体験入店・時給目安など。各リンクは Google 検索窓口です。必ず各店の公式サイト・求人票・法令をご確認ください。</p>
@@ -815,6 +862,7 @@ fn render_data_table(rows: &[Value], head_color: &str, cols: &[(&str, &str)]) ->
 /// CSSは`ARUARU_STYLE`(PHP版`<style>`ブロックの核部分を移植、ユーザー
 /// 指示によるスコープ拡大: 見た目もPHP版と一致させる)。
 async fn render_aruaru_body() -> String {
+    let lang_nav = lang_nav_bar("/aruaru");
     let doda = fetch_cache("aruaru/doda-jobs-cache.json").await;
     let tech = fetch_cache("ai-tech-ranking-cache.json").await;
     let eikaiwa = fetch_cache("aruaru-eikaiwa-ranking-cache.json").await;
@@ -941,6 +989,7 @@ async fn render_aruaru_body() -> String {
     format!(
         r##"{ARUARU_STYLE}
 <div class="aruaru-page">
+{lang_nav}
 <div class="hero">
   <h1>スキルと希望条件から<br>あなたにぴったりの案件が見つかる。</h1>
   <p>言語・フレームワーク・月額・勤務地で絞り込み。マッチした案件の外部サイトへ直接応募 ＋ 似た求人が見つかる外部サービスもご紹介。</p>
@@ -1242,6 +1291,7 @@ const RAKUTEN_MOBILE_STYLE: &str = r#"<style>
 </style>"#;
 
 async fn render_rakuten_mobile_body() -> String {
+    let lang_nav = lang_nav_bar("/rakuten-mobile");
     let rk = fetch_cache("rakuten-mobile-cache.json").await;
     let intl = fetch_cache("rakuten-intl-call-cache.json").await;
     let plat = fetch_cache("rakuten-platinum-cache.json").await;
@@ -1286,6 +1336,7 @@ async fn render_rakuten_mobile_body() -> String {
         r##"{RAKUTEN_MOBILE_STYLE}
 <div class="rakuten-mobile-page">
 <div class="page-wrap">
+{lang_nav}
 
 <div class="rm-hero">
 <div class="rm-hero__badge">📶 Rakuten最強プラン</div>

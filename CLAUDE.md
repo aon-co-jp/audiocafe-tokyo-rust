@@ -181,6 +181,40 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-08-04(続き) `/aruaru`・`/aruaru-lady`・`/rakuten-mobile`(日本語版)の先頭に
+  18言語ナビを追加(ユーザー指示「この3つの英語を基本として翻訳したサイトの
+  上に世界十数カ国の言語名をナビとして並べてクリックすると読めるように
+  して」)**: これらの日本語ページ自体には、`audiocafe-tokyo-php`側に
+  先に用意されていた多言語版(`index-en.php`等、18言語)への導線が
+  一切無かった(このRustサイトが「多言語版は依然未対応」と記録していた
+  制約はページ本体を指しており、日本語版からのリンクの話とは別問題
+  だったことが判明)。`src/main.rs`に共通ヘルパー`lang_nav_bar(base)`を
+  新設し、3ページそれぞれの`<h1>`直前に18言語(英/英(UK)/独/オーストリア/
+  スイス/伊/仏/西/フィリピン語/露/ウクライナ/アラビア/ペルシャ/
+  ヘブライ語/韓/中国語簡体字・繁体字)のピル型ナビを挿入した。
+  **リンク到達性の実バグも発見・修正(`open-web-server`側)**:
+  `/aruaru/index-en.php`等は`open-web-server`の`domains.toml`で
+  `path_prefix="/aruaru"`(→Rust版4400番、多言語ページ未実装のため404)に
+  常に吸収されてしまい、`audiocafe-tokyo-php`側にファイル自体は存在して
+  いても本番では一切到達不能だった。`/aruaru/index-`・
+  `/aruaru-lady/index-`・`/rakuten-mobile/index-`という、より長い
+  prefixで`127.0.0.1:4401`(PHP-FPM相当の`php -S`legacy)へ振り分ける
+  エントリを追加(`tenant_router`は`path_prefix`の長さで最長一致を
+  優先するため、既存の`/aruaru`より確実に優先される)。
+  - **検証**: `cargo build --release`成功(新規警告なし)・`cargo test`
+    14件全green。ローカルで実バイナリを起動し`curl`で3ページとも
+    `lang-nav-bar`・`index-he.php`・`index-es.php`が実際に出力に
+    含まれることを確認。VPS本番反映(`git pull`→`cargo build --release`→
+    `systemctl restart audiocafe-tokyo-rust`)後、
+    `https://audiocafe.tokyo/aruaru/`・`/aruaru-lady/`・
+    `/rakuten-mobile/`いずれもナビ表示を確認し、さらに
+    `https://audiocafe.tokyo/aruaru/index-he.php`等の実リンク先が
+    実際に200で正しい言語のページを返すことも確認済み
+    (`open-web-server`側`domains.toml`の変更込み)。
+  - 次にすべきこと: 特に緊急の課題は無し。今後さらに言語を追加する
+    場合は`lang_nav_bar`の`langs`配列と、PHP側`audiocafe-tokyo-php`の
+    各ディレクトリの`lang-nav.php`の両方を同期して更新すること。
+
 - **2026-08-04 実バグ修正: `aruaru`/`aruaru-lady`/`rakuten-mobile`パスがトップページを
   誤って表示していた問題を`open-web-server`側で修正 + トップページに2件目の
   ブログリンクを追加**: `aruaru.tokyo`・`audiocafe.tokyo/aruaru`・
