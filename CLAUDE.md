@@ -181,6 +181,25 @@ Rust版のものになっているかを必ず確認すること(ステータス
 
 ## HANDOFF
 
+- **2026-08-17 YouTube背景プレイヤーにMcIntosh Amplifierのリンクを追加
+  (ユーザー指示「audiocafe.tokyoのYoutubeのSPECの次にMcintosh
+  Amplifierのリンクにhttps://ameblo.jp/www-aon/entry-12976022104.html
+  を貼って」への対応)**: `assets/search_series.json`の「SPEC
+  RPA-MG1000 RPA-MG3000 画像検索」エントリの直後、「Pass Labs USA」の
+  直前にMcIntosh Amplifierのエントリ(btn/label、ameblo.jpの当該記事
+  URL)を追加。姉妹リポジトリ`audiocafe-tokyo-php`側の`index.php`内
+  `SEARCH_SERIES`にも同じ内容・同じ位置で追加済み(詳細は同リポジトリの
+  CLAUDE.md参照)。`cargo build --release`で`include_str!`経由の
+  埋め込みが正しくパースされることを確認済み(本ファイルの「YouTube
+  再生リストシリーズの編集について」節の通り、VPS側で`git pull`→
+  `cargo build --release`→`systemctl restart audiocafe-tokyo-rust`
+  まで行わないと本番反映されない点に注意)。README/CLAUDE/PORTINGの
+  英語版(README-English.md/CLAUDE-English.md/PORTING-English.md)も
+  本HANDOFFと併せて新設した。
+  - 次にすべきこと: 本番VPSへの反映(`git pull`→再ビルド→再起動)は
+    次回のデプロイ作業時に実施すること(このセッションではローカル
+    ビルド確認のみ)。
+
 - **2026-08-04(続き) `/aruaru`・`/aruaru-lady`・`/rakuten-mobile`(日本語版)の先頭に
   18言語ナビを追加(ユーザー指示「この3つの英語を基本として翻訳したサイトの
   上に世界十数カ国の言語名をナビとして並べてクリックすると読めるように
