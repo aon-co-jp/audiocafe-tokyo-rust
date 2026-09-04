@@ -2665,7 +2665,16 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
     var s = data[cur];
     if (!s) return;
     if (s.ids.length === 0) {{ window.open(s.searchUrl, '_blank', 'noopener'); return; }}
-    idx = (idx + 1) % s.ids.length;
+    if (idx + 1 >= s.ids.length) {{
+      // シリーズ内の全動画を再生し終えたら、次のシリーズへ自動的に進む
+      // (2026-09-04、ユーザー指示: アルニコ4351を10種類聞いたら次の
+      // 岡野昭仁の動画へ移る、という挙動をシリーズ切替の一般ルールとして実装)。
+      // 次のシリーズが無い(配列末尾)場合のみ、従来通り同シリーズ内でループする。
+      if (cur + 1 < data.length) {{ acPlaySeries(cur + 1); return; }}
+      idx = 0;
+    }} else {{
+      idx = idx + 1;
+    }}
     iframe.src = embedUrl(s.ids[idx]);
     setNowPlaying(watchUrl(s.ids[idx]), s.label);
   }};
