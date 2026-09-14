@@ -2609,9 +2609,9 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <div class="header">
 <span class="logo">audiocafe.tokyo</span>
 <p class="subtitle">Please select your native language.</p>
-<p class="note">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
+<p class="note" style="font-size:1rem">あなたの母国語を選択してください。2回目の選択時はブラウザを閉じて再度開いてください。<br>動画を視聴するには日本語を選択してください。</p>
 <p class="lang-select-link"><a href="#lang-grid">🌐 Select your language / 言語を選択する（世界中の言語から選べます） →</a></p>
-<p class="note">熱心なAUDIOファンで音質の良いDDC＋USB-DAC次期製品の希望と致しまして、<br>As an avid AUDIO fan, my request for a good-sounding next-generation DDC + USB-DAC product is as follows:</p>
+<p class="note">熱心なAUDIOファンで音質の良いDDC＋USB-DAC次期製品を希望している者と致しまして、<br>As an avid AUDIO fan, my request for a good-sounding next-generation DDC + USB-DAC product is as follows:</p>
 <p class="note">日本語:<br>Musician Audio「USB DAC PEGASUS」シリーズの次期製品として、ローム（ROHM）製フラッグシップD/AコンバーターIC「BD34302EKV」を4基（クアッド構成）搭載したモデルは、R2RのUSB-DACよりも是非その次期製品の発売を希望致しております。<br><br>English:<br>As the next product in Musician Audio's "USB DAC PEGASUS" series, we would very much like to see the release of a model equipped with four (quad configuration) ROHM "BD34302EKV" flagship D/A converter ICs, even more than an R2R USB-DAC.</p>
 <p class="blog-link"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_ja_esc}</a> / <a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">{blog_title_en_esc}</a></p>
 <p class="blog-link"><a href="{BLOG_POST2_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title2_ja_esc}</a></p>
