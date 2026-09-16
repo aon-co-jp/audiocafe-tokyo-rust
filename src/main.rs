@@ -2629,7 +2629,7 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="note" style="font-size:1.2rem">秋葉原イヤフォン＆ヘッドフォン専門店<br>AKIHABARA　Earphone &amp; HEADPHONE</p>
 <p class="blog-link" style="font-size:1.2rem"><a href="https://www.e-earphone.jp/collections/5?filter.p.m.custom.is_on_sale=%E8%B2%A9%E5%A3%B2%E4%B8%AD&sort_by=price-descending" target="_blank" rel="noopener noreferrer">📝 高級ヘッドフォン / HIEND HEADPHONE</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="https://www.e-earphone.jp/collections/3?filter.p.m.custom.is_on_sale=%E8%B2%A9%E5%A3%B2%E4%B8%AD&sort_by=price-descending" target="_blank" rel="noopener noreferrer">📝 高級有線イヤフォン / HIEND CABLE EARPHONE</a></p>
-<p class="blog-link" style="font-size:1.2rem"><a href="https://www.e-earphone.jp/collections/wireless_earphone?filter.p.m.custom.is_on_sale=%E8%B2%A9%E5%A3%B2%E4%B8%AD&sort_by=price-descending" target="_blank" rel="noopener noreferrer">📝 高級ワイヤレス・イヤフォン / HIEND Wireless EARPHONE</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.e-earphone.jp/collections/1?filter.p.m.custom.is_on_sale=%E8%B2%A9%E5%A3%B2%E4%B8%AD&sort_by=price-descending" target="_blank" rel="noopener noreferrer">📝 高級・完全ワイヤレス・イヤフォン / HIEND true wireless earbuds</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_ja_esc}</a> / <a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">{blog_title_en_esc}</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="{BLOG_POST2_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title2_ja_esc}</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
