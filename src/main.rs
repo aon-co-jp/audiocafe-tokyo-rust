@@ -2638,6 +2638,12 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="note" style="font-size:1.2rem">コストパフォーマンスが良い商品その２。<br><br>Cost-effective clip-on headphones　PART２.</p>
 <p class="blog-link" style="font-size:1.2rem"><a href="https://www.amazon.co.jp/audio-technica-W-%E5%AF%86%E9%96%89%E5%9E%8B%E3%82%AA%E3%83%B3%E3%82%A4%E3%83%A4%E3%83%BC%E3%83%98%E3%83%83%E3%83%89%E3%83%9B%E3%83%B3-%E8%80%B3%E6%8E%9B%E3%81%91%E5%BC%8F-ATH-EW9/dp/B0002ERI22" target="_blank" rel="noopener noreferrer">📝 Amazon Japan「オーディオテクニカ ATH-EW9 ヘッドホン 有線 耳掛け オンイヤー ウッドハウジング ブラウン 小型」</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="https://www.amazon.com/audio-technica-W-%E5%AF%86%E9%96%89%E5%9E%8B%E3%82%AA%E3%83%B3%E3%82%A4%E3%83%A4%E3%83%BC%E3%83%98%E3%83%83%E3%83%89%E3%83%9B%E3%83%B3-%E8%80%B3%E6%8E%9B%E3%81%91%E5%BC%8F-ATH-EW9/dp/B0002ERI22" target="_blank" rel="noopener noreferrer">📝 Amazon USA "audio-technica ATH-EW9"</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.electori.co.jp/pass/" target="_blank" rel="noopener noreferrer">📝 PASS Labs　Japan</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.passlabs.com/" target="_blank" rel="noopener noreferrer">📝 PASS Labs USA</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.electori.co.jp/mcintosh/products/" target="_blank" rel="noopener noreferrer">📝 Macintosh　マッキントッシュ　Japan</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.accuphase.co.jp/" target="_blank" rel="noopener noreferrer">📝 Accuphase</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://www.luxman.co.jp/" target="_blank" rel="noopener noreferrer">📝 LUXMAN</a></p>
+<p class="blog-link" style="font-size:1.2rem"><a href="https://jp.yamaha.com/" target="_blank" rel="noopener noreferrer">📝 YAMAHA</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title_ja_esc}</a> / <a href="{BLOG_POST_URL}" target="_blank" rel="noopener noreferrer">{blog_title_en_esc}</a></p>
 <p class="blog-link" style="font-size:1.2rem"><a href="{BLOG_POST2_URL}" target="_blank" rel="noopener noreferrer">📝 {blog_title2_ja_esc}</a></p>
 <div class="yt-bg-player" id="ytBgPlayer">
