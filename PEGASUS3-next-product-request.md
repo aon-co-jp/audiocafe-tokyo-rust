@@ -26,7 +26,7 @@ Musician Audio「USB DAC PEGASUSⅢ」シリーズの次期製品として、R2R
 
 ![DAISO 充電しながら使えるUSB Type-C変換ケーブル（DACチップ搭載・4極ミニジャック対応・500円/税込550円）](https://audiocafe.tokyo/images/daiso-usbc-35mm-charging-adapter.jpg)
 
-Bluetoothよりも更にWiFiなどの無線では、対応していればWiFiの方が音質が良いです。さらに、有線の方がノイズが乗りにくいので音質が良く、3.5mmや4.4mmやXLR接続のイヤホンやヘッドホンの中には、ベッドの枕に横になっても使える、クリップ式（耳掛け式）の物もございます。
+Bluetoothよりも更にWiFiなどの無線では、対応していればWiFiの方が音質が良いです。さらに、有線の方がノイズが乗りにくいので音質が良く、3.5mmや4.4mmやXLR接続のイヤホンやヘッドホンの中には、ベッドの枕に横になっても使える、クリップ式（耳掛け式）の物も御座います。
 
 - [SOUNDHOUSE](https://www.soundhouse.co.jp/search/index?s_maker_cd=&s_category_cd=1446&s_mid_category_cd=&s_large_category_cd=&s_product_cd=&search_all=&sSeriesCd=&sPriceFrom=0&sPriceTo=9999999&s_spec=&s_zaiko=&i_type=c&i_sub_type=&i_page=1&i_sort=&i_page_size=32&i_ListType=type2&tag=)
 - [【国内正規品】KOSS(コス) KSC75 耳掛け式ヘッドホン(オープン型) 有線 ・ケーブル長/約1.2m・コネクター:L型3.5㎜プラグ・43g](https://www.amazon.co.jp/dp/B076XZNKV8)
