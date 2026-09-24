@@ -42,6 +42,8 @@ DDCのHDMI(I2S)出力からのI2S入力端子付きで、安くて音質が良�
 
 [LOXJIE D40 PRO DAコンバーター & ヘッドホンアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載/Bluetooth 5.0対応/MQA・ハイレゾ・DSD音源全対応/バランス・アンバランス・高性能ヘッドホンアンプ付き 光 同軸 OTG USB DAC (グレー)](https://search.kakaku.com/LOXJIE%20D40%20PRO/)
 
+GUSTARD U18 DDCと、I2S(hdmi)でそのままつなげます。接続は未確認ながらI2S接続なら、MUSICIAN Pisces IIIと言う製品の方が少し高いですが、こちらの方がDDCとしては、音質は良いと思います。念の為ですが、DDC単体では音は出ません。PCやスマホなどとUSBでDDCを接続して、DDCとI2S(hdmi)で、I2S入力端子が付いているUSB-DACを購入したら、そのUSB-DACと接続して、4.4mmバランス接続などでイヤフォンかヘッドフォンもしくは、RCA同軸かXLRでアンプそしてスピーカーに接続して初めて良い音が出るのです。
+
 熱心なAUDIOファンで音質の良い、MUSICIAN AUDIOのPISCES IIIというDDC（GustardのDDCのU18よりロスレスのI2Sなので音質が良いとされております。2026年9月16日現在、Amazon USAではMUSICIAN Pisces II（2）しか販売されておらず、Amazon JapanではMUSICIAN Pisces III（3）を販売中でございます。）＋USB-DACの次期製品を希望している者といたしまして、
 
 Musician Audio「USB DAC PEGASUSⅢ」シリーズの次期製品として、R2R方式のUSB-DACよりも、ローム（ROHM）製フラッグシップD/AコンバーターIC「BD34302EKV」を4基（クアッド構成）搭載し、さらに低ノイズで音質の良い真空管も搭載し、真空管の部分はスイッチのONとOFFで切り替えられるモデルを希望します。また、既存のMusician Audio製品のように、電圧を100Vと230Vで自動切り替えする機能を、他社の機器にもぜひ搭載していただきたいと思います。そのようなモデルを、ぜひ次期製品として発売してほしいと思います。
@@ -91,6 +93,10 @@ In addition, Rakuten Mobile appears to offer unlimited data coverage across a wi
 As a popular USB DAC model that has an I2S input terminal for I2S from a DDC's HDMI (I2S) output and is considered inexpensive with good sound quality as of September 20, 2026, I recommend the following.
 
 [LOXJIE D40 Pro, Decoder Headphone Amplifier, ES 9039MS Pro Chip, HiFi, MQA Full Decoding, OPA1612, Support Transmission DSD, XU-316, Bluetooth 5.0, with Remote Control (Gray)](https://www.amazon.com/dp/B0C6B5Y39G)
+
+The LOXJIE D40 PRO can be connected directly to a GUSTARD U18 DDC (a digital-to-digital converter) with an I2S (HDMI) cable. I have not verified this connection myself. If you are going with an I2S connection, the MUSICIAN Pisces III is a little more expensive, but I believe it is the better DDC in terms of sound quality.
+
+Please note that a DDC by itself does not produce any sound. A DDC receives digital audio from a PC or smartphone over USB and passes it on, via I2S (HDMI), to a USB DAC that has an I2S input. The DAC then converts that digital signal into an analog signal, and only then do you hear good sound: through earphones or headphones using a 4.4mm balanced connection, or through an amplifier and speakers using RCA or XLR cables.
 
 As an enthusiastic audio fan who is hoping for a next-generation product combining a high-sound-quality DDC, the MUSICIAN AUDIO PISCES III (said to sound better than Gustard's U18 DDC because of its lossless I2S output; as of September 16, 2026, only the MUSICIAN Pisces II (2) is sold on Amazon USA, while the MUSICIAN Pisces III (3) is on sale on Amazon Japan), plus a USB DAC,
 
