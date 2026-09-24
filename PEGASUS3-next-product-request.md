@@ -48,6 +48,8 @@ GUSTARD U18 DDCと、I2S(hdmi)でそのままつなげます。接続は未確�
 
 [VMV SMSL D2R D/Aコンバーター フラッグシップDAC「BD34301EKV」搭載 オーディオ DAC Bluetooth USB 光 同軸 DAC](https://www.amazon.co.jp/dp/B0CH9Y9CS3)
 
+[VMV SMSL D2R MK2 D/Aコンバーター ROHM新型フラッグシップDAC「BD34302EKV」搭載 オーディオ DAC Bluetooth USB光 同軸DAC](https://www.amazon.co.jp/dp/B0H118K2MP)
+
 [VMV SMSL D3R D/Aコンバーター ROHM新型フラッグシップDAC「BD34302EKV」x2搭載 オーディオ DAC Bluetooth USB 光 同軸 DAC](https://www.amazon.co.jp/dp/B0GT8XSKCC)
 
 熱心なAUDIOファンで音質の良い、MUSICIAN AUDIOのPISCES IIIというDDC（GustardのDDCのU18よりロスレスのI2Sなので音質が良いとされております。2026年9月16日現在、Amazon USAではMUSICIAN Pisces II（2）しか販売されておらず、Amazon JapanではMUSICIAN Pisces III（3）を販売中でございます。）＋USB-DACの次期製品を希望している者といたしまして、
@@ -107,6 +109,8 @@ Please note that a DDC by itself does not produce any sound. A DDC receives digi
 [S.M.S.L DL400 fully balanced Bluetooth DAC, headphone amplifier and preamplifier all-in-one, equipped with the flagship DAC "ES9039MSPRO"; supports MQA, Hi-Res and DSD; supports LDAC, aptX, aptX HD, AAC and SBC. Inputs: optical, digital coaxial, I2S, OTG USB](https://www.amazon.com/dp/B0DK2THD14)
 
 [SMSL VMV D2R Audio DAC MQA MQA-CD Decoder BD34301EKV Chip Bluetooth 5.1 DSD512 XU316 PCM Balance USB Decoder with Remote Control](https://www.amazon.com/dp/B0CN6YM1B4)
+
+[SMSL VMV D2R MK2 DAC ROHM BD34302EKV Decoding Chip CK-04 Clock | Bluetooth 5.4 LDAC/APTX/HD、SBC、AAC for HiFi System/PC/Home Audio USB/Optical/Coaxial /I2S/ AES Input XLR/RCA Output](https://www.amazon.com/dp/B0H111VSWD)
 
 [SMSL VMV D3R Hi-Res DAC 2x ROHM BD34302EKV Chip Clock Input Bluetooth5.4 MQA CD DAC True Preamp Built-in 3ppb 10MHZ OCXO DSD512 PCM 768kHz USB/Opt/Coax/BT/I²S/AES Input RCA/XLR Output Balanced Decoder](https://www.amazon.com/dp/B0GT8PXNVF)
 
