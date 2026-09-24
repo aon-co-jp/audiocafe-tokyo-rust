@@ -42,6 +42,8 @@ DDCのHDMI(I2S)出力からのI2S入力端子付きで、安くて音質が良�
 
 [LOXJIE D40 PRO DAコンバーター & ヘッドホンアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載/Bluetooth 5.0対応/MQA・ハイレゾ・DSD音源全対応/バランス・アンバランス・高性能ヘッドホンアンプ付き 光 同軸 OTG USB DAC (グレー)](https://www.amazon.co.jp/dp/B0C5X91CSQ)　[［価格.comで見る］](https://search.kakaku.com/LOXJIE%20D40%20PRO/)
 
+[Shanling L8 シャンリン I2Sデジタルケーブル高純度 無酸素銅線 ノイズレスシールド設計Hi-Fiグレードデジタル伝送 【国内正規品】](https://www.amazon.co.jp/dp/B0CSP4ZXJR)
+
 GUSTARD U18 DDCと、I2S(hdmi)でそのままつなげます。接続は未確認ながらI2S接続なら、MUSICIAN Pisces IIIと言う製品の方が少し高いですが、こちらの方がDDCとしては、音質は良いと思います。念の為ですが、DDC単体では音は出ません。PCやスマホなどとUSBでDDCを接続して、DDCとI2S(hdmi)で、I2S入力端子が付いているUSB-DACを購入したら、そのUSB-DACと接続して、4.4mmバランス接続などでイヤフォンかヘッドフォンもしくは、RCA同軸かXLRでアンプそしてスピーカーに接続して初めて良い音が出るのです。
 
 [S.M.S.L DL400 フルバランス Bluetooth DAC ヘッドホンアンプ プリアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載／MQA・ハイレゾ・DSD音源対応／LDAC・aptX・aptX HD・AAC・SBC対応　入力端子：光、デジタル同軸、I2S、OTG USB](https://amzn.asia/d/0hxopV5I)
