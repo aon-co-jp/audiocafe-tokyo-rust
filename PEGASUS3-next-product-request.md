@@ -46,6 +46,10 @@ GUSTARD U18 DDCと、I2S(hdmi)でそのままつなげます。接続は未確�
 
 [S.M.S.L DL400 フルバランス Bluetooth DAC ヘッドホンアンプ プリアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載／MQA・ハイレゾ・DSD音源対応／LDAC・aptX・aptX HD・AAC・SBC対応　入力端子：光、デジタル同軸、I2S、OTG USB](https://amzn.asia/d/0hxopV5I)
 
+[VMV SMSL D2R D/Aコンバーター フラッグシップDAC「BD34301EKV」搭載 オーディオ DAC Bluetooth USB 光 同軸 DAC](https://www.amazon.co.jp/dp/B0CH9Y9CS3)
+
+[VMV SMSL D3R D/Aコンバーター ROHM新型フラッグシップDAC「BD34302EKV」x2搭載 オーディオ DAC Bluetooth USB 光 同軸 DAC](https://www.amazon.co.jp/dp/B0GT8XSKCC)
+
 熱心なAUDIOファンで音質の良い、MUSICIAN AUDIOのPISCES IIIというDDC（GustardのDDCのU18よりロスレスのI2Sなので音質が良いとされております。2026年9月16日現在、Amazon USAではMUSICIAN Pisces II（2）しか販売されておらず、Amazon JapanではMUSICIAN Pisces III（3）を販売中でございます。）＋USB-DACの次期製品を希望している者といたしまして、
 
 Musician Audio「USB DAC PEGASUSⅢ」シリーズの次期製品として、R2R方式のUSB-DACよりも、ローム（ROHM）製フラッグシップD/AコンバーターIC「BD34302EKV」を4基（クアッド構成）搭載し、さらに低ノイズで音質の良い真空管も搭載し、真空管の部分はスイッチのONとOFFで切り替えられるモデルを希望します。また、既存のMusician Audio製品のように、電圧を100Vと230Vで自動切り替えする機能を、他社の機器にもぜひ搭載していただきたいと思います。そのようなモデルを、ぜひ次期製品として発売してほしいと思います。
@@ -101,6 +105,10 @@ The LOXJIE D40 PRO can be connected directly to a GUSTARD U18 DDC (a digital-to-
 Please note that a DDC by itself does not produce any sound. A DDC receives digital audio from a PC or smartphone over USB and passes it on, via I2S (HDMI), to a USB DAC that has an I2S input. The DAC then converts that digital signal into an analog signal, and only then do you hear good sound: through earphones or headphones using a 4.4mm balanced connection, or through an amplifier and speakers using RCA or XLR cables.
 
 [S.M.S.L DL400 fully balanced Bluetooth DAC, headphone amplifier and preamplifier all-in-one, equipped with the flagship DAC "ES9039MSPRO"; supports MQA, Hi-Res and DSD; supports LDAC, aptX, aptX HD, AAC and SBC. Inputs: optical, digital coaxial, I2S, OTG USB](https://www.amazon.com/dp/B0DK2THD14)
+
+[SMSL VMV D2R Audio DAC MQA MQA-CD Decoder BD34301EKV Chip Bluetooth 5.1 DSD512 XU316 PCM Balance USB Decoder with Remote Control](https://www.amazon.com/dp/B0CN6YM1B4)
+
+[SMSL VMV D3R Hi-Res DAC 2x ROHM BD34302EKV Chip Clock Input Bluetooth5.4 MQA CD DAC True Preamp Built-in 3ppb 10MHZ OCXO DSD512 PCM 768kHz USB/Opt/Coax/BT/I²S/AES Input RCA/XLR Output Balanced Decoder](https://www.amazon.com/dp/B0GT8PXNVF)
 
 As an enthusiastic audio fan who is hoping for a next-generation product combining a high-sound-quality DDC, the MUSICIAN AUDIO PISCES III (said to sound better than Gustard's U18 DDC because of its lossless I2S output; as of September 16, 2026, only the MUSICIAN Pisces II (2) is sold on Amazon USA, while the MUSICIAN Pisces III (3) is on sale on Amazon Japan), plus a USB DAC,
 
