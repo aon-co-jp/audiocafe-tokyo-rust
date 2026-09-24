@@ -104,6 +104,8 @@ As a popular USB DAC model that has an I2S input terminal for I2S from a DDC's H
 
 [LOXJIE D40 Pro, Decoder Headphone Amplifier, ES 9039MS Pro Chip, HiFi, MQA Full Decoding, OPA1612, Support Transmission DSD, XU-316, Bluetooth 5.0, with Remote Control (Gray)](https://www.amazon.com/dp/B0C6B5Y39G)
 
+[Shanling L8-I2S to I2S Cable (1M) — Shanling Official Store](https://store.shanling.com/L8-I2S-to-I2S-Cable-1M-pd153678738.html)
+
 The LOXJIE D40 PRO can be connected directly to a GUSTARD U18 DDC (a digital-to-digital converter) with an I2S (HDMI) cable. I have not verified this connection myself. If you are going with an I2S connection, the MUSICIAN Pisces III is a little more expensive, but I believe it is the better DDC in terms of sound quality.
 
 Please note that a DDC by itself does not produce any sound. A DDC receives digital audio from a PC or smartphone over USB and passes it on, via I2S (HDMI), to a USB DAC that has an I2S input. The DAC then converts that digital signal into an analog signal, and only then do you hear good sound: through earphones or headphones using a 4.4mm balanced connection, or through an amplifier and speakers using RCA or XLR cables.
