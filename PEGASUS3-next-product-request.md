@@ -40,7 +40,7 @@ Bluetoothよりも更にWiFiなどの無線では、対応していればWiFiの
 
 DDCのHDMI(I2S)出力からのI2S入力端子付きで、安くて音質が良いとされる2026/09/20現在のUSB-DACの普及モデルとして、次をオススメ致します。
 
-[LOXJIE D40 PRO DAコンバーター & ヘッドホンアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載/Bluetooth 5.0対応/MQA・ハイレゾ・DSD音源全対応/バランス・アンバランス・高性能ヘッドホンアンプ付き 光 同軸 OTG USB DAC (グレー)](https://search.kakaku.com/LOXJIE%20D40%20PRO/)
+[LOXJIE D40 PRO DAコンバーター & ヘッドホンアンプ 一体型 フラッグシップDAC「ES9039MSPRO」搭載/Bluetooth 5.0対応/MQA・ハイレゾ・DSD音源全対応/バランス・アンバランス・高性能ヘッドホンアンプ付き 光 同軸 OTG USB DAC (グレー)](https://www.amazon.co.jp/dp/B0C5X91CSQ)　[［価格.comで見る］](https://search.kakaku.com/LOXJIE%20D40%20PRO/)
 
 GUSTARD U18 DDCと、I2S(hdmi)でそのままつなげます。接続は未確認ながらI2S接続なら、MUSICIAN Pisces IIIと言う製品の方が少し高いですが、こちらの方がDDCとしては、音質は良いと思います。念の為ですが、DDC単体では音は出ません。PCやスマホなどとUSBでDDCを接続して、DDCとI2S(hdmi)で、I2S入力端子が付いているUSB-DACを購入したら、そのUSB-DACと接続して、4.4mmバランス接続などでイヤフォンかヘッドフォンもしくは、RCA同軸かXLRでアンプそしてスピーカーに接続して初めて良い音が出るのです。
 
