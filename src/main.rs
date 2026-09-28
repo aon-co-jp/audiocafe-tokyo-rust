@@ -33,6 +33,15 @@ use once_cell::sync::Lazy;
 use serde::Deserialize;
 
 const CACHE_BASE: &str = "https://audiocafe.tokyo";
+/// 実バグ修正(2026-09-28、続き): `audiocafe-tokyo-rust.service`
+/// (このアプリ本体、`WorkingDirectory=/root/audiocafe-tokyo-rust`)と
+/// `audiocafe-cron-rust.service`(`--cron-all`、`WorkingDirectory=
+/// /var/www/audiocafe.tokyo`)が別々の作業ディレクトリを持つため、
+/// CWD相対パスでの読み書きでは一致しない(このアプリのCWDから見た
+/// `aruaru/doda-jobs-cache.json`は存在しないファイルを指してしまう)。
+/// 静的Webルート(nginx等の実配信ディレクトリ、cronの書き込み先と一致)
+/// を絶対パスで固定し、CWDに依存せず常に同じ場所を読むようにする。
+const CACHE_DIR: &str = "/var/www/audiocafe.tokyo";
 const ARUARU_TOKYO_URL: &str = "https://aruaru.tokyo/";
 /// 東京都西部の暮らし・テレワーク紹介 + open-cosmoエコシステムの入口
 /// (2026-07-20追記、ユーザー指示: 「aruaru.tokyo と runo.tokyo へのリンクを
@@ -125,7 +134,8 @@ nav a {{ margin-right: 1rem; }}
 /// (`--cron-all`の書き込み先と同じ相対パスで)直接読み、失敗した場合
 /// のみ従来通りHTTP経由でのフォールバックを試みる。
 async fn fetch_cache(filename: &str) -> Result<Value, String> {
-    if let Ok(text) = std::fs::read_to_string(filename) {
+    let local_path = std::path::Path::new(CACHE_DIR).join(filename);
+    if let Ok(text) = std::fs::read_to_string(&local_path) {
         return rust_json::parse_strict(&text).map_err(|e| e.to_string());
     }
     let url = format!("{CACHE_BASE}/{filename}");
