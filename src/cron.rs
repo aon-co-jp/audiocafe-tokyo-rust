@@ -437,7 +437,7 @@ async fn doda_crawl_category(client: &reqwest::Client, url: &str, max: usize) ->
 /// 今回0件だったカテゴリだけ前回の内容へフォールバックする
 /// (PHP版と同じ「失敗時は前回キャッシュを維持」というフェイルセーフ)。
 fn load_prev_doda_cache() -> Option<Value> {
-    let text = std::fs::read_to_string("doda-jobs-cache.json").ok()?;
+    let text = std::fs::read_to_string("aruaru/doda-jobs-cache.json").ok()?;
     rust_json::parse_strict(&text).ok()
 }
 
@@ -589,6 +589,17 @@ pub async fn eikaiwa_ranking_refresh() -> Value {
 // ===================== --cron-all 統合実行 =====================
 
 fn write_cache_json(filename: &str, data: &Value) -> std::io::Result<()> {
+    // 実バグ修正(2026-09-28): `doda-jobs-cache.json`だけカレント
+    // ディレクトリ直下ではなく`aruaru/`サブディレクトリ配下へ書く
+    // 必要があり(`main.rs`側の`fetch_cache("aruaru/doda-jobs-cache.json")`
+    // と一致させる必要があった)、親ディレクトリが無い環境だと
+    // `std::fs::write`がNotFoundで静かに失敗し得るため、書き込み前に
+    // 親ディレクトリを作成しておく(既に存在すれば no-op)。
+    if let Some(parent) = std::path::Path::new(filename).parent() {
+        if !parent.as_os_str().is_empty() {
+            std::fs::create_dir_all(parent)?;
+        }
+    }
     let text = serde_json::to_string_pretty(data)?;
     std::fs::write(filename, text)
 }
@@ -637,7 +648,7 @@ pub async fn run_cron_all() {
 
     println!("[{}] [4/5] doda 求人 クロール...", now_ymd_hm());
     let doda = doda_run_crawl().await;
-    if let Err(e) = write_cache_json("doda-jobs-cache.json", &doda) {
+    if let Err(e) = write_cache_json("aruaru/doda-jobs-cache.json", &doda) {
         eprintln!("[{}] [4/5] 書込エラー: {e}", now_ymd_hm());
     }
     let it_count = doda.get("categories").and_then(|c| c.get("it")).and_then(|c| c.get("count")).and_then(|v| v.as_u64()).unwrap_or(0);
