@@ -2,7 +2,7 @@
 
 ## 日本語
 
-Musician Audio「USB DAC PEGASUSⅢ」シリーズの次期製品として、R2R方式のUSB-DACではなく、ローム（ROHM）製フラッグシップD/AコンバーターIC「BD34302EKV」を4基（クアッド構成）搭載し、これに旭化成エレクトロニクス（AKM）製のデジタル信号処理・デルタシグマ変調用チップ「AK4191」を組み合わせた、2系統のDAC構成のモデルの発売を希望します。
+Musician Audio「USB DAC PEGASUSⅢ」シリーズの後継機種として、PEGASUSⅢで採用されている、100Vから240V自動対応と、ロスレスI2S(HDMI)は、そのまま引き続き採用して、後継機種は、R2R方式のUSB-DACではなく、ローム（ROHM）製フラッグシップD/AコンバーターIC「BD34302EKV」を4基（クアッド構成）搭載し、これに旭化成エレクトロニクス（AKM）製のデジタル信号処理・デルタシグマ変調用チップ「AK4191」を組み合わせた、2系統のDAC構成のモデルの発売を希望します。
 
 あわせて、低ノイズで音質に優れた真空管も搭載し、真空管回路は、スイッチのONとOFFで切り替えが可能な仕様にしていただきたいです。
 
@@ -64,7 +64,7 @@ Musician Audio「USB DAC PEGASUSⅢ」シリーズの次期製品として、R2R
 
 ## English
 
-As the next product in the Musician Audio "USB DAC PEGASUS III" series, I would like to see a model that, rather than using an R2R design, features four (quad configuration) of ROHM's flagship D/A converter ICs, the "BD34302EKV," combined with Asahi Kasei Microdevices' (AKM) "AK4191," a chip dedicated to digital signal processing and delta-sigma modulation, for a dual-DAC configuration.
+As the successor to the Musician Audio "USB DAC PEGASUS III" series, I would like the new model to carry over PEGASUS III's automatic 100V–240V input voltage switching and lossless I2S (HDMI) support as-is. Rather than an R2R design, I would like the successor model to feature four (quad configuration) of ROHM's flagship D/A converter ICs, the "BD34302EKV," combined with Asahi Kasei Microdevices' (AKM) "AK4191," a chip dedicated to digital signal processing and delta-sigma modulation, for a dual-DAC configuration.
 
 I would also like it to include a low-noise, high-fidelity vacuum tube stage, with the tube circuit switchable by an ON/OFF switch.
 
