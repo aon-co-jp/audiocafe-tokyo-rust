@@ -112,7 +112,22 @@ nav a {{ margin-right: 1rem; }}
     )
 }
 
+/// 実バグ修正(2026-09-28): このサーバー自身が`CACHE_BASE`
+/// (`https://audiocafe.tokyo`)へ自己参照HTTPリクエストを送る設計だったが、
+/// サブディレクトリ付きのパス(`aruaru/doda-jobs-cache.json`等)は
+/// リバースプロキシ側の`/aruaru/`向けlocationがこのRustアプリへ丸ごと
+/// 転送する設定になっており、アプリ自身は`/aruaru`という固定ページ
+/// ルートしか持たないため、キャッシュJSONへの自己リクエストは常に
+/// 404で失敗していた(ルートtouch level直下のファイルだけがnginx側の
+/// 静的配信で200になり、偶然動いているように見えていた)。この
+/// サーバーはキャッシュファイルと同じマシン上で動いているため、HTTP
+/// 経由の自己参照は本来不要——まずローカルファイルとして
+/// (`--cron-all`の書き込み先と同じ相対パスで)直接読み、失敗した場合
+/// のみ従来通りHTTP経由でのフォールバックを試みる。
 async fn fetch_cache(filename: &str) -> Result<Value, String> {
+    if let Ok(text) = std::fs::read_to_string(filename) {
+        return rust_json::parse_strict(&text).map_err(|e| e.to_string());
+    }
     let url = format!("{CACHE_BASE}/{filename}");
     let text = reqwest::get(&url).await.map_err(|e| e.to_string())?.text().await.map_err(|e| e.to_string())?;
     rust_json::parse_strict(&text).map_err(|e| e.to_string())
