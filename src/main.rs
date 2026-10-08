@@ -886,6 +886,17 @@ fn render_data_table(rows: &[Value], head_color: &str, cols: &[(&str, &str)]) ->
 /// データ部分は既存の`fetch_cache`アーキテクチャ経由で取得する。
 /// CSSは`ARUARU_STYLE`(PHP版`<style>`ブロックの核部分を移植、ユーザー
 /// 指示によるスコープ拡大: 見た目もPHP版と一致させる)。
+/// オンライン学習サイトの紹介(2026-10-08追加、ユーザー指示)。aruaruの一番上と
+/// 「おすすめ学習サービスTOP50」の冒頭の2か所に同じ内容を出す。文言・URLはユーザー提供のもの。
+/// `format!`の置換対象に埋め込むため、波括弧は含めないこと。
+const ONLINE_LEARNING_LIST_HTML: &str = r#"<ul style="list-style:none;padding:0;margin:.4rem 0 0;">
+<li style="padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.1);">AI駆動開発も学べます。WEBスキルなしで日本語でWEBサイトやスマホアプリが開発出来る様になります。<br>▶️ <a href="https://progate.com/courses/feature/ai-driven-development/exercises/atmoSFuL468uLDi-Pd-lI" target="_blank" rel="noopener noreferrer">Progate「AI駆動開発」</a></li>
+<li style="padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.1);">HTML,CSSを学ぼう<br>▶️ <a href="https://progate.com/courses/feature/webpage/exercises/hJQNO8xPIcha_idvTX2dn" target="_blank" rel="noopener noreferrer">Progate「HTML・CSS」</a></li>
+<li style="padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.1);">Pythonなら、無料ならPaizaの<br>▶️ <a href="https://paiza.jp/works/search_courses/2208" target="_blank" rel="noopener noreferrer">paizaラーニング「Python3」入門講座一覧</a></li>
+<li style="padding:.45rem 0;border-bottom:1px solid rgba(255,255,255,.1);">Python プロゲート<br>▶️ <a href="https://progate.com/courses/python" target="_blank" rel="noopener noreferrer">Progate「Python入門」</a></li>
+<li style="padding:.45rem 0;">その他無料でPythonが学べます。<br>▶️ <a href="https://www.python.jp/train/index.html" target="_blank" rel="noopener noreferrer">python.jp「Python入門講座」</a></li>
+</ul>"#;
+
 async fn render_aruaru_body() -> String {
     let lang_nav = lang_nav_bar("/aruaru");
     let doda = fetch_cache("aruaru/doda-jobs-cache.json").await;
@@ -1027,7 +1038,13 @@ async fn render_aruaru_body() -> String {
 </div>
 <div class="wrap">
 
+<div class="card" id="aruaru-online-learning" style="border-color:#06b6d4;">
+<h2 style="color:#67e8f9;">🎓 まずはここから！オンライン学習サイト</h2>
+{ONLINE_LEARNING_LIST_HTML}
+</div>
+
 <div class="toc">
+  <a href="#aruaru-online-learning">🎓 オンライン学習</a>
   <a href="#aruaru-rakuten-mobile-corner">📶 楽天モバイル</a>
   <a href="#doda-jobs">💼 doda求人ピックアップ</a>
   <a href="#ext">🌐 外部求人サイト</a>
@@ -1196,6 +1213,8 @@ async fn render_aruaru_body() -> String {
 
 <div class="card" id="aruaru-learning">
 <h2 style="color:#a5f3fc;">📚 おすすめ学習サービス TOP50（日本語・英語）</h2>
+<h3 style="color:#67e8f9;">🎓 まずはここから！オンライン学習サイト</h3>
+{ONLINE_LEARNING_LIST_HTML}
 <p style="opacity:.75;font-size:15px;">学習塾・家庭教師紹介サービス・PC教室・プログラミング教室・学習タブレットの5カテゴリ。各カテゴリ代表数件を抜粋（PHP版はカテゴリごとに機械的な自動生成の穴埋め行を含め50件までパディングしているが、今回は実データのみを抜粋移植——正直に開示するスコープ縮小）。</p>
 {learning_sections}
 </div>
