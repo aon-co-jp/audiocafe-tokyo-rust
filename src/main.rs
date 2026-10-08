@@ -886,6 +886,13 @@ fn render_data_table(rows: &[Value], head_color: &str, cols: &[(&str, &str)]) ->
 /// データ部分は既存の`fetch_cache`アーキテクチャ経由で取得する。
 /// CSSは`ARUARU_STYLE`(PHP版`<style>`ブロックの核部分を移植、ユーザー
 /// 指示によるスコープ拡大: 見た目もPHP版と一致させる)。
+/// AI駆動開発(WEBスキルが無くても母国語でWEBサイト・スマホアプリを開発する)の研究の一部として
+/// 紹介する記事(2026-10-08追加、ユーザー指示)。タイトルはユーザー提供の表記のまま、URLも表示する。
+/// `format!`の置換対象に埋め込むため、波括弧は含めないこと。
+const AI_DRIVEN_RESEARCH_HTML: &str = r#"<p style="margin:.2rem 0 .6rem;">Claudeによる、WEBスキルが無くても日本語（母国語）でWEBサイトやスマホアプリを開発する為のAI駆動開発（研究の一部）</p>
+<p style="margin:.2rem 0;">📝 <a href="https://ameblo.jp/www-aon/entry-12973252437.html" target="_blank" rel="noopener noreferrer">プログラム言語やフレームワークなどの全てをRust（Poemやhyper）版に移植するメリット？</a></p>
+<p style="margin:.2rem 0;word-break:break-all;"><a href="https://ameblo.jp/www-aon/entry-12973252437.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12973252437.html</a></p>"#;
+
 /// オンライン学習サイトの紹介(2026-10-08追加、ユーザー指示)。aruaruの一番上と
 /// 「おすすめ学習サービスTOP50」の冒頭の2か所に同じ内容を出す。文言・URLはユーザー提供のもの。
 /// `format!`の置換対象に埋め込むため、波括弧は含めないこと。
@@ -1041,6 +1048,11 @@ async fn render_aruaru_body() -> String {
 <div class="card" id="aruaru-online-learning" style="border-color:#06b6d4;">
 <h2 style="color:#67e8f9;">🎓 まずはここから！オンライン学習サイト</h2>
 {ONLINE_LEARNING_LIST_HTML}
+</div>
+
+<div class="card" id="aruaru-ai-driven-research" style="border-color:#a78bfa;">
+<h2 style="color:#c4b5fd;">🔬 研究中：AI駆動開発</h2>
+{AI_DRIVEN_RESEARCH_HTML}
 </div>
 
 <div class="toc">
