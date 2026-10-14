@@ -36,3 +36,9 @@ cargo build --release
 ## License
 
 Apache-2.0 OR MIT
+
+## Online-learning sites, AI-driven-development research article, and moving servers (2026-10-08/14)
+Added five online-learning sites and the research article (`ONLINE_LEARNING_LIST_HTML` / `AI_DRIVEN_RESEARCH_HTML`) at the very top of `/aruaru` and at the start of "Recommended learning services TOP50". Verified on production (also shown on the `aruaru.tokyo/aruaru/` mirror).
+**Not done**: showing the AI-made learning links (`aruaru/aruaru-tech-learning-ai-cache.json`, 80 technologies, ~770 links, prices corrected) in the Rust app.
+**Moving servers**: production is `/root/audiocafe-tokyo-rust`: `cargo build --release` then `systemctl restart audiocafe-tokyo-rust.service` (port 4400). It reads the cache JSON from `/var/www/audiocafe.tokyo`, so the PHP daily crawl must run first.
+The full procedure, systemd and nginx files are in `PORTING.md` and `deploy/vps/` of `audiocafe-tokyo`.
