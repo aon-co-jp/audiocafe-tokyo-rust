@@ -904,11 +904,94 @@ const ONLINE_LEARNING_LIST_HTML: &str = r#"<ul style="list-style:none;padding:0;
 <li style="padding:.45rem 0;">その他無料でPythonが学べます。<br>▶️ <a href="https://www.python.jp/train/index.html" target="_blank" rel="noopener noreferrer">python.jp「Python入門講座」</a></li>
 </ul>"#;
 
+/// 属性値(href等)に入れる文字列のエスケープ(`html_escape`は引用符を変換しないため)。
+fn html_attr_escape(s: &str) -> String {
+    html_escape(s).replace('"', "&quot;").replace('\'', "&#39;")
+}
+
+/// AI学習リンクのカード(2026-10-14追加)。`aruaru/aruaru-tech-learning-ai-cache.json`
+/// (PHPの毎朝クロールが`aruaru-llm`経由で生成。リンクは取得時に実在確認済み、価格欄は
+/// 公式ページで確認できたサービスの実価格か「要確認」に訂正済み)を、技術ごとの折りたたみで表示する。
+/// 生成AIの提案であり、人の目での確認ではないことを画面に明記する。
+fn render_ai_learning_links(cache: &Result<Value, String>) -> String {
+    let Ok(cache) = cache else {
+        return String::new();
+    };
+    let Some(entries) = cache.get("entries").and_then(|v| v.as_object()) else {
+        return String::new();
+    };
+    if entries.is_empty() {
+        return String::new();
+    }
+    let cats: [(&str, &str); 4] = [("lang", "プログラミング言語"), ("fw", "フレームワーク・ライブラリ"), ("db", "データベース"), ("cloud", "クラウド・インフラ")];
+    let mut body = String::new();
+    let mut techs = 0usize;
+    let mut links = 0usize;
+    for (prefix, label) in cats {
+        let mut keys: Vec<&String> = entries.keys().filter(|k| k.starts_with(&format!("{prefix}:"))).collect();
+        keys.sort_by_key(|k| k.to_lowercase());
+        if keys.is_empty() {
+            continue;
+        }
+        body.push_str(&format!("<h3 style=\"color:#c4b5fd;margin:1.2rem 0 .4rem;\">{}</h3>\n", html_escape(label)));
+        for key in keys {
+            let name = key.split_once(':').map(|x| x.1).unwrap_or(key);
+            let entry = &entries[key];
+            let list = |lang: &str, limit: usize| -> String {
+                let mut out = String::new();
+                for it in entry.get(lang).and_then(|v| v.as_array()).map(|a| a.as_slice()).unwrap_or(&[]).iter().take(limit) {
+                    let url = it.get("url").and_then(|v| v.as_str()).unwrap_or("");
+                    if !url.starts_with("https://") {
+                        continue; // 念のため。https以外のリンクは出さない
+                    }
+                    let n = it.get("name").and_then(|v| v.as_str()).unwrap_or("リンク");
+                    let f = it.get("features").and_then(|v| v.as_str()).unwrap_or("");
+                    let p = it.get("price").and_then(|v| v.as_str()).unwrap_or("");
+                    out.push_str(&format!(
+                        "<li style=\"padding:.3rem 0;\"><a href=\"{}\" target=\"_blank\" rel=\"noopener noreferrer nofollow\">{}</a> — {} <span style=\"opacity:.75;font-size:13px;\">【{}】</span></li>\n",
+                        html_attr_escape(url), html_escape(n), html_escape(f), html_escape(p)
+                    ));
+                }
+                out
+            };
+            let ja = list("ja", 6);
+            let en = list("en", 4);
+            if ja.is_empty() && en.is_empty() {
+                continue;
+            }
+            techs += 1;
+            links += ja.matches("<li").count() + en.matches("<li").count();
+            body.push_str(&format!("<details style=\"margin:.25rem 0;\"><summary style=\"cursor:pointer;\">{}</summary>\n", html_escape(name)));
+            if !ja.is_empty() {
+                body.push_str(&format!("<p style=\"margin:.5rem 0 .1rem;opacity:.8;\">🇯🇵 日本語</p><ul style=\"list-style:none;padding:0;margin:0;\">\n{ja}</ul>\n"));
+            }
+            if !en.is_empty() {
+                body.push_str(&format!("<p style=\"margin:.5rem 0 .1rem;opacity:.8;\">🌐 English</p><ul style=\"list-style:none;padding:0;margin:0;\">\n{en}</ul>\n"));
+            }
+            body.push_str("</details>\n");
+        }
+    }
+    if techs == 0 {
+        return String::new();
+    }
+    let saved = cache.get("meta").and_then(|m| m.get("saved_at")).and_then(|v| v.as_str()).unwrap_or("");
+    format!(
+        "<div class=\"card\" id=\"aruaru-ai-learning-links\" style=\"border-color:#a78bfa;\">\n\
+<h2 style=\"color:#c4b5fd;\">🤖 AIが提案する学習リンク（技術別・{techs}技術 {links}件）</h2>\n\
+<p style=\"opacity:.8;font-size:14px;\">生成AI（自前のaruaru-llm）が提案した学習先です。<b>人の目での確認ではありません。</b>\
+リンクは取得時にアクセスして実在を確認済み。金額を表示するのは公式ページで確認できたサービス（ドットインストール・Progate・paiza）だけで、それ以外は「要確認」です。\
+「無料」は、公式ドキュメント等を除き、ページ内に料金の記載があるかを自動で調べた結果です。毎日40技術ずつ更新されます。{saved_note}</p>\n\
+{body}</div>\n",
+        saved_note = if saved.is_empty() { String::new() } else { format!("（最終保存: {}）", html_escape(saved)) }
+    )
+}
+
 async fn render_aruaru_body() -> String {
     let lang_nav = lang_nav_bar("/aruaru");
     let doda = fetch_cache("aruaru/doda-jobs-cache.json").await;
     let tech = fetch_cache("ai-tech-ranking-cache.json").await;
     let eikaiwa = fetch_cache("aruaru-eikaiwa-ranking-cache.json").await;
+    let ai_links = fetch_cache("aruaru/aruaru-tech-learning-ai-cache.json").await;
 
     let empty = Value::Null;
     let doda = doda.as_ref().unwrap_or(&empty);
@@ -1024,6 +1107,7 @@ async fn render_aruaru_body() -> String {
         ("style", "学習スタイル"), ("level", "レベル"), ("price", "料金目安"), ("note", "ポイント・特徴"),
     ];
     let eikaiwa_table = render_data_table(eikaiwa_rows, "#34d399", eikaiwa_cols);
+    let ai_learning_links_card = render_ai_learning_links(&ai_links);
 
     let it_kenshu_url = google_search_url("未経験 無料IT研修 無料 転職エージェント サービス");
     let daiku_url = google_search_url("未経験から大工 造作大工 型枠大工 木造建築大工");
@@ -1063,6 +1147,7 @@ async fn render_aruaru_body() -> String {
   <a href="#policy-service">💡 サービス向上・販売提案</a>
   <a href="#aruaru-top80-tech">🚀 言語＆フレームワーク比較レポート</a>
   <a href="#aruaru-learning">📚 学習サービスTOP50</a>
+  <a href="#aruaru-ai-learning-links">🤖 AI学習リンク</a>
   <a href="#aruaru-eikaiwa-top50">🌏 英会話TOP50</a>
 </div>
 
@@ -1231,6 +1316,7 @@ async fn render_aruaru_body() -> String {
 {learning_sections}
 </div>
 
+{ai_learning_links_card}
 <div class="card" id="aruaru-eikaiwa-top50">
 <h2 style="color:#34d399;">🌏 スマホ・タブレット・PC 優れた英会話アプリ・サイト TOP50</h2>
 <p style="opacity:.72;font-size:15px;">📅 最終更新: {eikaiwa_updated} ／ 週1回（7日TTL）Cron自動更新</p>
