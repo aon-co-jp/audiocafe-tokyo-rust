@@ -51,6 +51,14 @@ const RUNO_TOKYO_URL: &str = "https://runo.tokyo/";
 /// ユーザー提供のブログ記事(タイトルをリンクテキストにし、URLそのものは
 /// 表示しない、2026-07-20追記)。トップページのYouTube紹介タイトルの
 /// 上に配置する(ユーザー指示)。
+const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:360px;margin:1rem auto;text-align:center;">
+<p style="font-size:1.2rem;font-weight:700;margin:0 0 .6rem;"><a href="https://ameblo.jp/www-aon/entry-12981724246.html" target="_blank" rel="noopener noreferrer">今の上海は経済崩壊でシャッター街なの？</a></p>
+<div style="position:relative;width:100%;max-width:270px;aspect-ratio:9/16;margin:0 auto;background:#000;border-radius:8px;overflow:hidden;">
+<button type="button" aria-label="動画を再生 / Play video" style="all:unset;position:absolute;inset:0;cursor:pointer;" onclick="var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/oPGV1n8niXw?autoplay=1&amp;playsinline=1&amp;rel=0';f.allow='autoplay; encrypted-media; picture-in-picture';f.allowFullscreen=true;f.title='今の上海は経済崩壊でシャッター街なの？';f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0';this.replaceWith(f)"><img src="https://i.ytimg.com/vi/oPGV1n8niXw/hqdefault.jpg" alt="今の上海は経済崩壊でシャッター街なの？" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:30px;line-height:64px;text-align:center;">▶</span></button>
+</div>
+</section>
+"#;
+
 const BLOG_POST_URL: &str = "https://ameblo.jp/www-aon/entry-12973252437.html";
 const BLOG_POST_TITLE_JA: &str = "プログラム言語やフレームワークなどの全てをRust(Poemやhyper)版に移植するメリット?";
 /// ユーザー指示(2026-07-20)により日英両方で掲載。ブログ本文自体は
@@ -103,6 +111,7 @@ nav a {{ margin-right: 1rem; }}
 </style>
 </head>
 <body>
+{TOP_VIDEO_HTML}
 <div class="site-header-band">
 <nav><a href="/">TOP</a> <a href="/discover">Discover</a> <a href="/help">困った時は</a> <a href="{ARUARU_TOKYO_URL}">aruaru.tokyo</a> <a href="{RUNO_TOKYO_URL}">runo.tokyo</a> <a href="https://karu.tokyo/" target="_blank" rel="noopener noreferrer">karu.tokyo</a> <a href="/index.php" class="nav-php-link" target="_blank" rel="noopener noreferrer">PHP</a></nav>
 <p class="ac-credit">Claude Code DESKTOPというAIに、ITスキルがほとんど無くてもアプリやWEBサイトが作れる技術で、PHP版をRust＋RPoem
