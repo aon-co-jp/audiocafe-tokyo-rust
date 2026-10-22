@@ -52,6 +52,11 @@ const RUNO_TOKYO_URL: &str = "https://runo.tokyo/";
 /// 表示しない、2026-07-20追記)。トップページのYouTube紹介タイトルの
 /// 上に配置する(ユーザー指示)。
 const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:360px;margin:1rem auto;text-align:center;">
+<p style="font-size:1.2rem;font-weight:700;margin:0 0 .6rem;"><a href="https://www.youtube.com/watch?v=5MFwZbfpKEk" target="_blank" rel="noopener noreferrer">この世界最大のタブー〝YHWH〟の正体がついに暴露されました。理想社会「弥勒の世」を実現する鍵は日本人が大切にしてきた〇〇だった！？この動画から時代がさらに動きます。</a></p>
+<p style="font-size:1.2rem;margin:0 0 .6rem;">出口王仁三郎のひ孫の出口光（ひかる）さんがYHWHと一体になれる体験をビデオにまとめてくれております。</p>
+<div style="position:relative;width:100%;aspect-ratio:16/9;margin:0 auto 1.2rem;background:#000;border-radius:8px;overflow:hidden;">
+<button type="button" aria-label="動画を再生 / Play video" style="all:unset;position:absolute;inset:0;cursor:pointer;" onclick="var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/5MFwZbfpKEk?autoplay=1&amp;playsinline=1&amp;rel=0';f.allow='autoplay; encrypted-media; picture-in-picture';f.allowFullscreen=true;f.title='YHWH';f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0';this.replaceWith(f)"><img src="https://i.ytimg.com/vi/5MFwZbfpKEk/hqdefault.jpg" alt="YHWH" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:30px;line-height:64px;text-align:center;">▶</span></button>
+</div>
 <p style="font-size:1.2rem;margin:1rem 0;">面白そうなカフェ　検索ワード<br><a href="https://ameblo.jp/www-aon/entry-12981863547.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12981863547.html</a></p>
 <p style="text-align:center;font-size:1.2rem;margin:1rem 0;"><br>民間ガン治療法<br><br>ボランティア情報<br><br><a href="https://ameblo.jp/www-aon/entry-12981774738.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12981774738.html</a></p>
 <p style="font-size:1.2rem;margin:1.2rem 0;">学校の教科書から マインクラフトを超えたオンライン3D GAMEを作る方法！<br><a href="https://ameblo.jp/www-aon/entry-12981886969.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12981886969.html</a></p>
