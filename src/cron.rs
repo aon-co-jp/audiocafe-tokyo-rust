@@ -499,7 +499,7 @@ pub async fn doda_run_crawl() -> Value {
 /// `ai`はサービス自体がAI機能を持つかを示す表示用フラグであり、
 /// この処理自体がOpenAI APIを呼ぶわけではない(モジュールdoc参照)。
 const EIKAIWA_POOL: &[(u32, &str, &str, &str, &str, &str, &str, bool, &str)] = &[
-    (1, "Praktika", "📱", "AIアバター会話", "初級〜上級", "無料体験〜(有料プランあり)", "https://praktika.ai/", true, "AIアバターの先生と実際に話して学ぶ、AI英会話チューター"),
+    (1, "Praktika", "📱", "AIアバター会話", "初級〜上級", "月額¥1,500〜(1か月プラン・App Store日本で確認)", "https://praktika.ai/", true, "AIアバターの先生と実際に話して学ぶ、AI英会話チューター"),
     (2, "Duolingo", "📱💻", "ゲーム感覚", "初級〜中級", "無料(Pro月額¥1,250〜)", "https://ja.duolingo.com/", false, "世界最大の語学学習アプリ。毎日継続しやすいゲーム形式"),
     (3, "Speak", "📱💻", "AIスピーキング", "初級〜上級", "月額¥2,000〜", "https://www.speak.com/ja", true, "AIが発音・会話をリアルタイム採点。話す練習特化"),
     (4, "ELSA Speak", "📱", "発音矯正AI", "初級〜上級", "無料(Pro月額¥1,500〜)", "https://elsaspeak.com/ja/", true, "AI音声認識で発音を細かくスコアリング"),
@@ -586,6 +586,71 @@ pub async fn eikaiwa_ranking_refresh() -> Value {
     })
 }
 
+// ===================== 英会話アプリの価格 毎朝自動クロール =====================
+//
+// ユーザー指示(2026-10-24「毎朝自動クロール機能を搭載して。価格変動があれば、自動更新して」)。
+// 公式サイトの価格がアプリ内課金で決まるサービスは、AppleのApp Store日本のページ
+// (サーバー側で描画されるJSONに「アプリ内課金の名前と日本円の価格」が入っている)から
+// 毎朝取得する。取得できない・値が不自然なときは**更新せず**、前回取得できた価格を保つ
+// (推測で価格を書かない)。変動があれば標準出力へ「旧 → 新」を出す(journalctlで追える)。
+// 正直な開示: 対象はここに列挙したサービスだけ。App Storeの「1か月プラン」の定価であり、
+// 割引・Android・Web決済の価格とは異なる場合がある。
+
+/// (サービス名, App Store日本のURL, アプリ内課金の名前, 表示用の書式 `{}`が価格)。
+const PRICE_SOURCES: &[(&str, &str, &str, &str)] = &[(
+    "Praktika",
+    "https://apps.apple.com/jp/app/id1624701477",
+    "Praktika Premium, 1 month",
+    "月額{}〜(1か月プラン・App Store日本で確認)",
+)];
+
+/// App Storeページ内のJSON(`"leadingText":"<課金名>","trailingText":"¥1,500"`)から円の価格を取り出す。
+/// 100円〜100,000円の範囲外は不自然として`None`。戻り値は`"¥1,500"`の形。
+pub fn extract_app_store_price(html: &str, item: &str) -> Option<String> {
+    let re = Regex::new(&format!(r#""leadingText":"{}","trailingText":"(¥[0-9,]+)""#, regex::escape(item))).ok()?;
+    let price = re.captures(html)?.get(1)?.as_str().to_string();
+    let yen: u64 = price.trim_start_matches('¥').replace(',', "").parse().ok()?;
+    (100..=100_000).contains(&yen).then_some(price)
+}
+
+/// 価格を取得して行へ反映した英会話ランキングを返す(`--cron-all`用)。
+pub async fn eikaiwa_ranking_refresh_with_prices() -> Value {
+    let mut data = eikaiwa_ranking_refresh().await;
+    let previous: Value = std::fs::read_to_string("aruaru-eikaiwa-ranking-cache.json")
+        .ok()
+        .and_then(|t| serde_json::from_str(&t).ok())
+        .unwrap_or(Value::Null);
+    let client = http_client(25);
+    let today = now_ymd_hm();
+    for (name, url, item, fmt) in PRICE_SOURCES {
+        let old_row = previous["rows"].as_array().and_then(|r| r.iter().find(|x| x["name"] == *name)).cloned();
+        let html = fetch_text(&client, url).await;
+        let crawled = extract_app_store_price(&html, item).map(|p| fmt.replace("{}", &p));
+        let Some(row) = data["rows"].as_array_mut().and_then(|r| r.iter_mut().find(|x| x["name"] == *name)) else { continue };
+        match crawled {
+            Some(new_price) => {
+                let old_price = old_row.as_ref().and_then(|r| r["price"].as_str()).unwrap_or("");
+                if old_price != new_price {
+                    println!("[{}] [price] {name}: 「{old_price}」 → 「{new_price}」(価格変動を検出して自動更新)", now_ymd_hm());
+                }
+                row["price"] = json!(new_price);
+                row["price_source"] = json!("app-store-jp");
+                row["price_checked_at"] = json!(today);
+            }
+            None => {
+                // 取得失敗: 前回クロールで得た価格があればそれを保つ(無ければ静的な初期値のまま)。
+                println!("[{}] [price] 警告: {name} の価格を取得できませんでした。前回の値を保ちます。", now_ymd_hm());
+                if let Some(old) = old_row.filter(|r| r["price_source"] == "app-store-jp") {
+                    row["price"] = old["price"].clone();
+                    row["price_source"] = old["price_source"].clone();
+                    row["price_checked_at"] = old["price_checked_at"].clone();
+                }
+            }
+        }
+    }
+    data
+}
+
 // ===================== --cron-all 統合実行 =====================
 
 fn write_cache_json(filename: &str, data: &Value) -> std::io::Result<()> {
@@ -656,7 +721,7 @@ pub async fn run_cron_all() {
     println!("[{}] [4/5] 完了 — IT={it_count} AD={ad_count}", now_ymd_hm());
 
     println!("[{}] [5/5] 英会話ランキング 更新...", now_ymd_hm());
-    let eikaiwa = eikaiwa_ranking_refresh().await;
+    let eikaiwa = eikaiwa_ranking_refresh_with_prices().await;
     if let Err(e) = write_cache_json("aruaru-eikaiwa-ranking-cache.json", &eikaiwa) {
         eprintln!("[{}] [5/5] 書込エラー: {e}", now_ymd_hm());
     }
@@ -677,6 +742,16 @@ pub async fn run_cron_all() {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn app_store_price_is_extracted_and_sanity_checked() {
+        let html = r#"..."leadingText":"Praktika Premium 3-months","trailingText":"¥5,000"},{"$kind":"textPair","leadingText":"Praktika Premium, 1 month","trailingText":"¥1,500"},..."#;
+        assert_eq!(extract_app_store_price(html, "Praktika Premium, 1 month"), Some("¥1,500".to_string()));
+        assert_eq!(extract_app_store_price(html, "Praktika Premium 3-months"), Some("¥5,000".to_string()));
+        assert_eq!(extract_app_store_price(html, "No such item"), None);
+        let absurd = r#""leadingText":"X","trailingText":"¥9""#;
+        assert_eq!(extract_app_store_price(absurd, "X"), None, "out-of-range prices must be ignored");
+    }
 
     #[tokio::test]
     async fn eikaiwa_ranking_refresh_returns_all_50_entries_sorted_by_rank() {
