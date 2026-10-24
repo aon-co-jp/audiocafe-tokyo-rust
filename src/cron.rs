@@ -169,6 +169,7 @@ pub async fn rakuten_intl_crawl() -> Value {
     ];
     let mut texts = Vec::new();
     for url in targets {
+        tokio::time::sleep(Duration::from_millis(800)).await;
         let html = fetch_text(&client, url).await;
         if !html.is_empty() {
             texts.push(strip_html_tags(&html));
@@ -597,18 +598,35 @@ pub async fn eikaiwa_ranking_refresh() -> Value {
 // 割引・Android・Web決済の価格とは異なる場合がある。
 
 /// (サービス名, App Store日本のURL, アプリ内課金の名前, 表示用の書式 `{}`が価格)。
-const PRICE_SOURCES: &[(&str, &str, &str, &str)] = &[(
-    "Praktika",
-    "https://apps.apple.com/jp/app/id1624701477",
-    "Praktika Premium, 1 month",
-    "月額{}〜(1か月プラン・App Store日本で確認)",
-)];
+const PRICE_SOURCES: &[(&str, &str, &str, &str)] = &[
+    ("Praktika", "https://apps.apple.com/jp/app/id1624701477", "Praktika Premium, 1 month", "月額{}〜(1か月プラン・App Store日本で確認)"),
+    ("Speak", "https://apps.apple.com/jp/app/id1286609883", "プレミアム月間プラン", "月額{}〜(月間プラン・App Store日本で確認)"),
+    ("Babbel", "https://apps.apple.com/jp/app/id829587759", "English 1 month", "月額{}〜(英語1か月プラン・App Store日本で確認)"),
+    ("HelloTalk", "https://apps.apple.com/jp/app/id557130558", "VIP Membership Monthly", "無料(VIP月額{}〜・App Store日本で確認)"),
+    ("Memrise", "https://apps.apple.com/jp/app/id635966718", "Monthly Language Learning Plan", "無料(Pro月額{}〜・App Store日本で確認)"),
+    ("abceed", "https://apps.apple.com/jp/app/id1060016132", "abceed proプラン 1ヶ月", "無料(Premium月額{}〜・App Store日本で確認)"),
+    ("Mondly", "https://apps.apple.com/jp/app/id987873536", "Unlimited Access - Monthly", "月額{}〜(App Store日本で確認)"),
+    ("Glossika", "https://apps.apple.com/jp/app/id6667095609", "PLUS MONTHLY", "月額{}〜(PLUS月額・App Store日本で確認)"),
+    ("LingQ", "https://apps.apple.com/jp/app/id379385811", "LingQ Premium (Monthly)", "無料(Premium月額{}〜・App Store日本で確認)"),
+    ("Clozemaster", "https://apps.apple.com/jp/app/id1149199075", "Clozemaster Pro 月間プラン", "無料(Pro月額{}〜・App Store日本で確認)"),
+    ("Beelinguapp", "https://apps.apple.com/jp/app/id1225056371", "Beelinguapp Monthly", "無料(月額{}〜・App Store日本で確認)"),
+    ("Yabla", "https://apps.apple.com/jp/app/id699847367", "1 Month Access Pass", "1か月{}〜(App Store日本で確認)"),
+    ("Mango Languages", "https://apps.apple.com/jp/app/id443516516", "Individual Plan (Monthly)", "月額{}〜(個人プラン・App Store日本で確認)"),
+    ("シャドテン", "https://apps.apple.com/jp/app/id1574799792", "シャドテン月額プラン", "月額{}(月額プラン・App Store日本で確認)"),
+];
 
 /// App Storeページ内のJSON(`"leadingText":"<課金名>","trailingText":"¥1,500"`)から円の価格を取り出す。
 /// 100円〜100,000円の範囲外は不自然として`None`。戻り値は`"¥1,500"`の形。
 pub fn extract_app_store_price(html: &str, item: &str) -> Option<String> {
     let re = Regex::new(&format!(r#""leadingText":"{}","trailingText":"(¥[0-9,]+)""#, regex::escape(item))).ok()?;
-    let price = re.captures(html)?.get(1)?.as_str().to_string();
+    // 同じ課金名に価格が複数ある(地域・キャンペーン違い等)と、どれが定価か決められないので取得しない。
+    let mut prices: Vec<String> = re.captures_iter(html).filter_map(|c| c.get(1)).map(|m| m.as_str().to_string()).collect();
+    prices.sort();
+    prices.dedup();
+    if prices.len() != 1 {
+        return None;
+    }
+    let price = prices.remove(0);
     let yen: u64 = price.trim_start_matches('¥').replace(',', "").parse().ok()?;
     (100..=100_000).contains(&yen).then_some(price)
 }
@@ -749,6 +767,8 @@ mod tests {
         assert_eq!(extract_app_store_price(html, "Praktika Premium, 1 month"), Some("¥1,500".to_string()));
         assert_eq!(extract_app_store_price(html, "Praktika Premium 3-months"), Some("¥5,000".to_string()));
         assert_eq!(extract_app_store_price(html, "No such item"), None);
+        let ambiguous = r#""leadingText":"Y","trailingText":"¥900"},{"leadingText":"Y","trailingText":"¥1,400""#;
+        assert_eq!(extract_app_store_price(ambiguous, "Y"), None, "one name with two prices is ambiguous and must be skipped");
         let absurd = r#""leadingText":"X","trailingText":"¥9""#;
         assert_eq!(extract_app_store_price(absurd, "X"), None, "out-of-range prices must be ignored");
     }
