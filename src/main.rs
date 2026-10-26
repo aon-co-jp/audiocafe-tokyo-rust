@@ -69,17 +69,27 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
 <p style="text-align:center;margin:.3rem 0 0;font-size:1.6rem;font-weight:800;line-height:1.3;">システムメモリ12GB<br><span lang="en" style="font-size:.8em;">12GB System Memory (RAM)</span></p>
 <p style="text-align:center;margin:.2rem 0 0;font-size:.95rem;">8GB機より4GB多く、アプリの切り替えやAI(Gemini)も余裕で動きます</p>
 <p lang="en" style="text-align:center;margin:0 0 .6rem;font-size:.88rem;opacity:.85;">4GB more than 8GB models: smoother app switching and AI (Gemini).</p>
-<p style="margin:.3rem 0 0;font-size:1.1rem;"><strong>💴 本体48回払い：1〜24回目は月1,990円</strong><br><small>(25〜47回目は月3,839円〜、48回目は3,843円〜。楽天カード払いのみ。25カ月目以降に条件を満たして返却すれば残りの支払いは不要)</small></p>
-<p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .6rem;"><strong>💴 48-installment plan: 1,990 yen/month for payments 1-24</strong> (3,839 yen~/month for 25-47, 3,843 yen~ for the 48th; Rakuten Card only. If you return the device under the conditions from month 25, the remaining payments are not required).</p>
+<p style="margin:.3rem 0 .2rem;font-size:1.1rem;"><strong>💴 本体48回払い(楽天カード払いのみ)</strong></p>
+<ul style="margin:0 0 .1rem;padding-left:1.3rem;">
+<li><strong>256GB</strong>：1〜24回目 <strong>月1,990円</strong> / 25〜47回目 月3,839円 / 48回目 3,843円(一括払い139,900円)</li>
+<li><strong>512GB(おすすめ)</strong>：1〜24回目 <strong>月2,990円</strong> / 25〜47回目 月3,881円 / 48回目 3,887円(一括払い164,910円)</li>
+</ul>
+<p style="margin:0 0 .4rem;"><small>25カ月目以降に条件を満たして返却すれば、残りの支払いは不要です。</small></p>
+<p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .1rem;"><strong>💴 48-installment plan (Rakuten Card only)</strong></p>
+<ul lang="en" style="margin:0 0 .1rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
+<li><strong>256GB</strong>: payments 1-24 <strong>1,990 yen/month</strong> / 25-47 3,839 yen/month / 48th 3,843 yen (lump sum 139,900 yen)</li>
+<li><strong>512GB (recommended)</strong>: payments 1-24 <strong>2,990 yen/month</strong> / 25-47 3,881 yen/month / 48th 3,887 yen (lump sum 164,910 yen)</li>
+</ul>
+<p lang="en" style="font-size:.88rem;opacity:.85;margin:0 0 .6rem;">If you return the device under the conditions from month 25, the remaining payments are not required.</p>
 <ul style="margin:.4rem 0 .1rem;padding-left:1.3rem;">
-<li><strong>メモリ12GB</strong> / ストレージ256GB または <strong>512GB(おすすめ)</strong>(一括払い139,900円〜)</li>
+<li><strong>メモリ12GB</strong> / ストレージ256GB または <strong>512GB(おすすめ)</strong></li>
 <li>ハイレゾオーディオ対応</li>
 <li>約6.3インチ OLEDディスプレイ</li>
 <li>カメラ：48MP広角 + 13MP超広角 + 10.8MP望遠</li>
 <li>バッテリー4,985mAh / Gemini Intelligenceに最適化</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
-<li><strong>12GB RAM</strong> / 256GB or <strong>512GB (recommended)</strong> storage (lump sum from 139,900 yen)</li>
+<li><strong>12GB RAM</strong> / 256GB or <strong>512GB (recommended)</strong> storage</li>
 <li>Hi-res audio supported</li>
 <li>About 6.3-inch OLED display</li>
 <li>Camera: 48MP wide + 13MP ultra-wide + 10.8MP telephoto</li>
