@@ -193,6 +193,16 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
 <section class="top-news" style="max-width:360px;margin:1rem auto;text-align:center;">
 <p style="font-size:1.2rem;margin:1rem 0;">面白そうなカフェ　検索ワード<br><a href="https://ameblo.jp/www-aon/entry-12981863547.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12981863547.html</a></p>
 <p style="text-align:center;font-size:1.2rem;margin:1rem 0;"><br>民間ガン治療法<br><br>ボランティア情報<br><br><a href="https://ameblo.jp/www-aon/entry-12981774738.html" target="_blank" rel="noopener noreferrer">https://ameblo.jp/www-aon/entry-12981774738.html</a></p>
+</section>
+<div class="top-intro" style="margin:1rem auto;padding:.8rem 1rem;max-width:42rem;text-align:left;line-height:1.8;font-size:1.1rem;">
+    <p style="margin:0 0 .8rem;">CLAUDEと言うAIをマスターして使いこなしておりますので、<br>様々なプログラム言語とフレームワーク対応可能で、<br>様々なWEBサイトやスマホアプリ開発が可能で御座います。</p>
+    <p style="margin:0;"><a href="mailto:norukia.jp@gmail.com">norukia.jp@gmail.com</a><br>
+    石　塚　正　浩<br>
+    郵便番号　197-0828<br>
+    東京都あきる野市秋留5-3-11<br>
+    <a href="tel:09075555011">090-7555-5011</a></p>
+  </div>
+<section class="top-news" style="max-width:360px;margin:1rem auto;text-align:center;">
 <p style="font-size:1.2rem;font-weight:700;margin:1.2rem 0 .6rem;"><a href="https://www.youtube.com/shorts/j_PGMrbhkj0" target="_blank" rel="noopener noreferrer">"4時間待ち"それでも外国人が殺到する日本のアニメイベントとは？</a></p>
 <div style="position:relative;width:100%;max-width:270px;aspect-ratio:9/16;margin:0 auto 1.2rem;background:#000;border-radius:8px;overflow:hidden;">
 <button type="button" aria-label="動画を再生 / Play video" style="all:unset;position:absolute;inset:0;cursor:pointer;" onclick="var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/j_PGMrbhkj0?autoplay=1&amp;playsinline=1&amp;rel=0';f.allow='autoplay; encrypted-media; picture-in-picture';f.allowFullscreen=true;f.title='"4時間待ち"それでも外国人が殺到する日本のアニメイベントとは？';f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0';this.replaceWith(f)"><img src="https://i.ytimg.com/vi/j_PGMrbhkj0/hqdefault.jpg" alt=""4時間待ち"それでも外国人が殺到する日本のアニメイベントとは？" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:30px;line-height:64px;text-align:center;">▶</span></button>
