@@ -204,8 +204,8 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
     <br>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/falconlab-model-707.jpg" alt="FalconLab Model 707" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.google.com/search?ibp=oshop&amp;prds=pvt:hg,pvo:48,imageDocid:10771413835225635290,headlineOfferDocid:3061133778700411862,productDocid:3061133778700411862&amp;q=product&amp;sa=X&amp;ved=2ahUKEwjE6bOfhNiXAxVss1YBHWfiH1wQxa4PegoIAggACAAIGhAF&amp;biw=1144&amp;bih=722&amp;dpr=2" target="_blank" rel="noopener noreferrer">FalconLab Model 707</a><br>ペアで3,850,000円<br>・特徴: 3ウェイ・5スピーカー構成の無指向性（全指向性）バスレフ型<br>・音響効果: 部屋のどこにいても均一でリアルな立体音響空間（360度）を再現します。</p>
-    <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200as.jpg" alt="TS-A200as" style="max-width:100%;height:auto;max-height:560px"></p>
-    <p style="font-size:1.2rem;margin:.4rem 0 1.4rem">TS-A200as<br>ペアで950,000円</p>
+    <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200as.jpg" alt="Egretta(エグレッタ) TS-A200as" style="max-width:100%;height:auto;max-height:560px"></p>
+    <p style="font-size:1.2rem;margin:.4rem 0 1.4rem">Egretta(エグレッタ)　TS-A200as<br>ペアで950,000円</p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts550f.jpg" alt="Egretta(エグレッタ) TS550F" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.amazon.co.jp/dp/B0B5D8W5W6" target="_blank" rel="noopener noreferrer">Egretta(エグレッタ)　TS550F<br>ペアで420,000円<br>Amazon</a></p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200.jpg" alt="Egretta(エグレッタ) TS-A200" style="max-width:100%;height:auto;max-height:560px"></p>
