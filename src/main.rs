@@ -206,10 +206,10 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.google.com/search?ibp=oshop&amp;prds=pvt:hg,pvo:48,imageDocid:10771413835225635290,headlineOfferDocid:3061133778700411862,productDocid:3061133778700411862&amp;q=product&amp;sa=X&amp;ved=2ahUKEwjE6bOfhNiXAxVss1YBHWfiH1wQxa4PegoIAggACAAIGhAF&amp;biw=1144&amp;bih=722&amp;dpr=2" target="_blank" rel="noopener noreferrer">FalconLab Model 707</a><br>ペアで3,850,000円<br>・特徴: 3ウェイ・5スピーカー構成の無指向性（全指向性）バスレフ型<br>・音響効果: 部屋のどこにいても均一でリアルな立体音響空間（360度）を再現します。</p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200as.jpg" alt="Egretta(エグレッタ) TS-A200as" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem">Egretta(エグレッタ)　TS-A200as<br>ペアで258,500円(税込)</p>
-    <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts550f.jpg" alt="Egretta(エグレッタ) TS550F" style="max-width:100%;height:auto;max-height:560px"></p>
-    <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.amazon.co.jp/dp/B0B5D8W5W6" target="_blank" rel="noopener noreferrer">Egretta(エグレッタ)　TS550F<br>ペアで122,100円(税込)<br>Amazon</a></p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200.jpg" alt="Egretta(エグレッタ) TS-A200" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1rem">Egretta(エグレッタ)　TS-A200<br>スピーカーを2台セットにしたステレオモデル「TS-A200as」が196,000円(税別・発売時)<br>DACやアンプを抜いた、パッシブ型スピーカー「TS-A200s」は1台72,000円(税別・発売時)。</p>
+    <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts550f.jpg" alt="Egretta(エグレッタ) TS550F" style="max-width:100%;height:auto;max-height:560px"></p>
+    <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.amazon.co.jp/dp/B0B5D8W5W6" target="_blank" rel="noopener noreferrer">Egretta(エグレッタ)　TS550F<br>ペアで122,100円(税込)<br>Amazon</a></p>
   </div>
 <section class="top-news" style="max-width:360px;margin:1rem auto;text-align:center;">
 <p style="font-size:1.2rem;font-weight:700;margin:1.2rem 0 .6rem;"><a href="https://www.youtube.com/shorts/j_PGMrbhkj0" target="_blank" rel="noopener noreferrer">"4時間待ち"それでも外国人が殺到する日本のアニメイベントとは？</a></p>
