@@ -207,7 +207,7 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200as.jpg" alt="Egretta(エグレッタ) TS-A200as" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem">Egretta(エグレッタ)　TS-A200as<br>ペアで258,500円(税込)</p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts-a200.jpg" alt="Egretta(エグレッタ) TS-A200" style="max-width:100%;height:auto;max-height:560px"></p>
-    <p style="font-size:1.2rem;margin:.4rem 0 1rem">Egretta(エグレッタ)　TS-A200<br>スピーカーを2台セットにしたステレオモデル「TS-A200as」が196,000円(税別・発売時)<br>DACやアンプを抜いた、パッシブ型スピーカー「TS-A200s」は1台72,000円(税別・発売時)。</p>
+    <p style="font-size:1.2rem;margin:.4rem 0 1rem">Egretta(エグレッタ)　TS-A200<br>スピーカーを2台セットにしたステレオモデル「TS-A200as」が215,600円(税込・発売時)<br>DACやアンプを抜いた、パッシブ型スピーカー「TS-A200s」は1台79,200円(税込・発売時)。</p>
     <p style="text-align:center;margin:1rem 0 .4rem"><img src="/images/egretta-ts550f.jpg" alt="Egretta(エグレッタ) TS550F" style="max-width:100%;height:auto;max-height:560px"></p>
     <p style="font-size:1.2rem;margin:.4rem 0 1.4rem"><a href="https://www.amazon.co.jp/dp/B0B5D8W5W6" target="_blank" rel="noopener noreferrer">Egretta(エグレッタ)　TS550F<br>ペアで122,100円(税込)<br>Amazon</a></p>
   </div>
