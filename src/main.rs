@@ -65,7 +65,7 @@ const TOP_VIDEO_HTML: &str = r#"<div class="pixel-intro">
 <p style="text-align:center;margin:.1rem 0 .6rem;font-size:.95rem;">8GB機より4GB多く、アプリの切り替えやAI(Gemini)も余裕で動きます</p>
 <p style="margin:.3rem 0;font-size:1.1rem;"><strong>💴 本体48回払い：1〜24回目は月1,990円</strong><br><small>(25〜47回目は月3,839円〜、48回目は3,843円〜。楽天カード払いのみ。25カ月目以降に条件を満たして返却すれば残りの支払いは不要)</small></p>
 <ul style="margin:.4rem 0 .6rem;padding-left:1.3rem;">
-<li>ストレージ256GB / 512GB(一括払い139,900円〜)</li>
+<li><strong>メモリ12GB</strong> / ストレージ256GB または <strong>512GB(おすすめ)</strong>(一括払い139,900円〜)</li>
 <li>ハイレゾオーディオ対応</li>
 <li>約6.3インチ OLEDディスプレイ</li>
 <li>カメラ：48MP広角 + 13MP超広角 + 10.8MP望遠</li>
