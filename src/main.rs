@@ -117,22 +117,22 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 </table>
 <p lang="en" style="font-size:.82rem;opacity:.85;margin:.2rem 0 .6rem;">Tax included. The first payment is slightly higher because of rounding. 48 payments: Rakuten Card only (0% APR). The 512GB figures follow press reports (Keitai Watch); please check Rakuten Mobile for the latest.</p>
 <ul style="margin:.4rem 0 .1rem;padding-left:1.3rem;">
-<li>メモリ <strong>8GB または 12GB</strong>(仮想メモリで最大16GB追加) / ストレージ <strong>256GB または 512GB</strong>(microSDで最大2TBまで拡張)</li>
+<li>メモリ <strong>8GB または 12GB</strong>(12GBモデルは仮想メモリで最大12GB追加) / ストレージ <strong>256GB または 512GB</strong>(microSDで最大2TBまで拡張)</li>
 <li>約6.4インチ 有機EL(最大144Hz・最大3,000nit)</li>
-<li>SoC:Dimensity 8350 Extreme</li>
+<li>SoC:Dimensity 8350 Extreme / Android 16 / 5G(Sub6)</li>
 <li>カメラ:メイン約5,030万画素 + 超広角約4,990万画素 / 4K 60fps動画 / フロント約4,990万画素</li>
 <li>バッテリー5,370mAh(1%→100%を最短約40分)</li>
-<li>約155×72×8.6mm・約187g / IP68・IP69の防水防塵 / おサイフケータイ対応</li>
-<li>ハイレゾオーディオ・ワイヤレス充電対応 / OSアップデート最大3回・セキュリティ更新最長5年</li>
+<li>約155×72×8.6mm・約187g / IPX6・IPX8・IPX9 / IP6Xの防水防塵 / おサイフケータイ対応</li>
+<li>ハイレゾオーディオ対応 / <strong>ワイヤレス充電は非対応</strong> / OSアップデート最大3回・セキュリティ更新最長5年</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
-<li><strong>8GB or 12GB RAM</strong> (up to 16GB more with virtual memory) / <strong>256GB or 512GB</strong> storage (microSD up to 2TB)</li>
+<li><strong>8GB or 12GB RAM</strong> (12GB model: up to 12GB more with virtual memory) / <strong>256GB or 512GB</strong> storage (microSD up to 2TB)</li>
 <li>About 6.4-inch OLED (up to 144Hz, up to 3,000 nits)</li>
-<li>SoC: Dimensity 8350 Extreme</li>
+<li>SoC: Dimensity 8350 Extreme / Android 16 / 5G (Sub6)</li>
 <li>Camera: about 50.3MP main + 49.9MP ultra-wide, 4K 60fps video, 49.9MP front camera</li>
 <li>5,370mAh battery (1% to 100% in about 40 minutes at the fastest)</li>
-<li>About 155 x 72 x 8.6 mm, 187 g / IP68 and IP69 / Osaifu-Keitai supported</li>
-<li>Hi-res audio and wireless charging / up to 3 OS updates and up to 5 years of security updates</li>
+<li>About 155 x 72 x 8.6 mm, 187 g / IPX6/IPX8/IPX9 and IP6X / Osaifu-Keitai supported</li>
+<li>Hi-res audio supported / <strong>no wireless charging</strong> / up to 3 OS updates and up to 5 years of security updates</li>
 </ul>
 <p style="margin:.3rem 0 0;">他社から初めて乗り換えると最大16,000ポイント還元(事前エントリー必要)。256GBは、このポイントを使うと実質69,900円(下取りなし・公式ページの試算)。</p>
 <p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .5rem;">Up to 16,000 points back when switching from another carrier for the first time (pre-entry required). The 256GB model works out to 69,900 yen with those points (no trade-in; Rakuten's own estimate).</p>
@@ -162,6 +162,7 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <li>約6.3インチ OLEDディスプレイ</li>
 <li>カメラ：48MP広角 + 13MP超広角 + 10.8MP望遠</li>
 <li>バッテリー4,985mAh / Gemini Intelligenceに最適化</li>
+<li>SoC:Tensor G6 / <strong>ワイヤレス充電対応</strong> / 防水IPX8・防塵IP6X / おサイフケータイ・NFC対応 / 約197g</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
 <li><strong>12GB RAM</strong> / 256GB or <strong>512GB (recommended)</strong> storage</li>
@@ -169,6 +170,7 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <li>About 6.3-inch OLED display</li>
 <li>Camera: 48MP wide + 13MP ultra-wide + 10.8MP telephoto</li>
 <li>4,985mAh battery / optimized for Gemini Intelligence</li>
+<li>SoC: Tensor G6 / <strong>wireless charging supported</strong> / IPX8 and IP6X / Osaifu-Keitai and NFC / about 197g</li>
 </ul>
 <p style="margin:.3rem 0 0;">他社から初めて乗り換えると最大16,000ポイント還元(事前エントリー必要)。</p>
 <p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .5rem;">Up to 16,000 points back when switching from another carrier for the first time (pre-entry required).</p>
@@ -187,6 +189,7 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <li>約6.3インチ OLEDディスプレイ</li>
 <li>カメラ：48MP広角 + 13MP超広角</li>
 <li>バッテリー5,100mAh / Gemini対応</li>
+<li>SoC:Tensor G4 / <strong>ワイヤレス充電対応</strong> / 防水IPX8・防塵IP6X / 約183g</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
 <li>8GB RAM / 128GB or 256GB storage</li>
@@ -194,6 +197,7 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <li>About 6.3-inch OLED display</li>
 <li>Camera: 48MP wide + 13MP ultra-wide</li>
 <li>5,100mAh battery / Gemini</li>
+<li>SoC: Tensor G4 / <strong>wireless charging supported</strong> / IPX8 and IP6X / about 183g</li>
 </ul>
 <p style="margin:.3rem 0 0;">他社から初めて乗り換えると最大16,000ポイント還元(事前エントリー必要)。</p>
 <p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .5rem;">Up to 16,000 points back when switching from another carrier for the first time (pre-entry required).</p>
@@ -205,26 +209,28 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <p style="margin:.3rem 0 0;"><strong>メモリ8GB版</strong>と<strong>12GB版</strong>があります(ストレージはどちらも256GB)。国産ブランドで、未使用品を探してみるのもおすすめです。</p>
 <p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .5rem;">Available in <strong>8GB</strong> and <strong>12GB</strong> RAM versions (256GB storage for both). A Japanese-brand phone; looking for an unused (new, unopened) unit is also worth a try.</p>
 <ul style="margin:.4rem 0 .1rem;padding-left:1.3rem;">
-<li>メモリ8GB版(ドコモ・楽天モバイル版) / <strong>12GB版(SIMフリー版 M06)</strong></li>
+<li>メモリ8GB版(ドコモ・楽天モバイル版) / <strong>12GB版(SIMフリー版 M06。楽天モバイルの公式スペック表は8GB/256GBのみ)</strong></li>
 <li>ストレージ256GB(microSDで最大1TBまで拡張可)</li>
 <li>約6.6インチ 有機EL(フルHD+ 2,400×1,080)</li>
 <li>カメラ：約5,010万画素広角(F1.8・光学手ブレ補正) + 約800万画素超広角 / 前面約1,610万画素</li>
 <li>バッテリー5,000mAh / Snapdragon 7s Gen 2</li>
-<li>防水(IPX5/IPX8)・防塵(IP6X)、MIL-STD-810H準拠の試験を実施</li>
+<li>防水(IPX5/IPX8)・防塵(IP6X)</li>
 <li>おサイフケータイ対応 / 指紋認証・顔認証</li>
 <li>脈波センサーで自律神経の活性度を測定(We2 Plusのみの機能)</li>
 <li>約182g、約162×75×8.5mm</li>
+<li><strong>ワイヤレス充電は非対応</strong> / イヤホンジャック対応 / Android 14</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
-<li>8GB RAM (Docomo / Rakuten Mobile versions) / <strong>12GB RAM (SIM-free version M06)</strong></li>
+<li>8GB RAM (Docomo / Rakuten Mobile versions) / <strong>12GB RAM (SIM-free version M06; Rakuten's spec table lists only 8GB/256GB)</strong></li>
 <li>256GB storage (expandable up to 1TB with microSD)</li>
 <li>About 6.6-inch OLED (Full HD+, 2,400x1,080)</li>
 <li>Camera: 50.1MP wide (F1.8, optical image stabilization) + 8MP ultra-wide / 16.1MP front</li>
 <li>5,000mAh battery / Snapdragon 7s Gen 2</li>
-<li>Water resistance (IPX5/IPX8) and dust resistance (IP6X); tested to MIL-STD-810H items</li>
+<li>Water resistance (IPX5/IPX8) and dust resistance (IP6X)</li>
 <li>Osaifu-Keitai (mobile wallet) supported / fingerprint and face authentication</li>
 <li>Pulse-wave sensor measures autonomic nervous system activity (We2 Plus only)</li>
 <li>About 182g, about 162 x 75 x 8.5mm</li>
+<li><strong>No wireless charging</strong> / headphone jack / Android 14</li>
 </ul>
 <p style="margin:.3rem 0 0;"><small>未使用品の価格・在庫は販売店ごとに異なります。最新の情報はご自身でご確認ください。</small></p>
 <p lang="en" style="font-size:.88rem;opacity:.85;margin:.1rem 0 .5rem;">Prices and stock of unused units vary by seller. Please check the latest information yourself.</p>
@@ -239,18 +245,20 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <li>メモリ8GB / ストレージ128GB(microSDで最大2TBまで対応)</li>
 <li>アウトカメラ：約6,400万画素メイン + 約800万画素超広角(112°) + 約200万画素マクロ / インカメラ約3,200万画素</li>
 <li>約6.7インチ 有機EL、120Hz</li>
-<li>バッテリー5,000mAh、67W SUPERVOOC急速充電(約48分で100%)</li>
-<li>防水・防塵 IP65 / おサイフケータイ(FeliCa)対応</li>
+<li>バッテリー5,000mAh、急速充電対応</li>
+<li>防水・防塵 IPX5 / IP6X / おサイフケータイ(FeliCa)対応</li>
 <li>MediaTek Dimensity 7050 / 約177g、厚さ約7.6mm</li>
+<li><strong>ワイヤレス充電は非対応</strong> / Android 14</li>
 <li>カラー：ダークグリーン、コーラルパープル</li>
 </ul>
 <ul lang="en" style="margin:0 0 .6rem;padding-left:1.3rem;font-size:.88rem;opacity:.85;">
 <li>8GB RAM / 128GB storage (microSD up to 2TB)</li>
 <li>Rear camera: about 64MP main + about 8MP ultra-wide (112 degrees) + about 2MP macro / 32MP front camera</li>
 <li>About 6.7-inch OLED, 120Hz</li>
-<li>5,000mAh battery, 67W SUPERVOOC fast charging (100% in about 48 minutes)</li>
-<li>IP65 water and dust resistance / Osaifu-Keitai (FeliCa) supported</li>
+<li>5,000mAh battery, fast charging supported</li>
+<li>IPX5 / IP6X water and dust resistance / Osaifu-Keitai (FeliCa) supported</li>
 <li>MediaTek Dimensity 7050 / about 177g, about 7.6mm thick</li>
+<li><strong>No wireless charging</strong> / Android 14</li>
 <li>Colors: Dark Green, Coral Purple</li>
 </ul>
 <p style="margin:.3rem 0 0;"><small>未使用品の価格・在庫は販売店ごとに異なります。最新の情報はご自身でご確認ください。</small></p>
