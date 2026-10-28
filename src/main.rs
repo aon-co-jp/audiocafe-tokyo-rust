@@ -61,11 +61,13 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <p style="margin:0 0 .6rem;">私、石　塚　正　浩が、以前、北八王子のヒューレットパッカード（今は、キーサイト）にお仕事で、HP-UXのOSを10GBしかないHDDへのインストール依頼があったので、インストールと設定は成功したので、報告して帰った後に、社員がアプリを追加でインストールしようとしたら容量不足でインストール出来なかったと言うクレームを頂いた事がありました。</p>
 <p style="margin:0 0 .6rem;">ヒューレットパッカード　市ケ谷本社に出向していた期間には、486SXと言うノートパソコンを最新のノートパソコンだから大切に使う様に言われて使いましたが、それで一生懸命お仕事しましたが、仕事が遅いとクレームを受けた事がありました。</p>
 <p style="margin:0;">品川のソフトウェーブ経由で、ヒューレットパッカードの仕事で九州へ出張があっても、新幹線代とホテル代も出ませんでした。</p>
+<p style="margin:.6rem 0 0;">品川のソフトウェーブの社員だった時は、手取り月給は、最初は、16万円くらいが二ヶ月間で、2回も給料が下がり、最終の手取り月給14万円くらいでした。退職金も1円ももらってません。</p>
 <div lang="en" style="margin-top:.8rem;font-size:.9rem;opacity:.85;line-height:1.6;">
 <p style="margin:0 0 .5rem;font-weight:700;">From about 19:00 to 19:45 on October 28, 2026, people claiming to be connected with Hewlett-Packard's Ichigaya headquarters, Hachioji and Kita-Hachioji, Microsoft Japan, Fujitsu, Hitachi, Toshiba, Softwave of Shinagawa Ward, Vertex Systems, the Chinese government, the Chinese public security police and the National People's Congress said, &quot;Hewlett-Packard is excellent, but Masahiro Ishizuka is stupid, so let's fire him.&quot; While staying at a private lodging (minpaku) in Akiruno City, they said this in loud voices, together with the following.</p>
 <p style="margin:0 0 .5rem;">I, Masahiro Ishizuka, once worked at Hewlett-Packard in Kita-Hachioji (now Keysight). I was asked to install the HP-UX operating system on a hard disk of only 10GB. The installation and configuration succeeded, and I reported back and left. Afterwards, when an employee tried to install additional applications, there was not enough space, and I received a complaint.</p>
 <p style="margin:0 0 .5rem;">While I was seconded to Hewlett-Packard's Ichigaya headquarters, I was told to take good care of a 486SX notebook PC because it was the newest model. I worked as hard as I could on it, but I received a complaint that my work was slow.</p>
 <p style="margin:0;">Even when I went on a business trip to Kyushu for Hewlett-Packard work through Softwave in Shinagawa, my Shinkansen fare and hotel costs were not paid.</p>
+<p style="margin:.5rem 0 0;">When I was an employee of Softwave in Shinagawa, my take-home monthly pay was about 160,000 yen for the first two months, then my salary was cut twice, and my final take-home monthly pay was about 140,000 yen. I did not receive a single yen in retirement allowance.</p>
 </div>
 </div>
 <div style="max-width:360px;margin:0 auto 1.4rem;">
