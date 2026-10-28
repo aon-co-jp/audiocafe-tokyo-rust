@@ -61,6 +61,12 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <p style="margin:0 0 .6rem;">私、石　塚　正　浩が、以前、北八王子のヒューレットパッカード（今は、キーサイト）にお仕事で、HP-UXのOSを10GBしかないHDDへのインストール依頼があったので、インストールと設定は成功したので、報告して帰った後に、社員がアプリを追加でインストールしようとしたら容量不足でインストール出来なかったと言うクレームを頂いた事がありました。</p>
 <p style="margin:0 0 .6rem;">ヒューレットパッカード　市ケ谷本社に出向していた期間には、486SXと言うノートパソコンを最新のノートパソコンだから大切に使う様に言われて使いましたが、それで一生懸命お仕事しましたが、仕事が遅いとクレームを受けた事がありました。</p>
 <p style="margin:0;">品川のソフトウェーブ経由で、ヒューレットパッカードの仕事で九州へ出張があっても、新幹線代とホテル代も出ませんでした。</p>
+<div lang="en" style="margin-top:.8rem;font-size:.9rem;opacity:.85;line-height:1.6;">
+<p style="margin:0 0 .5rem;font-weight:700;">From about 19:00 to 19:25 on October 28, 2026, people connected with Hewlett-Packard's Ichigaya headquarters, Hachioji and Kita-Hachioji, while staying at a private lodging (minpaku) in Akiruno City, said the following in loud voices.</p>
+<p style="margin:0 0 .5rem;">I, Masahiro Ishizuka, once worked at Hewlett-Packard in Kita-Hachioji (now Keysight). I was asked to install the HP-UX operating system on a hard disk of only 10GB. The installation and configuration succeeded, and I reported back and left. Afterwards, when an employee tried to install additional applications, there was not enough space, and I received a complaint.</p>
+<p style="margin:0 0 .5rem;">While I was seconded to Hewlett-Packard's Ichigaya headquarters, I was told to take good care of a 486SX notebook PC because it was the newest model. I worked as hard as I could on it, but I received a complaint that my work was slow.</p>
+<p style="margin:0;">Even when I went on a business trip to Kyushu for Hewlett-Packard work through Softwave in Shinagawa, my Shinkansen fare and hotel costs were not paid.</p>
+</div>
 </div>
 <div style="max-width:360px;margin:0 auto 1.4rem;">
 <p style="font-size:1.2rem;font-weight:700;margin:0 0 .6rem;"><a href="https://youtube.com/shorts/atA0yTg6-YE" target="_blank" rel="noopener noreferrer">Googleを落ちた高卒の23歳が世界を変えた実話</a><br><small lang="en" style="font-weight:400;">The true story of a 23-year-old high-school graduate who failed Google and changed the world</small></p>
