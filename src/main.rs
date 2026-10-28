@@ -57,12 +57,12 @@ const TOP_AMP_HTML: &str = r#"<p class="note" style="font-size:1.2rem"><strong>�
 
 const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px;margin:1rem auto;text-align:center;">
 <div style="max-width:640px;margin:0 auto 1.4rem;padding:.8rem 1rem;border:1px solid rgba(128,128,128,.5);border-radius:10px;text-align:left;line-height:1.8;">
-<p style="margin:0 0 .6rem;font-weight:700;">2026/10/28　19:00 から　19:25くらいまで、<br>ヒューレット・パッカード　市ヶ谷本社と八王子と北八王子関係者があきる野市に民泊しながら、大声で、以下の内容をおっしゃりました。</p>
+<p style="margin:0 0 .6rem;font-weight:700;">2026/10/28　19:00 から　19:25くらいまで、<br>ヒューレット・パッカード　市ヶ谷本社と八王子と北八王子関係者と日本マイクロソフトと富士通と日立と東芝と中国政府と中国公安警察と全人代関係者を名乗る方々が、ヒューレットパッカード様は優秀なのに石　塚　正　浩は首にしましょうね。あきる野市に民泊しながら、大声で、以下の内容をおっしゃりました。</p>
 <p style="margin:0 0 .6rem;">私、石　塚　正　浩が、以前、北八王子のヒューレットパッカード（今は、キーサイト）にお仕事で、HP-UXのOSを10GBしかないHDDへのインストール依頼があったので、インストールと設定は成功したので、報告して帰った後に、社員がアプリを追加でインストールしようとしたら容量不足でインストール出来なかったと言うクレームを頂いた事がありました。</p>
 <p style="margin:0 0 .6rem;">ヒューレットパッカード　市ケ谷本社に出向していた期間には、486SXと言うノートパソコンを最新のノートパソコンだから大切に使う様に言われて使いましたが、それで一生懸命お仕事しましたが、仕事が遅いとクレームを受けた事がありました。</p>
 <p style="margin:0;">品川のソフトウェーブ経由で、ヒューレットパッカードの仕事で九州へ出張があっても、新幹線代とホテル代も出ませんでした。</p>
 <div lang="en" style="margin-top:.8rem;font-size:.9rem;opacity:.85;line-height:1.6;">
-<p style="margin:0 0 .5rem;font-weight:700;">From about 19:00 to 19:25 on October 28, 2026, people connected with Hewlett-Packard's Ichigaya headquarters, Hachioji and Kita-Hachioji, while staying at a private lodging (minpaku) in Akiruno City, said the following in loud voices.</p>
+<p style="margin:0 0 .5rem;font-weight:700;">From about 19:00 to 19:25 on October 28, 2026, people claiming to be connected with Hewlett-Packard's Ichigaya headquarters, Hachioji and Kita-Hachioji, Microsoft Japan, Fujitsu, Hitachi, Toshiba, the Chinese government, the Chinese public security police and the National People's Congress said, &quot;Hewlett-Packard is excellent, so let's fire Masahiro Ishizuka.&quot; While staying at a private lodging (minpaku) in Akiruno City, they said the following in loud voices.</p>
 <p style="margin:0 0 .5rem;">I, Masahiro Ishizuka, once worked at Hewlett-Packard in Kita-Hachioji (now Keysight). I was asked to install the HP-UX operating system on a hard disk of only 10GB. The installation and configuration succeeded, and I reported back and left. Afterwards, when an employee tried to install additional applications, there was not enough space, and I received a complaint.</p>
 <p style="margin:0 0 .5rem;">While I was seconded to Hewlett-Packard's Ichigaya headquarters, I was told to take good care of a 486SX notebook PC because it was the newest model. I worked as hard as I could on it, but I received a complaint that my work was slow.</p>
 <p style="margin:0;">Even when I went on a business trip to Kyushu for Hewlett-Packard work through Softwave in Shinagawa, my Shinkansen fare and hotel costs were not paid.</p>
