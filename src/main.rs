@@ -85,6 +85,12 @@ const TOP_VIDEO_HTML: &str = r#"<section class="top-news" style="max-width:640px
 <p style="margin:.5rem 0 0;">When I was an employee of Softwave in Shinagawa, my take-home monthly pay was about 160,000 yen for the first two months, then my salary was cut twice, and my final take-home monthly pay was about 140,000 yen. I did not receive a single yen in retirement allowance.</p>
 </div>
 </div>
+<div style="max-width:640px;margin:0 auto 1.4rem;">
+<p style="font-size:1.2rem;font-weight:700;margin:0 0 .6rem;"><a href="https://www.youtube.com/watch?v=c7pEIqhxj20" target="_blank" rel="noopener noreferrer">【海外の反応】塩水で発電を日本が実用化へ！世界中の電力会社が諦めた開発に世界中が大注目の理由</a><br><small lang="en" style="font-weight:400;">[Reactions from overseas] Japan moves to put salt-water power generation into practical use! Why the world is watching a development that power companies worldwide gave up on</small></p>
+<div style="position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden;">
+<button type="button" aria-label="動画を再生 / Play video" style="all:unset;position:absolute;inset:0;cursor:pointer;" onclick="var f=document.createElement('iframe');f.src='https://www.youtube-nocookie.com/embed/c7pEIqhxj20?autoplay=1&amp;playsinline=1&amp;rel=0';f.allow='autoplay; encrypted-media; picture-in-picture';f.allowFullscreen=true;f.title='【海外の反応】塩水で発電を日本が実用化へ！世界中の電力会社が諦めた開発に世界中が大注目の理由';f.style.cssText='position:absolute;inset:0;width:100%;height:100%;border:0';this.replaceWith(f)"><img src="https://i.ytimg.com/vi/c7pEIqhxj20/hqdefault.jpg" alt="【海外の反応】塩水で発電を日本が実用化へ！世界中の電力会社が諦めた開発に世界中が大注目の理由" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:64px;height:64px;border-radius:50%;background:rgba(0,0,0,.65);color:#fff;font-size:30px;line-height:64px;text-align:center;">▶</span></button>
+</div>
+</div>
 <div style="max-width:360px;margin:0 auto 1.4rem;">
 <p style="font-size:1.2rem;font-weight:700;margin:0 0 .6rem;"><a href="https://youtube.com/shorts/atA0yTg6-YE" target="_blank" rel="noopener noreferrer">Googleを落ちた高卒の23歳が世界を変えた実話</a><br><small lang="en" style="font-weight:400;">The true story of a 23-year-old high-school graduate who failed Google and changed the world</small></p>
 <div style="position:relative;width:100%;aspect-ratio:9/16;background:#000;border-radius:8px;overflow:hidden;">
