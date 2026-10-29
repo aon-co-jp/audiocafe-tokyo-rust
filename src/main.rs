@@ -3225,6 +3225,10 @@ fn render_top_body(query: &std::collections::HashMap<String, String>) -> String 
 <p class="blog-link" style="font-size:1.2rem;margin:0 0 .5rem"><a href="https://www.youtube.com/watch?v=R8-C8ObhA5c" onclick="return acClickPlay(this)">▶ The KLIPSCHORN in Wintertime! 4K 60fps HD Audio</a></p>
 <a class="yt-thumb" href="https://www.youtube.com/watch?v=R8-C8ObhA5c" onclick="return acClickPlay(this)" style="display:block;position:relative"><img src="https://i.ytimg.com/vi/R8-C8ObhA5c/hqdefault.jpg" alt="The KLIPSCHORN in Wintertime! 4K 60fps HD Audio" style="width:100%;height:auto;display:block;border-radius:8px"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:3rem;color:#fff;background:rgba(0,0,0,.6);border-radius:50%;width:5rem;height:5rem;line-height:5rem;text-align:center">▶</span></a>
 </div>
+<div class="yt-click-play" data-vid="9yqTQ-yl7_A" style="font-size:1.2rem;margin:.8rem auto;max-width:640px;text-align:center">
+<p class="blog-link" style="font-size:1.2rem;margin:0 0 .5rem"><a href="https://www.youtube.com/watch?v=9yqTQ-yl7_A" onclick="return acClickPlay(this)">▶ 高橋洋子　残酷な天使のテーゼ　＆　魂のルフラン</a></p>
+<a class="yt-thumb" href="https://www.youtube.com/watch?v=9yqTQ-yl7_A" onclick="return acClickPlay(this)" style="display:block;position:relative"><img src="https://i.ytimg.com/vi/9yqTQ-yl7_A/hqdefault.jpg" alt="高橋洋子　残酷な天使のテーゼ　＆　魂のルフラン" style="width:100%;height:auto;display:block;border-radius:8px"><span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:3rem;color:#fff;background:rgba(0,0,0,.6);border-radius:50%;width:5rem;height:5rem;line-height:5rem;text-align:center">▶</span></a>
+</div>
 <p class="note" style="font-size:1.4rem;font-weight:700;margin:1.6rem 0 .4rem">福山雅治　ビデオ集</p>
 <p class="note" style="font-size:1.2rem;font-weight:700"><a href="https://www.youtube.com/watch?v=fDAToBerhPE" target="_blank" rel="noopener noreferrer">福山雅治 - 道標 2022〈Another Story of Promise for the Future『裸の音』〉(Short ver.)</a></p>
 <div style="max-width:640px;margin:0 auto 1.2rem">
