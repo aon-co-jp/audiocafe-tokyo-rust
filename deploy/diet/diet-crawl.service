@@ -1,0 +1,6 @@
+[Unit]
+Description=Daily crawl of diet recipe list pages (aruaru.tokyo / audiocafe.tokyo top links)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /root/repository/audiocafe-tokyo-rust/deploy/diet/diet_crawl.py
