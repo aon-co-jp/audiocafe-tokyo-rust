@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """毎朝、ダイエットレシピの一覧ページ3つを巡回し、先頭のレシピが変わったら「最新」と「一つ前」を更新する。
-他社ページの写しは保存しない(レシピの題名とURLだけを記録)。"""
+あわせて「時短 ダイエット レシピ」の検索結果(aruaru-search)を取得し、英訳(aruaru-llm)を付けて更新する。
+他社ページの写しは保存しない(題名・URL・短い要約と、その英訳だけを記録)。"""
 import html, json, os, re, sys, time, urllib.request
 from datetime import datetime, timedelta, timezone
 
@@ -13,6 +14,10 @@ SOURCES = [
     ("rakuten", "https://recipe.rakuten.co.jp/category/39-504/", r'href="(/recipe/\d+/)"'),
 ]
 JST = timezone(timedelta(hours=9))
+SEARCH_URL = "http://127.0.0.1:4610/v1/search"
+LLM_URL = "http://127.0.0.1:4600/v1/chat-providers/complete-priority"
+QUERY = "時短 ダイエット レシピ"
+SKIP = ("instagram.com", "youtube.com", "tiktok.com", "twitter.com", "x.com", "facebook.com")
 
 
 def get(url):
@@ -21,11 +26,59 @@ def get(url):
         return r.read().decode("utf-8", "replace")
 
 
+def post(url, body, timeout=60):
+    req = urllib.request.Request(url, data=json.dumps(body).encode("utf-8"), headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.loads(r.read().decode("utf-8"))
+
+
 def title_of(page):
     m = re.search(r"<title[^>]*>([^<]*)</title>", page)
     t = html.unescape(m.group(1)).strip() if m else ""
     t = re.split(r"\s+[|｜]\s+|\s+-\s+(?=楽天レシピ|Nadia)", t)[0].strip()
     return t
+
+
+def translate(title, snippet):
+    prompt = ("Translate the following Japanese web search result into natural English. Output exactly two lines:\n"
+              "TITLE: <translated title>\nSUMMARY: <translated summary>\n\n"
+              "Japanese title: " + title + "\nJapanese summary: " + snippet)
+    try:
+        text = post(LLM_URL, {"prompt": prompt})["reply"]["text"]
+    except Exception as e:
+        print("translate error:", e, file=sys.stderr)
+        return "", ""
+    t = re.search(r"TITLE:\s*(.+)", text)
+    m = re.search(r"SUMMARY:\s*(.+)", text)
+    return (t.group(1).strip() if t else ""), (m.group(1).strip() if m else "")
+
+
+def crawl_search(state):
+    try:
+        res = post(SEARCH_URL, {"q": QUERY, "n": 12, "hl": "ja", "gl": "jp"}, 60).get("results", [])
+    except Exception as e:
+        print("search error:", e, file=sys.stderr)
+        return
+    old = {r["url"]: r for r in state.get("search", {}).get("results", [])}
+    out = []
+    for r in res:
+        link, title = r.get("link", ""), (r.get("title") or "").strip()
+        if not link.startswith("http") or not title or any(d in link for d in SKIP):
+            continue
+        title = html.unescape(title)[:90]
+        snippet = html.unescape((r.get("snippet") or "").strip())[:160]
+        prev = old.get(link)
+        if prev and prev.get("title") == title and prev.get("title_en"):
+            out.append(prev)
+        else:
+            te, se = translate(title, snippet)
+            out.append({"title": title, "title_en": te, "url": link, "snippet": snippet, "snippet_en": se})
+            time.sleep(3)
+        if len(out) >= 6:
+            break
+    if len(out) >= 3:
+        state["search"] = {"query": QUERY, "date": datetime.now(JST).strftime("%Y-%m-%d"), "results": out}
+        print("search updated:", len(out))
 
 
 def main():
@@ -57,11 +110,13 @@ def main():
             time.sleep(2)
         except Exception as e:
             print(key, "error:", e, file=sys.stderr)
+    crawl_search(state)
     os.makedirs(os.path.dirname(STATE), exist_ok=True)
     json.dump(state, open(STATE, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    pub = {"updated": today, "sources": {k: v for k, v in state.items() if k != "search"}, "search": state.get("search")}
     for out in OUTS:
         if os.path.isdir(os.path.dirname(out)):
-            json.dump({"updated": today, "sources": state}, open(out, "w", encoding="utf-8"), ensure_ascii=False)
+            json.dump(pub, open(out, "w", encoding="utf-8"), ensure_ascii=False)
     print("done changed=%s" % changed)
 
 
