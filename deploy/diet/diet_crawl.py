@@ -22,7 +22,7 @@ def get(url):
 
 
 def title_of(page):
-    m = re.search(r"<title>([^<]*)</title>", page)
+    m = re.search(r"<title[^>]*>([^<]*)</title>", page)
     t = html.unescape(m.group(1)).strip() if m else ""
     t = re.split(r"\s+[|｜]\s+|\s+-\s+(?=楽天レシピ|Nadia)", t)[0].strip()
     return t
