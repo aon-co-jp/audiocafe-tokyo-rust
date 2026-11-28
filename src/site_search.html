@@ -29,7 +29,7 @@ function go(i){
   if(!hits.length)return;if(cur>=0&&hits[cur])hits[cur].classList.remove('ss-cur');
   cur=(i+hits.length)%hits.length;var m=hits[cur];m.classList.add('ss-cur');
   var d=m.closest('details');if(d)d.open=true;
-  m.scrollIntoView({behavior:'smooth',block:'center'});
+  m.scrollIntoView({block:'center'});
   cnt.textContent=(cur+1)+' / '+hits.length;
 }
 q.addEventListener('input',function(){clearTimeout(timer);timer=setTimeout(search,250);});
